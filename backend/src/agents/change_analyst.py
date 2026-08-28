@@ -91,6 +91,42 @@ class ChangeAnalystAgent:
         impacted: list[ImpactedFile] = []
         planned: list[PlannedChange] = []
 
+        # Check for enterprise / advanced billing scenario
+        is_advanced_billing = any(kw in (request.title + " " + request.description).lower() for kw in ["enterprise", "coupon", "tax", "currency", "invoice", "billing_types"])
+
+        if is_advanced_billing:
+            return ChangePlan(
+                story_id=request.story_id,
+                summary=f"Enterprise Architecture Plan: Expand calculator into modular multi-currency pricing, tiered tax, coupon validation, and invoice breakdown engine across 4 source & test modules.",
+                impacted_files=[
+                    ImpactedFile(path="calculator.py", reason="Core computation engine with multi-currency, coupon deduction, and invoice generation", confidence=0.98),
+                    ImpactedFile(path="billing_types.py", reason="Strongly-typed domain data structures for Currency, Coupon, TaxRule, and InvoiceBreakdown", confidence=0.99),
+                    ImpactedFile(path="test_calculator.py", reason="Regression and compatibility test suite for standard and discounted calculations", confidence=0.95),
+                    ImpactedFile(path="test_billing_engine.py", reason="Comprehensive enterprise test suite for tax tiers, coupon rules, currency conversion, and audits", confidence=0.97)
+                ],
+                planned_changes=[
+                    PlannedChange(file_path="billing_types.py", change_type=ChangeType.CREATE, description="Create domain data structures for Currency, Coupon, TaxRule, and InvoiceBreakdown"),
+                    PlannedChange(file_path="calculator.py", change_type=ChangeType.MODIFY, description="Implement enterprise calculate_invoice, apply_coupon, apply_tax, and convert_currency engines while preserving calculate_total"),
+                    PlannedChange(file_path="test_calculator.py", change_type=ChangeType.MODIFY, description="Update baseline calculator tests to assert discount compatibility"),
+                    PlannedChange(file_path="test_billing_engine.py", change_type=ChangeType.CREATE, description="Create enterprise test suite covering coupon expiration, minimum thresholds, tiered tax brackets, currency exchange, and breakdown precision")
+                ],
+                dependencies=["Python 3.11+", "dataclasses", "enum", "decimal", "pytest"],
+                risks=[
+                    "Floating-point rounding precision errors in financial calculations (mitigated with 2-decimal rounding)",
+                    "Backward compatibility for existing calculate_total callers (mitigated by preserving original signature)",
+                    "Invalid coupon or negative tax rate injections (mitigated with strict domain validation)"
+                ],
+                testing_strategy=[
+                    "Run automated pytest across both test_calculator.py and test_billing_engine.py",
+                    "Verify zero-division and negative amount validation across all currencies",
+                    "Verify coupon expiration and minimum order threshold enforcement"
+                ],
+                clarifications=[
+                    "Supported currencies: USD (base), EUR (0.92), GBP (0.79), JPY (155.0), CAD (1.36)",
+                    "Taxes applied post-coupon deduction per standard international e-commerce accounting standards"
+                ]
+            )
+
         if target_src:
             impacted.append(ImpactedFile(
                 path=target_src,

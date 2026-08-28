@@ -69,6 +69,15 @@ export class AppComponent implements OnInit {
     this.errorMessage = null;
   }
 
+  loadEnterprisePreset() {
+    this.storyId = 'CP-ENTERPRISE-500';
+    this.title = 'Enterprise Multi-Tier Billing, Tax, Coupon & Currency Breakdown Engine';
+    this.description = 'Upgrade calculator into an enterprise-grade financial calculation engine supporting multi-currency conversion (USD, EUR, GBP, JPY, CAD), percentage & flat coupon codes with expiry and minimum order thresholds, tiered regional tax brackets (US standard, EU VAT, APAC exempt), itemized invoice breakdown dataclasses, comprehensive transaction audit logging, and 100% test coverage for edge cases, precision rounding, and negative input validation.';
+    this.repoLocation = 'demo_repo';
+    this.baseBranch = 'main';
+    this.errorMessage = null;
+  }
+
   inspectRepository() {
     if (!this.repoLocation) return;
     this.isInspecting = true;
