@@ -1,0 +1,294 @@
+<div class="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
+  <!-- Top Navigation Header -->
+  <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50 px-6 py-3.5 flex items-center justify-between">
+    <div class="flex items-center space-x-3">
+      <div class="h-9 w-9 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center font-bold text-white shadow-lg shadow-indigo-500/20">
+        CP
+      </div>
+      <div>
+        <div class="flex items-center space-x-2">
+          <h1 class="text-lg font-bold tracking-tight text-white">ChangePilot</h1>
+          <span class="text-xs px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-medium">v1.0.0</span>
+        </div>
+        <p class="text-xs text-slate-400">Autonomous Software-Change Pipeline</p>
+      </div>
+    </div>
+
+    <!-- Health & Vertex AI Status Badges -->
+    <div class="flex items-center space-x-3 text-xs">
+      <div class="flex items-center space-x-1.5 px-3 py-1 rounded-md bg-slate-800 border border-slate-700">
+        <span class="h-2 w-2 rounded-full" [ngClass]="health ? 'bg-emerald-400 shadow-sm shadow-emerald-400/50' : 'bg-amber-400 animate-pulse'"></span>
+        <span class="text-slate-300">API: <strong class="text-white">{{ health ? 'Connected' : 'Connecting...' }}</strong></span>
+      </div>
+
+      <div class="flex items-center space-x-1.5 px-3 py-1 rounded-md bg-slate-800 border border-slate-700">
+        <span class="h-2 w-2 rounded-full" [ngClass]="health?.vertex_ai_configured ? 'bg-indigo-400 shadow-sm shadow-indigo-400/50' : 'bg-emerald-400'"></span>
+        <span class="text-slate-300">AI: <strong class="text-white">{{ health?.vertex_ai_configured ? 'Vertex AI (ADC)' : 'Deterministic / Local' }}</strong></span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Body -->
+  <main class="flex-1 p-6 max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+    <!-- Left Column: Change Request Input & Control Panel (4 cols) -->
+    <section class="lg:col-span-4 flex flex-col space-y-6">
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+            <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            Change Request
+          </h2>
+          <button (click)="loadDemoPreset()" class="text-xs text-indigo-400 hover:text-indigo-300 underline font-medium cursor-pointer">
+            Load Demo Preset
+          </button>
+        </div>
+
+        <form (ngSubmit)="runWorkflow()" class="space-y-4 text-xs">
+          <div>
+            <label class="block text-slate-400 font-medium mb-1">Story / Ticket ID</label>
+            <input type="text" [(ngModel)]="storyId" name="storyId" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-slate-100 focus:outline-none focus:border-indigo-500 font-mono" placeholder="CP-101" required>
+          </div>
+
+          <div>
+            <label class="block text-slate-400 font-medium mb-1">Change Title</label>
+            <input type="text" [(ngModel)]="title" name="title" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-slate-100 focus:outline-none focus:border-indigo-500" placeholder="Feature title" required>
+          </div>
+
+          <div>
+            <label class="block text-slate-400 font-medium mb-1">Detailed Requirements</label>
+            <textarea rows="4" [(ngModel)]="description" name="description" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-slate-100 focus:outline-none focus:border-indigo-500 text-xs" placeholder="Describe the behavior and constraints..." required></textarea>
+          </div>
+
+          <div>
+            <label class="block text-slate-400 font-medium mb-1">Repository Location (Path or Safe URL)</label>
+            <div class="flex gap-2">
+              <input type="text" [(ngModel)]="repoLocation" name="repoLocation" class="flex-1 px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-slate-100 focus:outline-none focus:border-indigo-500 font-mono text-xs" placeholder="demo_repo or /path/to/repo" required>
+              <button type="button" (click)="inspectRepository()" [disabled]="isInspecting" class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-700 transition flex items-center gap-1 cursor-pointer">
+                <span *ngIf="isInspecting" class="animate-spin text-indigo-400">⟳</span>
+                <span>Inspect</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="pt-2">
+            <button type="submit" [disabled]="isRunning" class="w-full py-2.5 px-4 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/30 transition disabled:opacity-50 cursor-pointer">
+              <svg *ngIf="isRunning" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+              <span>{{ isRunning ? 'Executing Autonomous Pipeline...' : 'Run Autonomous Pipeline' }}</span>
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Analyzed Repo Facts Card (if inspected) -->
+      <div *ngIf="analyzedContext" class="bg-slate-900 border border-slate-800 rounded-xl p-4 text-xs space-y-2">
+        <h3 class="font-semibold text-slate-300 flex items-center gap-1.5">
+          <span class="h-2 w-2 rounded-full bg-cyan-400"></span>
+          Repository Inspection Evidence
+        </h3>
+        <div class="grid grid-cols-2 gap-2 text-slate-400">
+          <div>Language: <strong class="text-slate-200">{{ analyzedContext.primary_language }}</strong></div>
+          <div>Files: <strong class="text-slate-200">{{ analyzedContext.all_files?.length }}</strong></div>
+          <div class="col-span-2">Runner: <code class="text-indigo-300 font-mono">{{ analyzedContext.test_runner_command || 'None' }}</code></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right Column: Pipeline Execution & Verification Results (8 cols) -->
+    <section class="lg:col-span-8 flex flex-col space-y-6">
+
+      <!-- Pipeline Stage Stepper -->
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl">
+        <h2 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-4 flex items-center gap-2">
+          <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+          Autonomous Execution Stages
+        </h2>
+
+        <div class="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-9 gap-2">
+          <div *ngFor="let s of stages; let i = index" class="flex flex-col items-center text-center p-2 rounded-lg border transition-all"
+               [ngClass]="{
+                 'bg-emerald-950/40 border-emerald-500/40 text-emerald-300': getStageStatus(s.key) === 'completed',
+                 'bg-indigo-950/50 border-indigo-500 text-indigo-300 shadow-md shadow-indigo-500/20 animate-pulse': getStageStatus(s.key) === 'current',
+                 'bg-rose-950/40 border-rose-500/40 text-rose-300': getStageStatus(s.key) === 'failed',
+                 'bg-slate-950/40 border-slate-800/80 text-slate-500': getStageStatus(s.key) === 'pending'
+               }">
+            <div class="text-xs font-semibold">{{ i + 1 }}</div>
+            <div class="text-[11px] font-medium leading-tight mt-0.5 truncate w-full">{{ s.label.split('. ')[1] }}</div>
+            <div class="text-[9px] text-slate-400 mt-1">
+              <span *ngIf="getStageStatus(s.key) === 'completed'">✓ Passed</span>
+              <span *ngIf="getStageStatus(s.key) === 'current'">Active...</span>
+              <span *ngIf="getStageStatus(s.key) === 'failed'">✗ Failed</span>
+              <span *ngIf="getStageStatus(s.key) === 'pending'">Pending</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Execution Status Metric Banner -->
+      <div *ngIf="result" class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col">
+          <span class="text-xs text-slate-400">Pipeline Status</span>
+          <span class="text-lg font-bold mt-1" [ngClass]="result.success ? 'text-emerald-400' : 'text-rose-400'">
+            {{ result.status }}
+          </span>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col">
+          <span class="text-xs text-slate-400">Total Duration</span>
+          <span class="text-lg font-bold text-slate-100 mt-1 font-mono">
+            {{ result.total_duration_ms ? (result.total_duration_ms / 1000).toFixed(2) + 's' : '-' }}
+          </span>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col">
+          <span class="text-xs text-slate-400">Automated Tests</span>
+          <span class="text-lg font-bold mt-1" [ngClass]="result.test_passed ? 'text-emerald-400' : 'text-rose-400'">
+            {{ result.test_passed ? 'Passed (100%)' : (result.test_passed === false ? 'Failed' : 'N/A') }}
+          </span>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col">
+          <span class="text-xs text-slate-400">Modified Branch</span>
+          <span class="text-xs font-mono font-medium text-indigo-300 mt-2 truncate" title="{{ result.branch_name }}">
+            {{ result.branch_name || 'None' }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Error Notification Banner (if any) -->
+      <div *ngIf="errorMessage" class="bg-rose-950/40 border border-rose-500/50 rounded-xl p-4 text-rose-200 text-xs flex items-start gap-3">
+        <svg class="w-5 h-5 text-rose-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        <div>
+          <strong class="font-semibold text-rose-300">Execution Error:</strong>
+          <p class="mt-0.5">{{ errorMessage }}</p>
+        </div>
+      </div>
+
+      <!-- Tabbed Results Inspector -->
+      <div *ngIf="result" class="bg-slate-900 border border-slate-800 rounded-xl shadow-xl overflow-hidden flex flex-col">
+        <!-- Tab Navigation Bar -->
+        <div class="border-b border-slate-800 bg-slate-950/50 px-4 flex space-x-2 text-xs font-medium">
+          <button (click)="activeTab = 'diff'" [ngClass]="activeTab === 'diff' ? 'text-indigo-400 border-b-2 border-indigo-500' : 'text-slate-400 hover:text-slate-200'" class="py-3 px-3 transition cursor-pointer">
+            Unified Git Diff
+          </button>
+          <button (click)="activeTab = 'plan'" [ngClass]="activeTab === 'plan' ? 'text-indigo-400 border-b-2 border-indigo-500' : 'text-slate-400 hover:text-slate-200'" class="py-3 px-3 transition cursor-pointer">
+            Structured ChangePlan
+          </button>
+          <button (click)="activeTab = 'logs'" [ngClass]="activeTab === 'logs' ? 'text-indigo-400 border-b-2 border-indigo-500' : 'text-slate-400 hover:text-slate-200'" class="py-3 px-3 transition cursor-pointer">
+            Test Verification Output
+          </button>
+          <button (click)="activeTab = 'audit'" [ngClass]="activeTab === 'audit' ? 'text-indigo-400 border-b-2 border-indigo-500' : 'text-slate-400 hover:text-slate-200'" class="py-3 px-3 transition cursor-pointer">
+            Audit Trail & Gates
+          </button>
+        </div>
+
+        <!-- Tab 1: Diff Viewer -->
+        <div *ngIf="activeTab === 'diff'" class="p-4 bg-slate-950 font-mono text-xs overflow-x-auto min-h-[300px]">
+          <div *ngIf="result.applied_diff" class="space-y-0.5">
+            <div *ngFor="let line of formatDiffLines(result.applied_diff)"
+                 class="px-2 py-0.5 rounded-xs"
+                 [ngClass]="{
+                   'bg-emerald-950/40 text-emerald-300 font-semibold': line.type === 'add',
+                   'bg-rose-950/40 text-rose-300 line-through opacity-80': line.type === 'del',
+                   'text-slate-500 font-bold': line.type === 'header',
+                   'text-slate-300': line.type === 'normal'
+                 }">
+              {{ line.text }}
+            </div>
+          </div>
+          <div *ngIf="!result.applied_diff" class="text-slate-500 italic p-6 text-center">
+            No filesystem diff generated for this execution.
+          </div>
+        </div>
+
+        <!-- Tab 2: ChangePlan Viewer -->
+        <div *ngIf="activeTab === 'plan'" class="p-5 space-y-5 text-xs">
+          <div>
+            <h4 class="text-slate-400 font-medium mb-1">Executive Summary</h4>
+            <p class="text-slate-200 bg-slate-950 p-3 rounded-lg border border-slate-800">{{ result.change_plan?.summary }}</p>
+          </div>
+
+          <div>
+            <h4 class="text-slate-400 font-medium mb-2">Planned File Operations</h4>
+            <div class="space-y-2">
+              <div *ngFor="let p of result.change_plan?.planned_changes" class="bg-slate-950 p-3 rounded-lg border border-slate-800 flex items-start gap-3">
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide shrink-0"
+                      [ngClass]="{
+                        'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30': p.change_type === 'CREATE',
+                        'bg-amber-500/20 text-amber-400 border border-amber-500/30': p.change_type === 'MODIFY',
+                        'bg-rose-500/20 text-rose-400 border border-rose-500/30': p.change_type === 'DELETE'
+                      }">
+                  {{ p.change_type }}
+                </span>
+                <div class="flex-1">
+                  <code class="font-mono text-indigo-300 font-semibold">{{ p.file_path }}</code>
+                  <p class="text-slate-400 mt-1">{{ p.description }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Impacted Files & Confidence -->
+          <div>
+            <h4 class="text-slate-400 font-medium mb-2">Impacted Files & Confidence</h4>
+            <div class="space-y-2">
+              <div *ngFor="let imp of result.change_plan?.impacted_files" class="bg-slate-950 p-3 rounded-lg border border-slate-800 flex items-center justify-between text-xs">
+                <div class="flex-1 pr-4">
+                  <code class="font-mono text-slate-200">{{ imp.path }}</code>
+                  <p class="text-slate-400 text-[11px] mt-0.5">{{ imp.reason }}</p>
+                </div>
+                <div class="w-24 text-right shrink-0">
+                  <span class="text-indigo-300 font-bold font-mono">{{ (imp.confidence * 100).toFixed(0) }}%</span>
+                  <div class="w-full bg-slate-800 h-1.5 rounded-full mt-1 overflow-hidden">
+                    <div class="bg-indigo-500 h-full rounded-full" [style.width.%]="imp.confidence * 100"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Risks & Testing Strategy -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+            <div class="bg-slate-950 p-3 rounded-lg border border-slate-800">
+              <h4 class="text-amber-400 font-semibold mb-1 flex items-center gap-1">⚠️ Identified Risks</h4>
+              <ul class="list-disc list-inside text-slate-300 space-y-1">
+                <li *ngFor="let r of result.change_plan?.risks">{{ r }}</li>
+              </ul>
+            </div>
+            <div class="bg-slate-950 p-3 rounded-lg border border-slate-800">
+              <h4 class="text-emerald-400 font-semibold mb-1 flex items-center gap-1">🧪 Testing Strategy</h4>
+              <ul class="list-disc list-inside text-slate-300 space-y-1">
+                <li *ngFor="let t of result.change_plan?.testing_strategy">{{ t }}</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 3: Test Output Logs -->
+        <div *ngIf="activeTab === 'logs'" class="p-4 bg-slate-950 font-mono text-xs text-slate-300 overflow-x-auto min-h-[300px]">
+          <pre class="whitespace-pre-wrap">{{ result.test_output || 'No test output recorded.' }}</pre>
+        </div>
+
+        <!-- Tab 4: Audit Trail -->
+        <div *ngIf="activeTab === 'audit'" class="p-4 space-y-3 text-xs">
+          <div *ngFor="let a of result.audit_trail" class="bg-slate-950 p-3 rounded-lg border border-slate-800 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+              <span class="h-2 w-2 rounded-full"
+                    [ngClass]="{
+                      'bg-emerald-400': a.status === 'SUCCESS',
+                      'bg-indigo-400 animate-pulse': a.status === 'IN_PROGRESS',
+                      'bg-rose-400': a.status === 'FAILED' || a.status === 'REJECTED'
+                    }"></span>
+              <div>
+                <strong class="text-slate-200">{{ a.stage }}</strong>
+                <p class="text-slate-400 text-[11px]">{{ a.message }}</p>
+              </div>
+            </div>
+            <span class="font-mono text-slate-500 text-[11px]">{{ a.duration_ms ? a.duration_ms + 'ms' : '-' }}</span>
+          </div>
+        </div>
+      </div>
+
+    </section>
+  </main>
+</div>
