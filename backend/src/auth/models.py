@@ -15,6 +15,7 @@ class AuthProvider(str, Enum):
     GITHUB = "github"
     GOOGLE = "google"
     LOCAL = "local"
+    PASSWORD = "password"
 
 
 class User(BaseModel):
@@ -25,7 +26,7 @@ class User(BaseModel):
     display_name: str = Field(..., description="Full Name")
     email: str = Field(..., description="Primary email address")
     avatar_url: Optional[str] = Field(default=None, description="User avatar image URL")
-    provider: AuthProvider = Field(default=AuthProvider.GITHUB, description="Authentication provider")
+    provider: AuthProvider = Field(default=AuthProvider.GOOGLE, description="Authentication provider")
     roles: List[UserRole] = Field(default_factory=lambda: [UserRole.DEVELOPER], description="Assigned roles")
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     last_login_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -43,10 +44,19 @@ class TokenPayload(BaseModel):
 
 
 class LoginRequest(BaseModel):
-    """Login payload supporting Google ID tokens, GitHub OAuth codes, or Demo login."""
-    provider: AuthProvider = Field(default=AuthProvider.GITHUB)
-    token_or_code: Optional[str] = Field(default=None, description="OAuth code or ID token")
+    """Login payload supporting Google ID tokens, Email/Password, or Demo login."""
+    provider: AuthProvider = Field(default=AuthProvider.GOOGLE)
+    email: Optional[str] = Field(default=None, description="User email address")
+    password: Optional[str] = Field(default=None, description="User password")
+    token_or_code: Optional[str] = Field(default=None, description="Google OAuth ID token or credential")
     demo_username: Optional[str] = Field(default=None, description="For local/demo quick login")
+
+
+class RegisterRequest(BaseModel):
+    """User registration payload with Email, Password, and Full Name."""
+    email: str = Field(..., description="User email address")
+    password: str = Field(..., description="Password (min 6 characters)")
+    display_name: str = Field(..., description="Full Name")
 
 
 class AuthSessionResponse(BaseModel):

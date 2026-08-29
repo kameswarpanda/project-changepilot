@@ -9,28 +9,20 @@ import { User, AuthSessionResponse } from '../models';
 })
 export class AuthService {
   private apiUrl = 'http://localhost:8000/api/auth';
-  private currentUserSubject = new BehaviorSubject<User>({
-    id: 'usr-kameswar-01',
-    identity_provider_id: 'gh-kameswar-2026',
-    username: 'kameswar',
-    display_name: 'Kameswar',
-    email: 'kameswar@changepilot.dev',
-    avatar_url: 'https://avatars.githubusercontent.com/u/583231',
-    provider: 'github',
-    roles: ['admin', 'developer']
-  });
-
-  public currentUser$: Observable<User> = this.currentUserSubject.asObservable();
-  private tokenSubject = new BehaviorSubject<string | null>(localStorage.getItem('cp_token'));
+  
+  private initialToken = localStorage.getItem('cp_token');
+  private tokenSubject = new BehaviorSubject<string | null>(this.initialToken);
   public token$: Observable<string | null> = this.tokenSubject.asObservable();
 
+  private currentUserSubject = new BehaviorSubject<User | null>(null);
+  public currentUser$: Observable<User | null> = this.currentUserSubject.asObservable();
+
+  private isAuthenticatedSubject = new BehaviorSubject<boolean>(!!this.initialToken);
+  public isAuthenticated$: Observable<boolean> = this.isAuthenticatedSubject.asObservable();
+
   constructor(private http: HttpClient) {
-    // If token exists, fetch profile from backend
-    if (this.tokenSubject.value) {
+    if (this.initialToken) {
       this.fetchProfile();
-    } else {
-      // Auto-authenticate as default developer for zero-friction local mode
-      this.loginDemo('kameswar').subscribe();
     }
   }
 
@@ -38,16 +30,54 @@ export class AuthService {
     return this.tokenSubject.value;
   }
 
-  get currentUser(): User {
+  get isAuthenticated(): boolean {
+    return this.isAuthenticatedSubject.value;
+  }
+
+  get currentUser(): User | null {
     return this.currentUserSubject.value;
   }
 
   fetchProfile(): void {
     const headers = { Authorization: `Bearer ${this.token}` };
     this.http.get<User>(`${this.apiUrl}/me`, { headers }).subscribe({
-      next: (user) => this.currentUserSubject.next(user),
-      error: () => this.loginDemo('kameswar').subscribe()
+      next: (user) => {
+        this.currentUserSubject.next(user);
+        this.isAuthenticatedSubject.next(true);
+      },
+      error: () => {
+        this.logout();
+      }
     });
+  }
+
+  loginWithGoogle(emailOrToken: string = 'developer@google.com'): Observable<AuthSessionResponse> {
+    return this.http.post<AuthSessionResponse>(`${this.apiUrl}/login`, {
+      provider: 'google',
+      email: emailOrToken
+    }).pipe(
+      tap((res) => this.handleAuthSuccess(res))
+    );
+  }
+
+  loginWithPassword(email: string, password: string): Observable<AuthSessionResponse> {
+    return this.http.post<AuthSessionResponse>(`${this.apiUrl}/login`, {
+      provider: 'password',
+      email: email,
+      password: password
+    }).pipe(
+      tap((res) => this.handleAuthSuccess(res))
+    );
+  }
+
+  register(email: string, password: string, displayName: string): Observable<AuthSessionResponse> {
+    return this.http.post<AuthSessionResponse>(`${this.apiUrl}/register`, {
+      email: email,
+      password: password,
+      display_name: displayName
+    }).pipe(
+      tap((res) => this.handleAuthSuccess(res))
+    );
   }
 
   loginDemo(username: string = 'kameswar'): Observable<AuthSessionResponse> {
@@ -55,25 +85,21 @@ export class AuthService {
       provider: 'local',
       demo_username: username
     }).pipe(
-      tap((res) => {
-        localStorage.setItem('cp_token', res.access_token);
-        this.tokenSubject.next(res.access_token);
-        this.currentUserSubject.next(res.user);
-      })
+      tap((res) => this.handleAuthSuccess(res))
     );
+  }
+
+  private handleAuthSuccess(res: AuthSessionResponse): void {
+    localStorage.setItem('cp_token', res.access_token);
+    this.tokenSubject.next(res.access_token);
+    this.currentUserSubject.next(res.user);
+    this.isAuthenticatedSubject.next(true);
   }
 
   logout(): void {
     localStorage.removeItem('cp_token');
     this.tokenSubject.next(null);
-    this.currentUserSubject.next({
-      id: 'usr-guest',
-      identity_provider_id: 'guest',
-      username: 'guest',
-      display_name: 'Guest User',
-      email: 'guest@changepilot.local',
-      provider: 'local',
-      roles: ['viewer']
-    });
+    this.currentUserSubject.next(null);
+    this.isAuthenticatedSubject.next(false);
   }
 }

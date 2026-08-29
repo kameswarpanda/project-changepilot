@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 
 from backend.src.auth.authorization import AccessLevel, authz_service, RepositoryPermission
 from backend.src.auth.dependencies import get_current_user, get_optional_user
-from backend.src.auth.models import AuthSessionResponse, LoginRequest, User
+from backend.src.auth.models import AuthSessionResponse, LoginRequest, RegisterRequest, User
 from backend.src.auth.service import auth_service
 from backend.src.config import settings
 from backend.src.database.repository import db_repository
@@ -67,11 +67,30 @@ async def health_check():
 # -----------------------------------------------------------------------------
 # Identity & Authentication Endpoints
 # -----------------------------------------------------------------------------
+@router.post("/api/auth/register", response_model=AuthSessionResponse, tags=["Auth"])
+async def register(req: RegisterRequest):
+    """Registers a new user with Email, Password, and Full Name."""
+    try:
+        session = auth_service.register_user(req)
+        return session
+    except ValueError as ve:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(ve))
+    except Exception as e:
+        logger.exception(f"Error during registration: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Registration failed.")
+
+
 @router.post("/api/auth/login", response_model=AuthSessionResponse, tags=["Auth"])
 async def login(req: LoginRequest):
-    """Authenticates user with Google Identity, GitHub OAuth, or Demo profile."""
-    session = await auth_service.authenticate(req)
-    return session
+    """Authenticates user with Google Identity, Email/Password, or Demo profile."""
+    try:
+        session = await auth_service.authenticate(req)
+        return session
+    except ValueError as ve:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(ve))
+    except Exception as e:
+        logger.exception(f"Error during login: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Authentication failed.")
 
 
 @router.get("/api/auth/me", response_model=User, tags=["Auth"])

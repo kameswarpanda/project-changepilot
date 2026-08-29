@@ -1,0 +1,182 @@
+<div class="min-h-screen w-full flex items-center justify-center bg-[#0B0E14] px-4 py-8 relative overflow-hidden">
+  <!-- Subtle Background Ambient Glows -->
+  <div class="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-[#494bd6]/10 blur-[120px] pointer-events-none"></div>
+  <div class="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] rounded-full bg-[#8083ff]/10 blur-[120px] pointer-events-none"></div>
+
+  <div class="w-full max-w-md bg-[#161B22] border border-[#30363D] rounded-2xl shadow-2xl overflow-hidden relative z-10 p-8 space-y-6">
+    <!-- Brand Header -->
+    <div class="text-center space-y-2">
+      <div class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-[#8083ff] text-[#0d0096] shadow-lg mb-1">
+        <span class="material-symbols-outlined fill-icon text-[28px]">terminal</span>
+      </div>
+      <h1 class="font-display-lg text-2xl font-bold text-[#e1e2eb] tracking-tight">Welcome to ChangePilot</h1>
+      <p class="font-body-md text-xs text-[#908fa0] leading-relaxed">
+        Autonomous Software Change & Infrastructure Automation Platform with Deterministic Safety Gates.
+      </p>
+    </div>
+
+    <!-- Error Banner -->
+    <div *ngIf="errorMessage" class="bg-[#ffb4ab]/10 border border-[#ffb4ab]/30 rounded-lg p-3 text-xs text-[#ffb4ab] flex items-center gap-2">
+      <span class="material-symbols-outlined text-[18px]">error</span>
+      <span>{{ errorMessage }}</span>
+    </div>
+
+    <!-- Primary Identity Providers -->
+    <div class="space-y-3 pt-2">
+      <!-- Continue with Google (Active) -->
+      <button (click)="handleGoogleSignIn()" 
+              [disabled]="isLoading"
+              class="w-full py-2.5 px-4 rounded-lg bg-[#21262d] border border-[#30363D] hover:bg-[#272a31] hover:border-[#8083ff] text-[#e1e2eb] text-xs font-semibold flex items-center justify-center gap-3 transition-all shadow-sm">
+        <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+        </svg>
+        <span>Continue with Google</span>
+      </button>
+
+      <!-- Continue with GitHub (Disabled + Coming Soon) -->
+      <div class="relative">
+        <button disabled 
+                class="w-full py-2.5 px-4 rounded-lg bg-[#161B22]/60 border border-[#30363D]/50 text-[#908fa0]/60 text-xs font-semibold flex items-center justify-between cursor-not-allowed transition-all opacity-60">
+          <div class="flex items-center gap-3">
+            <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
+              <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+            </svg>
+            <span>Continue with GitHub</span>
+          </div>
+          <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-[#ffb783]/10 text-[#ffb783] border border-[#ffb783]/20">
+            Coming Soon
+          </span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Divider -->
+    <div class="relative flex items-center justify-center my-4">
+      <div class="border-t border-[#30363D] w-full"></div>
+      <span class="bg-[#161B22] px-3 font-label-caps text-[10px] text-[#908fa0] uppercase tracking-wider absolute">
+        Or with email
+      </span>
+    </div>
+
+    <!-- Mode Selector Tabs (Sign In / Sign Up) -->
+    <div class="flex bg-[#10131a] p-1 rounded-lg border border-[#30363D]">
+      <button (click)="switchMode('signin')" 
+              [ngClass]="authMode === 'signin' ? 'bg-[#494bd6] text-white font-semibold shadow-sm' : 'text-[#908fa0] hover:text-[#e1e2eb]'" 
+              class="flex-1 py-1.5 rounded-md text-xs transition-all">
+        Sign In
+      </button>
+      <button (click)="switchMode('signup')" 
+              [ngClass]="authMode === 'signup' ? 'bg-[#494bd6] text-white font-semibold shadow-sm' : 'text-[#908fa0] hover:text-[#e1e2eb]'" 
+              class="flex-1 py-1.5 rounded-md text-xs transition-all">
+        Create Account
+      </button>
+    </div>
+
+    <!-- Sign In Form -->
+    <form *ngIf="authMode === 'signin'" (ngSubmit)="handlePasswordSignIn()" class="space-y-4 text-xs">
+      <div>
+        <label class="font-title-sm text-xs text-[#908fa0] mb-1.5 block">Work Email</label>
+        <input type="email" 
+               [(ngModel)]="signInEmail" 
+               name="signInEmail"
+               placeholder="name@company.com" 
+               required
+               class="w-full bg-[#10131a] border border-[#30363D] rounded-md px-3 py-2 text-[#e1e2eb] text-xs focus:outline-none focus:border-[#8083ff]">
+      </div>
+
+      <div>
+        <div class="flex justify-between items-center mb-1.5">
+          <label class="font-title-sm text-xs text-[#908fa0]">Password</label>
+        </div>
+        <input type="password" 
+               [(ngModel)]="signInPassword" 
+               name="signInPassword"
+               placeholder="••••••••••••" 
+               required
+               class="w-full bg-[#10131a] border border-[#30363D] rounded-md px-3 py-2 text-[#e1e2eb] text-xs focus:outline-none focus:border-[#8083ff]">
+      </div>
+
+      <button type="submit" 
+              [disabled]="isLoading"
+              class="w-full py-2.5 px-4 rounded-lg bg-[#494bd6] hover:bg-[#8083ff] hover:text-[#0d0096] text-white font-semibold text-xs transition-colors flex items-center justify-center gap-2 shadow-sm disabled:opacity-60">
+        <span *ngIf="!isLoading" class="material-symbols-outlined text-[16px]">login</span>
+        <span *ngIf="isLoading" class="material-symbols-outlined text-[16px] animate-spin">autorenew</span>
+        <span>{{ isLoading ? 'Authenticating...' : 'Sign In to ChangePilot' }}</span>
+      </button>
+    </form>
+
+    <!-- Sign Up Form -->
+    <form *ngIf="authMode === 'signup'" (ngSubmit)="handleSignUp()" class="space-y-3.5 text-xs">
+      <div>
+        <label class="font-title-sm text-xs text-[#908fa0] mb-1 block">Full Name</label>
+        <input type="text" 
+               [(ngModel)]="signUpName" 
+               name="signUpName"
+               placeholder="Alex Mercer" 
+               required
+               class="w-full bg-[#10131a] border border-[#30363D] rounded-md px-3 py-2 text-[#e1e2eb] text-xs focus:outline-none focus:border-[#8083ff]">
+      </div>
+
+      <div>
+        <label class="font-title-sm text-xs text-[#908fa0] mb-1 block">Work Email</label>
+        <input type="email" 
+               [(ngModel)]="signUpEmail" 
+               name="signUpEmail"
+               placeholder="alex@company.com" 
+               required
+               class="w-full bg-[#10131a] border border-[#30363D] rounded-md px-3 py-2 text-[#e1e2eb] text-xs focus:outline-none focus:border-[#8083ff]">
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="font-title-sm text-xs text-[#908fa0] mb-1 block">Password</label>
+          <input type="password" 
+                 [(ngModel)]="signUpPassword" 
+                 name="signUpPassword"
+                 placeholder="Min 6 chars" 
+                 required
+                 class="w-full bg-[#10131a] border border-[#30363D] rounded-md px-3 py-2 text-[#e1e2eb] text-xs focus:outline-none focus:border-[#8083ff]">
+        </div>
+        <div>
+          <label class="font-title-sm text-xs text-[#908fa0] mb-1 block">Confirm</label>
+          <input type="password" 
+                 [(ngModel)]="signUpConfirmPassword" 
+                 name="signUpConfirmPassword"
+                 placeholder="Repeat password" 
+                 required
+                 class="w-full bg-[#10131a] border border-[#30363D] rounded-md px-3 py-2 text-[#e1e2eb] text-xs focus:outline-none focus:border-[#8083ff]">
+        </div>
+      </div>
+
+      <button type="submit" 
+              [disabled]="isLoading"
+              class="w-full py-2.5 px-4 rounded-lg bg-[#494bd6] hover:bg-[#8083ff] hover:text-[#0d0096] text-white font-semibold text-xs transition-colors flex items-center justify-center gap-2 shadow-sm disabled:opacity-60 mt-1">
+        <span *ngIf="!isLoading" class="material-symbols-outlined text-[16px]">person_add</span>
+        <span *ngIf="isLoading" class="material-symbols-outlined text-[16px] animate-spin">autorenew</span>
+        <span>{{ isLoading ? 'Creating Account...' : 'Create Developer Account' }}</span>
+      </button>
+    </form>
+
+    <!-- Quick Fast-Pass / Hackathon Evaluator Login -->
+    <div class="pt-4 border-t border-[#30363D] space-y-2">
+      <div class="text-[10px] font-label-caps text-[#908fa0] text-center uppercase tracking-wider">
+        Quick Hackathon Evaluation Access
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        <button (click)="handleDemoLogin('kameswar')" 
+                class="py-2 px-3 rounded bg-[#10131a] hover:bg-[#21262d] border border-[#30363D] text-[11px] text-[#c0c1ff] font-semibold transition-colors flex items-center justify-center gap-1.5">
+          <span class="material-symbols-outlined text-[14px]">admin_panel_settings</span>
+          <span>Kameswar (Admin)</span>
+        </button>
+        <button (click)="handleDemoLogin('alex.mercer')" 
+                class="py-2 px-3 rounded bg-[#10131a] hover:bg-[#21262d] border border-[#30363D] text-[11px] text-[#4edea3] font-semibold transition-colors flex items-center justify-center gap-1.5">
+          <span class="material-symbols-outlined text-[14px]">code</span>
+          <span>Alex Mercer (Dev)</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

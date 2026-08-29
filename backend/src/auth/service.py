@@ -1,4 +1,5 @@
-"""Authentication and Identity Service supporting Google Identity, GitHub OAuth, and Local Demo."""
+"""Authentication and Identity Service supporting Google Identity, Email/Password, and Local Demo."""
+import hashlib
 import logging
 import uuid
 from datetime import datetime, timezone
@@ -6,60 +7,124 @@ from typing import Dict, Optional
 import httpx
 
 from backend.src.auth.jwt_handler import create_access_token
-from backend.src.auth.models import AuthProvider, AuthSessionResponse, LoginRequest, User, UserRole
+from backend.src.auth.models import (
+    AuthProvider,
+    AuthSessionResponse,
+    LoginRequest,
+    RegisterRequest,
+    User,
+    UserRole,
+)
 from backend.src.config import settings
 
 logger = logging.getLogger("changepilot.auth.service")
 
 
+def _hash_password(password: str) -> str:
+    """Deterministic salted hash for credential security."""
+    salt = "cp_salt_2026_"
+    return hashlib.sha256((salt + password).encode("utf-8")).hexdigest()
+
+
 class AuthService:
-    """Service handling multi-provider authentication and session issuance."""
+    """Service handling multi-provider authentication, user registration, and session issuance."""
 
     def __init__(self):
-        # In-memory user cache for local & fast execution
+        # In-memory user cache and password credentials store
         self._user_store: Dict[str, User] = {}
+        self._password_store: Dict[str, str] = {}
         self._seed_default_users()
 
     def _seed_default_users(self):
-        """Pre-seeds standard developer & admin profiles for instant zero-friction local execution."""
+        """Pre-seeds standard developer & admin profiles for instant zero-friction execution."""
         kameswar = User(
             id="usr-kameswar-01",
-            identity_provider_id="gh-kameswar-2026",
+            identity_provider_id="google-kameswar-2026",
             username="kameswar",
             display_name="Kameswar",
             email="kameswar@changepilot.dev",
             avatar_url="https://avatars.githubusercontent.com/u/583231",
-            provider=AuthProvider.GITHUB,
+            provider=AuthProvider.GOOGLE,
             roles=[UserRole.ADMIN, UserRole.DEVELOPER]
         )
         alex = User(
             id="usr-alex-02",
-            identity_provider_id="gh-alex-mercer",
+            identity_provider_id="google-alex-mercer",
             username="alex.mercer",
             display_name="Alex Mercer",
             email="alex@changepilot.dev",
             avatar_url=None,
-            provider=AuthProvider.GITHUB,
+            provider=AuthProvider.GOOGLE,
             roles=[UserRole.DEVELOPER]
         )
         self._user_store[kameswar.id] = kameswar
         self._user_store[kameswar.username] = kameswar
+        self._user_store[kameswar.email] = kameswar
+        self._password_store[kameswar.email] = _hash_password("changepilot2026")
+
         self._user_store[alex.id] = alex
         self._user_store[alex.username] = alex
+        self._user_store[alex.email] = alex
+        self._password_store[alex.email] = _hash_password("changepilot2026")
 
     def get_user_by_id(self, user_id: str) -> Optional[User]:
         """Retrieves a user by their unique ChangePilot ID."""
         return self._user_store.get(user_id)
 
+    def register_user(self, req: RegisterRequest) -> AuthSessionResponse:
+        """Registers a new user with Email, Password, and Display Name."""
+        email_clean = req.email.strip().lower()
+        if email_clean in self._user_store:
+            raise ValueError(f"User with email '{email_clean}' already exists. Please sign in.")
+
+        username = email_clean.split("@")[0].replace(".", "_")
+        user_id = f"usr-email-{uuid.uuid4().hex[:6]}"
+        user = User(
+            id=user_id,
+            identity_provider_id=f"email-{email_clean}",
+            username=username,
+            display_name=req.display_name.strip() or username.capitalize(),
+            email=email_clean,
+            avatar_url=None,
+            provider=AuthProvider.PASSWORD,
+            roles=[UserRole.DEVELOPER]
+        )
+
+        self._user_store[user.id] = user
+        self._user_store[user.username] = user
+        self._user_store[user.email] = user
+        self._password_store[email_clean] = _hash_password(req.password)
+
+        logger.info(f"Registered new user: {user.email} (ID: {user.id})")
+        token = create_access_token(user)
+        return AuthSessionResponse(
+            access_token=token,
+            expires_in=settings.jwt_access_token_expire_minutes * 60,
+            user=user
+        )
+
     async def authenticate(self, req: LoginRequest) -> AuthSessionResponse:
-        """Authenticates user via provider token, OAuth code, or demo login."""
+        """Authenticates user via Google OAuth/ID token, Email/Password, or Demo profile."""
         user: Optional[User] = None
 
-        if req.provider == AuthProvider.LOCAL or req.demo_username:
+        # 1. Email & Password Login
+        if (req.provider == AuthProvider.PASSWORD or (req.email and req.password)):
+            email_clean = (req.email or "").strip().lower()
+            stored_user = self._user_store.get(email_clean)
+            if not stored_user:
+                raise ValueError("Invalid email or password. Please check your credentials or create an account.")
+
+            expected_hash = self._password_store.get(email_clean)
+            if expected_hash and expected_hash != _hash_password(req.password):
+                raise ValueError("Invalid email or password. Please check your credentials.")
+
+            user = stored_user
+
+        # 2. Local Demo Quick Access
+        elif req.provider == AuthProvider.LOCAL or req.demo_username:
             username = (req.demo_username or "kameswar").lower().strip()
             user = self._user_store.get(username)
             if not user:
-                # Create a local user on-the-fly
                 user_id = f"usr-{username}-{uuid.uuid4().hex[:4]}"
                 user = User(
                     id=user_id,
@@ -72,21 +137,36 @@ class AuthService:
                 )
                 self._user_store[user.id] = user
                 self._user_store[user.username] = user
+                self._user_store[user.email] = user
 
-        elif req.provider == AuthProvider.GITHUB:
-            # If GitHub client secret is configured, exchange code for user info
-            if settings.github_client_id and settings.github_client_secret and req.token_or_code:
-                user = await self._verify_github_oauth(req.token_or_code)
-            else:
-                # Fallback to standard developer profile
-                user = self._user_store.get("kameswar")
-
+        # 3. Google Sign-In & Google Identity Platform
         elif req.provider == AuthProvider.GOOGLE:
-            # Google Identity Platform ID token verification
             if req.token_or_code:
                 user = await self._verify_google_id_token(req.token_or_code)
+            elif req.email:
+                # Fast Google Demo with provided email
+                email_clean = req.email.strip().lower()
+                username = email_clean.split("@")[0]
+                user_id = f"usr-google-{uuid.uuid4().hex[:6]}"
+                user = User(
+                    id=user_id,
+                    identity_provider_id=f"google-{email_clean}",
+                    username=username,
+                    display_name=username.capitalize(),
+                    email=email_clean,
+                    avatar_url="https://lh3.googleusercontent.com/a/default-user",
+                    provider=AuthProvider.GOOGLE,
+                    roles=[UserRole.DEVELOPER]
+                )
+                self._user_store[user.id] = user
+                self._user_store[user.username] = user
+                self._user_store[user.email] = user
             else:
                 user = self._user_store.get("kameswar")
+
+        # 4. GitHub fallback (if ever invoked directly)
+        elif req.provider == AuthProvider.GITHUB:
+            user = self._user_store.get("kameswar")
 
         if not user:
             user = self._user_store.get("kameswar")
@@ -102,56 +182,6 @@ class AuthService:
             expires_in=settings.jwt_access_token_expire_minutes * 60,
             user=user
         )
-
-    async def _verify_github_oauth(self, code: str) -> User:
-        """Exchanges GitHub OAuth code for user profile."""
-        try:
-            async with httpx.AsyncClient() as client:
-                token_resp = await client.post(
-                    "https://github.com/login/oauth/access_token",
-                    headers={"Accept": "application/json"},
-                    data={
-                        "client_id": settings.github_client_id,
-                        "client_secret": settings.github_client_secret,
-                        "code": code,
-                    },
-                    timeout=10.0
-                )
-                token_data = token_resp.json()
-                gh_token = token_data.get("access_token")
-
-                if not gh_token:
-                    logger.warning("GitHub OAuth token exchange failed, using developer profile")
-                    return self._user_store["kameswar"]
-
-                user_resp = await client.get(
-                    "https://api.github.com/user",
-                    headers={
-                        "Authorization": f"Bearer {gh_token}",
-                        "Accept": "application/json"
-                    },
-                    timeout=10.0
-                )
-                gh_user = user_resp.json()
-                username = gh_user.get("login", "github-user")
-                email = gh_user.get("email") or f"{username}@users.noreply.github.com"
-                user_id = f"usr-gh-{gh_user.get('id', uuid.uuid4().hex[:6])}"
-
-                user = User(
-                    id=user_id,
-                    identity_provider_id=str(gh_user.get("id")),
-                    username=username,
-                    display_name=gh_user.get("name") or username,
-                    email=email,
-                    avatar_url=gh_user.get("avatar_url"),
-                    provider=AuthProvider.GITHUB,
-                    roles=[UserRole.DEVELOPER]
-                )
-                self._user_store[user.id] = user
-                return user
-        except Exception as e:
-            logger.error(f"GitHub OAuth error: {e}")
-            return self._user_store["kameswar"]
 
     async def _verify_google_id_token(self, id_token_str: str) -> User:
         """Verifies Google Identity Platform ID token."""
@@ -179,6 +209,8 @@ class AuthService:
                         roles=[UserRole.DEVELOPER]
                     )
                     self._user_store[user.id] = user
+                    self._user_store[user.username] = user
+                    self._user_store[user.email] = user
                     return user
         except Exception as e:
             logger.error(f"Google Identity token verification error: {e}")

@@ -2,7 +2,7 @@
 import pytest
 from datetime import timedelta
 from backend.src.auth.jwt_handler import create_access_token, decode_access_token
-from backend.src.auth.models import AuthProvider, LoginRequest, User, UserRole
+from backend.src.auth.models import AuthProvider, LoginRequest, RegisterRequest, User, UserRole
 from backend.src.auth.service import AuthService
 
 
@@ -14,7 +14,7 @@ def test_jwt_create_and_decode():
         username="tester",
         display_name="Test User",
         email="tester@example.com",
-        provider=AuthProvider.GITHUB,
+        provider=AuthProvider.GOOGLE,
         roles=[UserRole.DEVELOPER]
     )
 
@@ -27,7 +27,7 @@ def test_jwt_create_and_decode():
     assert payload.sub == user.id
     assert payload.username == user.username
     assert payload.email == user.email
-    assert payload.provider == "github"
+    assert payload.provider == "google"
     assert "developer" in payload.roles
 
 
@@ -74,3 +74,53 @@ async def test_auth_service_demo_login():
     assert session.user.username == "kameswar"
     assert session.user.email == "kameswar@changepilot.dev"
     assert UserRole.ADMIN in session.user.roles
+
+
+@pytest.mark.asyncio
+async def test_auth_service_register_and_login_flow():
+    """Verifies user registration with email/password and subsequent login."""
+    auth_svc = AuthService()
+    
+    # 1. Register new user
+    reg_req = RegisterRequest(
+        email="developer.lead@enterprise.com",
+        password="SecurePassword2026!",
+        display_name="Lead Engineer"
+    )
+    reg_session = auth_svc.register_user(reg_req)
+    assert reg_session.access_token is not None
+    assert reg_session.user.email == "developer.lead@enterprise.com"
+    assert reg_session.user.display_name == "Lead Engineer"
+
+    # 2. Login with correct password
+    login_req = LoginRequest(
+        provider=AuthProvider.PASSWORD,
+        email="developer.lead@enterprise.com",
+        password="SecurePassword2026!"
+    )
+    login_session = await auth_svc.authenticate(login_req)
+    assert login_session.access_token is not None
+    assert login_session.user.id == reg_session.user.id
+
+    # 3. Login with wrong password throws ValueError
+    wrong_pw_req = LoginRequest(
+        provider=AuthProvider.PASSWORD,
+        email="developer.lead@enterprise.com",
+        password="WrongPassword123"
+    )
+    with pytest.raises(ValueError):
+        await auth_svc.authenticate(wrong_pw_req)
+
+
+@pytest.mark.asyncio
+async def test_auth_service_google_login():
+    """Verifies Google Sign-In issuance."""
+    auth_svc = AuthService()
+    google_req = LoginRequest(
+        provider=AuthProvider.GOOGLE,
+        email="alex.google@cloud.com"
+    )
+    session = await auth_svc.authenticate(google_req)
+    assert session.access_token is not None
+    assert session.user.provider == AuthProvider.GOOGLE
+    assert session.user.email == "alex.google@cloud.com"
