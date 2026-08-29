@@ -43,6 +43,9 @@ class TokenPayload(BaseModel):
     iat: int = Field(..., description="Issued at timestamp (epoch seconds)")
 
 
+from pydantic import BaseModel, EmailStr, Field, field_validator
+
+
 class LoginRequest(BaseModel):
     """Login payload supporting Google ID tokens, Email/Password, or Demo login."""
     provider: AuthProvider = Field(default=AuthProvider.GOOGLE)
@@ -50,6 +53,13 @@ class LoginRequest(BaseModel):
     password: Optional[str] = Field(default=None, description="User password")
     token_or_code: Optional[str] = Field(default=None, description="Google OAuth ID token or credential")
     demo_username: Optional[str] = Field(default=None, description="For local/demo quick login")
+
+    @field_validator("provider", mode="before")
+    @classmethod
+    def normalize_provider(cls, v):
+        if isinstance(v, str):
+            return v.lower()
+        return v
 
 
 class RegisterRequest(BaseModel):

@@ -84,14 +84,25 @@ export class AuthPageComponent implements OnInit {
     this.errorMessage = null;
 
     if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
+      let promptHandled = false;
       try {
         google.accounts.id.prompt((notification: any) => {
           this.ngZone.run(() => {
-            if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+            promptHandled = true;
+            if (notification.isNotDisplayed() || notification.isSkippedMoment() || notification.isDismissedMoment()) {
               this.executeGoogleDirectLogin();
             }
           });
         });
+
+        // Safe fallback if prompt callback does not return within 1.2s
+        setTimeout(() => {
+          this.ngZone.run(() => {
+            if (!promptHandled && !this.authService.isAuthenticated) {
+              this.executeGoogleDirectLogin();
+            }
+          });
+        }, 1200);
         return;
       } catch (e) {
         console.warn('Google prompt fallback:', e);
