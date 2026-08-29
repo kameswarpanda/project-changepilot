@@ -25,7 +25,7 @@
     <!-- 2. Vertex AI Engine Status -->
     <button (click)="state.setNav('settings')" 
             class="h-8 px-2.5 rounded-md bg-[#161B22] border border-[#30363D] hover:bg-[#272a31] transition-colors flex items-center gap-1.5 text-xs text-[#e1e2eb]" 
-            [title]="(state.health$ | async)?.vertex_ai_configured ? 'Vertex AI Gemini 2.5 Flash Engine Active' : 'Vertex AI Application Default Credentials'">
+            [title]="(state.health$ | async)?.vertex_ai_configured ? 'Vertex AI Gemini 3.7 Flash Engine Active' : 'Vertex AI Application Default Credentials'">
       <span *ngIf="(state.health$ | async)?.vertex_ai_configured" 
             class="material-symbols-outlined text-[16px] text-[#4edea3]">check_circle</span>
       <span *ngIf="!(state.health$ | async)?.vertex_ai_configured" 

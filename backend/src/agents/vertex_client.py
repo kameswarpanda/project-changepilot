@@ -68,7 +68,7 @@ class VertexClient:
 
         from google.genai import types
 
-        model_name = settings.gemini_model or "gemini-2.5-flash"
+        model_name = settings.gemini_model or "gemini-3.7-flash"
         logger.info(f"Invoking Vertex AI model: {model_name}")
 
         try:

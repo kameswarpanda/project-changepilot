@@ -331,7 +331,7 @@ async def execute_change_request(
     logger.info(f"[{correlation_id}] Initiating execution for story: {request.story_id} by user: {user.username}")
 
     try:
-        result = await orchestrator.execute_async(request)
+        result = await orchestrator.execute_async(request, user_id=user.id)
         db_repository.save_pipeline_run(result, user_id=user.id, repo_name=request.repository_location)
         return result
     except Exception as e:

@@ -472,3 +472,9 @@ class WorkflowOrchestrator:
             error_stage=stage if status != WorkflowStatus.SUCCESS else None,
             error_message=error_msg
         )
+
+    async def execute_async(self, request: ChangeRequest, user_id: str = "usr-kameswar-01") -> WorkflowResult:
+        """Executes the workflow asynchronously in a thread pool executor."""
+        import asyncio
+        return await asyncio.to_thread(self.execute, request, user_id)
+
