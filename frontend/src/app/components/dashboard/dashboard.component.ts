@@ -14,15 +14,17 @@ import { WorkflowStage } from '../../models';
 export class DashboardComponent implements OnInit {
   constructor(public state: WorkflowStateService) {}
 
-  ngOnInit(): void {}
+  ngOnInit(): void {
+    this.state.refreshAllData();
+  }
 
   runPipeline(): void {
-    this.state.runWorkflow();
+    this.state.executeWorkflow();
   }
 
   getFormattedDuration(): string {
     const ms = this.state.resultSubject.value?.total_duration_ms;
-    return ms ? (ms / 1000).toFixed(2) + 's' : '3.36s';
+    return ms ? (ms / 1000).toFixed(2) + 's' : '3.24s';
   }
 
   getStageState(stageKey: WorkflowStage): { status: 'pending' | 'running' | 'passed' | 'failed'; duration?: number } {

@@ -1,48 +1,26 @@
 <div class="p-6 max-w-5xl mx-auto space-y-8">
   <!-- Page Header -->
-  <div>
-    <h2 class="font-display-lg text-2xl font-bold text-[#e1e2eb]">Configuration</h2>
-    <p class="font-body-md text-xs text-[#908fa0] mt-1 max-w-2xl">
-      Manage your workspace preferences, AI integrations, execution environments, and deterministic security protocols.
-    </p>
+  <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <div>
+      <h2 class="font-display-lg text-2xl font-bold text-[#e1e2eb]">System Configuration</h2>
+      <p class="font-body-md text-xs text-[#908fa0] mt-1 max-w-2xl">
+        Manage live cloud runtime settings, Vertex AI Gemini intelligence, database endpoints, and deterministic security gates.
+      </p>
+    </div>
+    <button (click)="save()" class="px-4 py-2 bg-[#494bd6] text-white rounded-md text-xs font-bold hover:bg-[#8083ff] hover:text-[#0d0096] transition-colors shadow-sm flex items-center gap-1.5">
+      <span class="material-symbols-outlined text-[16px]">sync</span>
+      <span>Sync Live Settings</span>
+    </button>
   </div>
 
   <!-- Settings Sections Layout -->
   <div class="space-y-8">
-    <!-- General Preferences -->
+    
+    <!-- 1. Cloud & AI Orchestration Bento Cards -->
     <section class="space-y-4">
       <div>
-        <h3 class="font-title-sm text-sm font-semibold text-[#e1e2eb]">General Preferences</h3>
-        <p class="font-body-sm text-xs text-[#908fa0]">Customize your core platform experience.</p>
-      </div>
-
-      <div class="bg-[#161B22] border border-[#30363D] rounded-lg overflow-hidden divide-y divide-[#30363D]">
-        <div class="flex items-center justify-between p-4 text-xs">
-          <div>
-            <p class="font-medium text-[#e1e2eb]">Interface Theme</p>
-            <p class="text-[#908fa0] text-[11px] mt-0.5">Dark theme optimized for long development sessions.</p>
-          </div>
-          <div class="flex bg-[#10131a] rounded p-1 border border-[#30363D]">
-            <button class="px-3 py-1 rounded text-xs text-[#908fa0]">Light</button>
-            <button class="px-3 py-1 rounded text-xs bg-[#272a31] text-[#e1e2eb] font-semibold">Dark</button>
-          </div>
-        </div>
-
-        <div class="flex items-center justify-between p-4 text-xs">
-          <div>
-            <p class="font-medium text-[#e1e2eb]">Global Notifications</p>
-            <p class="text-[#908fa0] text-[11px] mt-0.5">Receive alerts for pipeline stage transitions and approvals.</p>
-          </div>
-          <span class="text-[#4edea3] font-semibold">Enabled</span>
-        </div>
-      </div>
-    </section>
-
-    <!-- AI Orchestration Bento Cards -->
-    <section class="space-y-4">
-      <div>
-        <h3 class="font-title-sm text-sm font-semibold text-[#e1e2eb]">AI Orchestration Engine</h3>
-        <p class="font-body-sm text-xs text-[#908fa0]">Configure the intelligence layer powering your autonomous infrastructure changes.</p>
+        <h3 class="font-title-sm text-sm font-semibold text-[#e1e2eb]">Google Cloud & Vertex AI Engine</h3>
+        <p class="font-body-sm text-xs text-[#908fa0]">Live configuration loaded from server runtime environment (.env).</p>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -55,67 +33,89 @@
                 <span class="material-symbols-outlined text-[20px]">psychology</span>
               </div>
               <div>
-                <h4 class="text-xs font-bold text-[#e1e2eb]">Google Vertex AI / Gemini 2.5</h4>
+                <h4 class="text-xs font-bold text-[#e1e2eb]">Google Vertex AI / Gemini</h4>
                 <div class="flex items-center gap-1.5 mt-0.5">
-                  <span class="w-2 h-2 rounded-full bg-[#4edea3]"></span>
-                  <span class="text-[11px] text-[#4edea3]">ADC Authenticated</span>
+                  <span class="w-2 h-2 rounded-full" [ngClass]="(state.systemConfig$ | async)?.vertex_ai_configured ? 'bg-[#4edea3]' : 'bg-[#ffb783]'"></span>
+                  <span class="text-[11px]" [ngClass]="(state.systemConfig$ | async)?.vertex_ai_configured ? 'text-[#4edea3]' : 'text-[#ffb783]'">
+                    {{ (state.systemConfig$ | async)?.vertex_ai_configured ? 'Active & Authenticated' : 'Application Default Credentials' }}
+                  </span>
                 </div>
               </div>
             </div>
           </div>
 
-          <div class="space-y-2 text-xs">
+          <div class="space-y-2.5 text-xs">
             <div class="flex justify-between items-center">
-              <span class="text-[#908fa0]">Active Model:</span>
-              <span class="font-mono text-[#c0c1ff] bg-[#10131a] px-2 py-0.5 rounded border border-[#30363D]">gemini-2.5-pro</span>
+              <span class="text-[#908fa0]">GCP Project ID:</span>
+              <span class="font-mono text-[#e1e2eb] bg-[#10131a] px-2 py-0.5 rounded border border-[#30363D]">
+                {{ (state.systemConfig$ | async)?.google_cloud_project || 'project-changepilot' }}
+              </span>
             </div>
             <div class="flex justify-between items-center">
-              <span class="text-[#908fa0]">Structured Schema Output:</span>
-              <span class="text-[#4edea3] font-semibold">Strict JSON Mode</span>
+              <span class="text-[#908fa0]">Region / Location:</span>
+              <span class="font-mono text-[#e1e2eb] bg-[#10131a] px-2 py-0.5 rounded border border-[#30363D]">
+                {{ (state.systemConfig$ | async)?.google_cloud_location || 'us-central1' }}
+              </span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-[#908fa0]">Active Model:</span>
+              <span class="font-mono text-[#c0c1ff] bg-[#10131a] px-2 py-0.5 rounded border border-[#30363D]">
+                {{ (state.systemConfig$ | async)?.gemini_model || 'gemini-2.5-flash' }}
+              </span>
             </div>
           </div>
         </div>
 
-        <!-- Deterministic Fallback Card -->
+        <!-- Infrastructure & Persistence Card -->
         <div class="bg-[#161B22] border border-[#30363D] rounded-lg p-5 relative overflow-hidden">
           <div class="absolute top-0 left-0 w-1 h-full bg-[#4edea3]"></div>
           <div class="flex justify-between items-start mb-4">
             <div class="flex items-center gap-3">
               <div class="w-9 h-9 rounded bg-[#10131a] border border-[#30363D] flex items-center justify-center text-[#4edea3]">
-                <span class="material-symbols-outlined text-[20px]">smart_toy</span>
+                <span class="material-symbols-outlined text-[20px]">database</span>
               </div>
               <div>
-                <h4 class="text-xs font-bold text-[#e1e2eb]">Deterministic Rule Engine</h4>
+                <h4 class="text-xs font-bold text-[#e1e2eb]">Database & Execution Sandbox</h4>
                 <div class="flex items-center gap-1.5 mt-0.5">
                   <span class="w-2 h-2 rounded-full bg-[#4edea3]"></span>
-                  <span class="text-[11px] text-[#4edea3]">Active & Verified</span>
+                  <span class="text-[11px] text-[#4edea3]">Online & Persistent</span>
                 </div>
               </div>
             </div>
           </div>
 
-          <div class="space-y-2 text-xs">
+          <div class="space-y-2.5 text-xs">
             <div class="flex justify-between items-center">
-              <span class="text-[#908fa0]">Test Runner Bounds:</span>
-              <span class="font-mono text-[#e1e2eb]">pytest (60s Hard Timeout)</span>
+              <span class="text-[#908fa0]">Database Target:</span>
+              <span class="font-mono text-[#e1e2eb] bg-[#10131a] px-2 py-0.5 rounded border border-[#30363D] truncate max-w-[200px]">
+                {{ (state.systemConfig$ | async)?.database_url || 'sqlite:///./changepilot.db' }}
+              </span>
             </div>
             <div class="flex justify-between items-center">
-              <span class="text-[#908fa0]">Local Sandbox Clones:</span>
-              <span class="text-[#4edea3] font-semibold">Enabled</span>
+              <span class="text-[#908fa0]">Sandbox Max Size:</span>
+              <span class="font-mono text-[#e1e2eb]">
+                {{ (state.systemConfig$ | async)?.max_repository_size_mb || 100 }} MB
+              </span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-[#908fa0]">Execution Hard Timeout:</span>
+              <span class="font-mono text-[#e1e2eb]">
+                {{ (state.systemConfig$ | async)?.command_timeout_seconds || 60 }}s
+              </span>
             </div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Security Posture Table -->
+    <!-- 2. Security Posture Table -->
     <section class="space-y-4">
       <div>
         <h3 class="font-title-sm text-sm font-semibold text-[#e1e2eb] flex items-center gap-2">
-          <span>Security Posture & Deterministic Defense</span>
+          <span>Deterministic Safety Gates & Security Posture</span>
           <span class="material-symbols-outlined text-[#4edea3] text-[18px]">verified_user</span>
         </h3>
-        <p class="font-body-sm text-xs text-[#908fa0]">Monitor active protections guarding your repository against unauthorized mutations.</p>
+        <p class="font-body-sm text-xs text-[#908fa0]">9-stage non-negotiable verification pipeline protecting repository integrity.</p>
       </div>
 
       <div class="bg-[#161B22] rounded-lg border border-[#30363D] overflow-hidden">
@@ -123,42 +123,46 @@
           <thead>
             <tr class="border-b border-[#30363D] bg-[#10131a]">
               <th class="py-3 px-4 font-label-caps text-[#908fa0]">PROTECTION LAYER</th>
-              <th class="py-3 px-4 font-label-caps text-[#908fa0]">STATUS</th>
+              <th class="py-3 px-4 font-label-caps text-[#908fa0]">ENFORCEMENT MECHANISM</th>
+              <th class="py-3 px-4 font-label-caps text-[#908fa0] text-right">STATUS</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-[#30363D] text-[#e1e2eb]">
             <tr>
               <td class="py-3 px-4">
-                <div class="font-medium">Workspace Isolation</div>
-                <div class="text-[#908fa0] text-[11px]">Prevents AI agents from mutating outside dedicated disposable sandboxes.</div>
+                <div class="font-medium">Sandbox Workspace Isolation</div>
+                <div class="text-[#908fa0] text-[11px]">Enforces strict isolated clone boundaries; no in-place mutation.</div>
               </td>
-              <td class="py-3 px-4">
-                <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-[#4edea3]/10 text-[#4edea3] font-bold text-[10px]">
-                  <span class="w-1.5 h-1.5 rounded-full bg-[#4edea3]"></span> PROTECTED
+              <td class="py-3 px-4 font-mono text-[11px] text-[#908fa0]">UUID Workspace Sandboxing</td>
+              <td class="py-3 px-4 text-right">
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#4edea3]/10 text-[#4edea3] font-bold text-[10px]">
+                  <span class="w-1.5 h-1.5 rounded-full bg-[#4edea3]"></span> ACTIVE
                 </span>
               </td>
             </tr>
 
             <tr>
               <td class="py-3 px-4">
-                <div class="font-medium">Path Traversal Defense</div>
-                <div class="text-[#908fa0] text-[11px]">Enforces strict resolve().relative_to(sandbox) on every file operation.</div>
+                <div class="font-medium">Path Traversal & Sensitive File Shield</div>
+                <div class="text-[#908fa0] text-[11px]">Blocks access or patching of .env, id_rsa, cloud credentials, or external paths.</div>
               </td>
-              <td class="py-3 px-4">
-                <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-[#4edea3]/10 text-[#4edea3] font-bold text-[10px]">
-                  <span class="w-1.5 h-1.5 rounded-full bg-[#4edea3]"></span> PROTECTED
+              <td class="py-3 px-4 font-mono text-[11px] text-[#908fa0]">Deterministic AST & Path Confinement</td>
+              <td class="py-3 px-4 text-right">
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#4edea3]/10 text-[#4edea3] font-bold text-[10px]">
+                  <span class="w-1.5 h-1.5 rounded-full bg-[#4edea3]"></span> ACTIVE
                 </span>
               </td>
             </tr>
 
             <tr>
               <td class="py-3 px-4">
-                <div class="font-medium">Sensitive Secret File Shield</div>
-                <div class="text-[#908fa0] text-[11px]">Blocks reading or modifying .env, id_rsa, credentials, or cloud keys.</div>
+                <div class="font-medium">Patch Consistency & Test Suite Gate</div>
+                <div class="text-[#908fa0] text-[11px]">Validates diff exactness and executes test suites in isolated sandbox before PR.</div>
               </td>
-              <td class="py-3 px-4">
-                <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-[#4edea3]/10 text-[#4edea3] font-bold text-[10px]">
-                  <span class="w-1.5 h-1.5 rounded-full bg-[#4edea3]"></span> PROTECTED
+              <td class="py-3 px-4 font-mono text-[11px] text-[#908fa0]">Automated Pytest / Runner Verification</td>
+              <td class="py-3 px-4 text-right">
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#4edea3]/10 text-[#4edea3] font-bold text-[10px]">
+                  <span class="w-1.5 h-1.5 rounded-full bg-[#4edea3]"></span> ACTIVE
                 </span>
               </td>
             </tr>
@@ -167,11 +171,5 @@
       </div>
     </section>
 
-    <!-- Save Action Button -->
-    <div class="pt-4 flex justify-end">
-      <button (click)="save()" class="px-6 py-2.5 bg-[#494bd6] text-white rounded-md text-xs font-bold hover:bg-[#8083ff] hover:text-[#0d0096] transition-colors shadow-sm">
-        Save Configuration
-      </button>
-    </div>
   </div>
 </div>

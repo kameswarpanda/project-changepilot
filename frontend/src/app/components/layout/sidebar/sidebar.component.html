@@ -47,13 +47,6 @@
       <span>Repositories</span>
     </a>
 
-    <a (click)="navigate('templates')" 
-       [class.active]="(state.activeNav$ | async) === 'templates'" 
-       class="nav-link">
-      <span class="material-symbols-outlined text-[20px]" [class.fill-icon]="(state.activeNav$ | async) === 'templates'">description</span>
-      <span>Templates</span>
-    </a>
-
     <a (click)="navigate('audit')" 
        [class.active]="(state.activeNav$ | async) === 'audit'" 
        class="nav-link">

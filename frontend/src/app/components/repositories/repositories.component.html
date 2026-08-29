@@ -3,16 +3,16 @@
   <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
     <div>
       <h2 class="font-display-lg text-2xl font-bold text-[#e1e2eb]">Repositories</h2>
-      <p class="font-body-md text-xs text-[#908fa0] mt-1">Manage connected codebases monitored by ChangePilot via GitHub App, Azure DevOps, and Jira integrations.</p>
+      <p class="font-body-md text-xs text-[#908fa0] mt-1">Manage connected codebases monitored by ChangePilot via GitHub App and Azure DevOps integrations.</p>
     </div>
     <div class="flex items-center gap-3">
       <button (click)="openConnectModal()" class="bg-[#494bd6] text-white font-semibold text-xs px-4 py-2 rounded-md hover:bg-[#8083ff] hover:text-[#0d0096] transition-colors flex items-center gap-2 shadow-sm">
         <span class="material-symbols-outlined text-[16px]">add_link</span>
         <span>+ Connect Repository</span>
       </button>
-      <button (click)="state.inspectRepository()" class="bg-[#161B22] border border-[#30363D] text-[#e1e2eb] font-semibold text-xs px-4 py-2 rounded-md hover:bg-[#272a31] transition-colors flex items-center gap-2">
+      <button (click)="state.loadRepositories()" class="bg-[#161B22] border border-[#30363D] text-[#e1e2eb] font-semibold text-xs px-4 py-2 rounded-md hover:bg-[#272a31] transition-colors flex items-center gap-2">
         <span class="material-symbols-outlined text-[16px]">sync</span>
-        <span>Re-Analyze All</span>
+        <span>Sync All</span>
       </button>
     </div>
   </div>
@@ -23,10 +23,10 @@
     <div class="p-4 border-b border-[#30363D] bg-[#1d2026] flex flex-col sm:flex-row gap-4 items-center justify-between">
       <div class="flex items-center gap-2 text-xs text-[#908fa0]">
         <span class="material-symbols-outlined text-[#4edea3] text-[16px]">verified</span>
-        <span>Connected Repositories & CI/CD Pipelines</span>
+        <span>Connected Cloud Repositories & CI/CD Pipelines</span>
       </div>
       <div class="text-xs text-[#908fa0]">
-        <span>Isolated sandbox branches created per change story.</span>
+        <span>Sandbox isolation enabled for all branch operations.</span>
       </div>
     </div>
 
@@ -35,10 +35,10 @@
       <table class="w-full text-left border-collapse text-xs">
         <thead>
           <tr class="border-b border-[#30363D] bg-[#10131a]">
-            <th class="font-label-caps text-[#908fa0] py-3 px-4 w-[30%]">NAME & PROVIDER</th>
-            <th class="font-label-caps text-[#908fa0] py-3 px-4">LOCATION / ACCESS</th>
+            <th class="font-label-caps text-[#908fa0] py-3 px-4 w-[30%]">NAME & ACCESS</th>
+            <th class="font-label-caps text-[#908fa0] py-3 px-4">LOCATION / CLONE PATH</th>
             <th class="font-label-caps text-[#908fa0] py-3 px-4">LANGUAGE / RUNNER</th>
-            <th class="font-label-caps text-[#908fa0] py-3 px-4">DISCOVERED BRANCHES</th>
+            <th class="font-label-caps text-[#908fa0] py-3 px-4">BRANCHES</th>
             <th class="font-label-caps text-[#908fa0] py-3 px-4 text-center">STATUS</th>
             <th class="font-label-caps text-[#908fa0] py-3 px-4 text-right">ACTION</th>
           </tr>
@@ -85,6 +85,12 @@
               <button (click)="select(repo)" class="text-[#4edea3] hover:underline font-semibold">Create Change</button>
             </td>
           </tr>
+
+          <tr *ngIf="((filteredRepos$ | async)?.length ?? 0) === 0">
+            <td colspan="6" class="py-8 text-center text-[#908fa0] italic">
+              No repositories connected yet. Click "+ Connect Repository" above to import your first repo.
+            </td>
+          </tr>
         </tbody>
       </table>
     </div>
@@ -101,72 +107,123 @@
         <button (click)="closeConnectModal()" class="text-[#908fa0] hover:text-[#e1e2eb] text-lg font-bold">&times;</button>
       </div>
 
-      <div class="space-y-4 text-xs">
-        <!-- Provider Selection Pills -->
+      <!-- Mode Switcher: Platform vs Public Git URL -->
+      <div class="flex bg-[#10131a] rounded-lg p-1 border border-[#30363D]">
+        <button (click)="switchConnectMode('platform')" 
+                [ngClass]="connectMode === 'platform' ? 'bg-[#494bd6] text-white font-semibold shadow-sm' : 'text-[#908fa0] hover:text-[#e1e2eb]'" 
+                class="flex-1 py-1.5 rounded-md text-xs transition-all">
+          Connected Platform (GitHub / Azure)
+        </button>
+        <button (click)="switchConnectMode('public_url')" 
+                [ngClass]="connectMode === 'public_url' ? 'bg-[#494bd6] text-white font-semibold shadow-sm' : 'text-[#908fa0] hover:text-[#e1e2eb]'" 
+                class="flex-1 py-1.5 rounded-md text-xs transition-all">
+          Public Git Clone URL
+        </button>
+      </div>
+
+      <!-- Option 1: Platform Account Discovery (GitHub / Azure DevOps) -->
+      <div *ngIf="connectMode === 'platform'" class="space-y-4 text-xs">
         <div>
-          <label class="font-title-sm text-xs text-[#908fa0] mb-1.5 block">Repository Provider</label>
-          <div class="grid grid-cols-4 gap-1.5 bg-[#10131a] rounded p-1 border border-[#30363D]">
-            <button (click)="onProviderChange('github')" [ngClass]="connectProvider === 'github' ? 'bg-[#494bd6] text-white font-semibold' : 'text-[#908fa0]'" class="py-1.5 rounded transition-colors text-center">
-              GitHub
+          <label class="font-title-sm text-xs text-[#908fa0] mb-1.5 block">Select Platform</label>
+          <div class="grid grid-cols-2 gap-2">
+            <button (click)="connectProvider = 'github'; fetchUserPlatformRepos()" 
+                    [ngClass]="connectProvider === 'github' ? 'border-[#8083ff] bg-[#272a31] text-white font-semibold' : 'border-[#30363D] bg-[#10131a] text-[#908fa0]'" 
+                    class="py-2 px-3 rounded-lg border text-left flex items-center justify-between transition-all">
+              <span>GitHub Account</span>
+              <span class="material-symbols-outlined text-[16px] text-[#4edea3]">check_circle</span>
             </button>
-            <button (click)="onProviderChange('azure_devops')" [ngClass]="connectProvider === 'azure_devops' ? 'bg-[#494bd6] text-white font-semibold' : 'text-[#908fa0]'" class="py-1.5 rounded transition-colors text-center">
-              Azure DevOps
-            </button>
-            <button (click)="onProviderChange('jira')" [ngClass]="connectProvider === 'jira' ? 'bg-[#494bd6] text-white font-semibold' : 'text-[#908fa0]'" class="py-1.5 rounded transition-colors text-center">
-              GitLab / Jira
-            </button>
-            <button (click)="onProviderChange('local')" [ngClass]="connectProvider === 'local' ? 'bg-[#494bd6] text-white font-semibold' : 'text-[#908fa0]'" class="py-1.5 rounded transition-colors text-center">
-              Local Repo
+            <button (click)="connectProvider = 'azure_devops'; fetchUserPlatformRepos()" 
+                    [ngClass]="connectProvider === 'azure_devops' ? 'border-[#8083ff] bg-[#272a31] text-white font-semibold' : 'border-[#30363D] bg-[#10131a] text-[#908fa0]'" 
+                    class="py-2 px-3 rounded-lg border text-left flex items-center justify-between transition-all">
+              <span>Azure DevOps</span>
+              <span class="material-symbols-outlined text-[16px] text-[#908fa0]">cloud_sync</span>
             </button>
           </div>
         </div>
 
+        <!-- Accessible Repositories List from Platform -->
         <div>
-          <label class="font-title-sm text-xs text-[#908fa0] mb-1 block">Repository Identifier / Clone URL</label>
-          <input type="text" [(ngModel)]="connectRepoName" placeholder="e.g. kameswarpanda/project-changepilot or https://github.com/org/repo.git" class="w-full bg-[#10131a] border border-[#30363D] rounded-md px-3 py-2 text-[#e1e2eb] font-mono text-xs focus:outline-none focus:border-[#8083ff]">
+          <div class="flex justify-between items-center mb-1.5">
+            <label class="font-title-sm text-xs text-[#908fa0]">Accessible Repositories (Live Discovery)</label>
+            <button (click)="fetchUserPlatformRepos()" class="text-[#c0c1ff] hover:underline text-[11px] flex items-center gap-1">
+              <span class="material-symbols-outlined text-[12px]">refresh</span>
+              <span>Refresh</span>
+            </button>
+          </div>
+
+          <div *ngIf="isLoadingPlatformRepos" class="py-6 text-center text-[#908fa0]">
+            <span class="material-symbols-outlined animate-spin text-[20px]">autorenew</span>
+            <div class="text-[11px] mt-1">Discovering accessible repositories...</div>
+          </div>
+
+          <div *ngIf="!isLoadingPlatformRepos" class="max-h-48 overflow-y-auto space-y-1.5 border border-[#30363D] rounded-lg p-2 bg-[#10131a]">
+            <div *ngFor="let r of userPlatformRepos" 
+                 (click)="selectedPlatformRepo = r" 
+                 [ngClass]="selectedPlatformRepo?.name === r.name ? 'border-[#8083ff] bg-[#272a31]' : 'border-transparent hover:bg-[#161B22]'"
+                 class="p-2 rounded border cursor-pointer flex items-center justify-between transition-colors">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-[#c0c1ff] text-[16px]">folder_git</span>
+                <div>
+                  <div class="font-mono text-xs font-semibold text-[#e1e2eb]">{{ r.full_name || r.name }}</div>
+                  <div class="text-[10px] text-[#908fa0]">{{ r.language || 'Python' }} • {{ r.is_private ? 'Private' : 'Public' }}</div>
+                </div>
+              </div>
+              <span *ngIf="selectedPlatformRepo?.name === r.name" class="material-symbols-outlined text-[16px] text-[#4edea3]">check</span>
+            </div>
+
+            <div *ngIf="userPlatformRepos.length === 0" class="py-4 text-center text-[#908fa0] text-[11px]">
+              No repositories found. Ensure GITHUB_TOKEN or OAuth is connected in .env.
+            </div>
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-3 pt-3 border-t border-[#30363D]">
+          <button (click)="closeConnectModal()" class="px-4 py-2 rounded border border-[#30363D] text-[#e1e2eb] text-xs hover:bg-[#272a31]">Cancel</button>
+          <button (click)="submitPlatformConnect()" 
+                  [disabled]="!selectedPlatformRepo || isLoading" 
+                  class="px-5 py-2 rounded bg-[#494bd6] text-white font-semibold text-xs hover:bg-[#8083ff] hover:text-[#0d0096] disabled:opacity-50">
+            {{ isLoading ? 'Importing...' : 'Import & Track Repository' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Option 2: Public Git URL Import -->
+      <div *ngIf="connectMode === 'public_url'" class="space-y-4 text-xs">
+        <div>
+          <label class="font-title-sm text-xs text-[#908fa0] mb-1 block">Public Git Clone URL (HTTPS)</label>
+          <input type="text" 
+                 [(ngModel)]="publicGitUrl" 
+                 placeholder="https://github.com/owner/repository.git" 
+                 class="w-full bg-[#10131a] border border-[#30363D] rounded-md px-3 py-2 text-[#e1e2eb] font-mono text-xs focus:outline-none focus:border-[#8083ff]">
         </div>
 
         <div>
-          <label class="font-title-sm text-xs text-[#908fa0] mb-1 block">Access Token / PAT (Optional if set in .env)</label>
-          <input type="password" [(ngModel)]="connectToken" placeholder="ghp_... or DevOps PAT (stored locally in session)" class="w-full bg-[#10131a] border border-[#30363D] rounded-md px-3 py-2 text-[#e1e2eb] font-mono text-xs focus:outline-none focus:border-[#8083ff]">
-        </div>
-
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="font-title-sm text-xs text-[#908fa0] mb-1 block">Base Target Branch</label>
-            <select [(ngModel)]="connectBaseBranch" class="w-full bg-[#10131a] border border-[#30363D] rounded-md px-3 py-2 text-[#e1e2eb] font-mono text-xs focus:outline-none focus:border-[#8083ff]">
-              <option value="main">main</option>
-              <option value="develop">develop</option>
-              <option value="master">master</option>
-            </select>
-          </div>
-
-          <div>
-            <label class="font-title-sm text-xs text-[#908fa0] mb-1 block">Visibility</label>
-            <select [(ngModel)]="connectIsPrivate" class="w-full bg-[#10131a] border border-[#30363D] rounded-md px-3 py-2 text-[#e1e2eb] text-xs focus:outline-none focus:border-[#8083ff]">
-              <option [ngValue]="true">Private</option>
-              <option [ngValue]="false">Public</option>
-            </select>
-          </div>
+          <label class="font-title-sm text-xs text-[#908fa0] mb-1 block">Default Base Branch</label>
+          <input type="text" 
+                 [(ngModel)]="publicBaseBranch" 
+                 placeholder="main" 
+                 class="w-full bg-[#10131a] border border-[#30363D] rounded-md px-3 py-2 text-[#e1e2eb] font-mono text-xs focus:outline-none focus:border-[#8083ff]">
         </div>
 
         <div class="bg-[#10131a] p-3 rounded border border-[#30363D] text-[11px] text-[#908fa0] space-y-1">
           <div class="text-[#e1e2eb] font-semibold flex items-center gap-1.5">
-            <span class="material-symbols-outlined text-[#4edea3] text-[14px]">shield</span>
-            <span>Automated Operations Granted:</span>
+            <span class="material-symbols-outlined text-[#4edea3] text-[14px]">public</span>
+            <span>Public Repository Inspection:</span>
           </div>
-          <div>• Remote clone into isolated workspace sandbox</div>
-          <div>• Dynamic branch creation: <code class="text-[#38BDF8]">changepilot/&lt;story-id&gt;-&lt;slug&gt;</code></div>
-          <div>• Automated Git commit & Pull Request generation</div>
+          <div>• Automatically discovers remote branches with <code class="text-[#38BDF8]">git ls-remote</code></div>
+          <div>• Sandboxed isolated workspace created for patch verification</div>
+        </div>
+
+        <div class="flex justify-end gap-3 pt-3 border-t border-[#30363D]">
+          <button (click)="closeConnectModal()" class="px-4 py-2 rounded border border-[#30363D] text-[#e1e2eb] text-xs hover:bg-[#272a31]">Cancel</button>
+          <button (click)="submitPublicUrlConnect()" 
+                  [disabled]="!publicGitUrl.trim() || isLoading" 
+                  class="px-5 py-2 rounded bg-[#494bd6] text-white font-semibold text-xs hover:bg-[#8083ff] hover:text-[#0d0096] disabled:opacity-50">
+            {{ isLoading ? 'Discovering Branches...' : 'Import Public Repository' }}
+          </button>
         </div>
       </div>
 
-      <div class="flex justify-end gap-3 pt-3 border-t border-[#30363D]">
-        <button (click)="closeConnectModal()" class="px-4 py-2 rounded border border-[#30363D] text-[#e1e2eb] text-xs hover:bg-[#272a31]">Cancel</button>
-        <button (click)="submitConnect()" class="px-5 py-2 rounded bg-[#494bd6] text-white font-semibold text-xs hover:bg-[#8083ff] hover:text-[#0d0096]">
-          {{ isLoading ? 'Connecting...' : 'Connect Repository' }}
-        </button>
-      </div>
     </div>
   </div>
 </div>

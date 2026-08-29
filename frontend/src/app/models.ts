@@ -7,7 +7,7 @@ export interface User {
   display_name: string;
   email: string;
   avatar_url?: string;
-  provider: 'github' | 'google' | 'local';
+  provider: 'github' | 'google' | 'local' | 'azure_devops';
   roles: string[];
 }
 
@@ -29,6 +29,7 @@ export interface PullRequestInfo {
 }
 
 export interface ChangeRequestPayload {
+  request_id?: string;
   story_id: string;
   title: string;
   description: string;
@@ -36,7 +37,7 @@ export interface ChangeRequestPayload {
   base_branch: string;
   target_branch?: string;
   execution_mode?: ExecutionMode;
-  auto_apply: boolean;
+  auto_apply?: boolean;
 }
 
 export type ChangeType = 'CREATE' | 'MODIFY' | 'DELETE';
@@ -177,6 +178,7 @@ export interface ConnectedRepo {
   id?: string;
   name: string;
   path: string;
+  provider?: string;
   language: string;
   testRunner: string;
   fileCount: number;

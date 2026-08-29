@@ -26,8 +26,43 @@ export class ApiService {
     return this.http.get<HealthResponse>(`${this.baseUrl}/health`);
   }
 
+  getSystemConfig(): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/api/system/config`, { headers: this.getHeaders() });
+  }
+
+  getReports(): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/api/reports`, { headers: this.getHeaders() });
+  }
+
+  getAuditLogs(storyId?: string, repository?: string): Observable<any[]> {
+    let url = `${this.baseUrl}/api/audit-logs?limit=50`;
+    if (storyId) url += `&story_id=${encodeURIComponent(storyId)}`;
+    if (repository) url += `&repository=${encodeURIComponent(repository)}`;
+    return this.http.get<any[]>(url, { headers: this.getHeaders() });
+  }
+
+  listChangeRequests(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/api/requests`, { headers: this.getHeaders() });
+  }
+
+  createChangeRequest(payload: any): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/api/requests`, payload, { headers: this.getHeaders() });
+  }
+
   listRepositories(): Observable<any> {
     return this.http.get<any>(`${this.baseUrl}/api/repositories`, { headers: this.getHeaders() });
+  }
+
+  listUserPlatformRepos(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/api/repositories/user-repos`, { headers: this.getHeaders() });
+  }
+
+  importPublicRepository(gitUrl: string, baseBranch: string = 'main'): Observable<any> {
+    return this.http.post<any>(
+      `${this.baseUrl}/api/repositories/import-public`,
+      { git_url: gitUrl, base_branch: baseBranch },
+      { headers: this.getHeaders() }
+    );
   }
 
   listBranches(repoId: string): Observable<string[]> {
@@ -40,6 +75,14 @@ export class ApiService {
 
   listPipelines(): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}/api/pipelines`, { headers: this.getHeaders() });
+  }
+
+  listResults(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/api/results`, { headers: this.getHeaders() });
+  }
+
+  getNotifications(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/api/notifications`, { headers: this.getHeaders() });
   }
 
   analyzeRepository(repositoryLocation: string): Observable<any> {

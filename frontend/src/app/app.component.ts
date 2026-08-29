@@ -8,7 +8,6 @@ import { ChangeRequestsComponent } from './components/change-requests/change-req
 import { PipelinesComponent } from './components/pipelines/pipelines.component';
 import { ChangeResultComponent } from './components/change-result/change-result.component';
 import { RepositoriesComponent } from './components/repositories/repositories.component';
-import { TemplatesComponent } from './components/templates/templates.component';
 import { AuditLogsComponent } from './components/audit-logs/audit-logs.component';
 import { ReportsComponent } from './components/reports/reports.component';
 import { SettingsComponent } from './components/settings/settings.component';
@@ -32,7 +31,6 @@ import { AuthService } from './services/auth.service';
     PipelinesComponent,
     ChangeResultComponent,
     RepositoriesComponent,
-    TemplatesComponent,
     AuditLogsComponent,
     ReportsComponent,
     SettingsComponent,

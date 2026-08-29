@@ -1,7 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { WorkflowStateService } from '../../services/workflow-state.service';
+import { ApiService } from '../../services/api.service';
+import { NotificationService } from '../../services/notification.service';
 import { ConnectedRepo } from '../../models';
 import { Observable, combineLatest } from 'rxjs';
 import { map } from 'rxjs/operators';
@@ -13,19 +15,30 @@ import { map } from 'rxjs/operators';
   templateUrl: './repositories.component.html',
   styleUrls: ['./repositories.component.css']
 })
-export class RepositoriesComponent {
+export class RepositoriesComponent implements OnInit {
   filteredRepos$: Observable<ConnectedRepo[]>;
 
   // Connect Modal State
   showConnectModal = false;
-  connectProvider: 'github' | 'azure_devops' | 'jira' | 'local' = 'github';
-  connectRepoName = 'kameswarpanda/project-changepilot';
-  connectToken = '';
-  connectBaseBranch = 'main';
-  connectIsPrivate = true;
+  connectMode: 'platform' | 'public_url' = 'platform';
+  connectProvider: 'github' | 'azure_devops' = 'github';
+
+  // Platform Repos Discovery
+  userPlatformRepos: any[] = [];
+  selectedPlatformRepo: any = null;
+  isLoadingPlatformRepos = false;
+
+  // Public Git URL input
+  publicGitUrl = 'https://github.com/kameswarpanda/project-changepilot.git';
+  publicBaseBranch = 'main';
+
   isLoading = false;
 
-  constructor(public state: WorkflowStateService) {
+  constructor(
+    public state: WorkflowStateService,
+    private api: ApiService,
+    private notif: NotificationService
+  ) {
     this.filteredRepos$ = combineLatest([
       this.state.connectedRepos$,
       this.state.searchQuery$
@@ -42,36 +55,64 @@ export class RepositoriesComponent {
     );
   }
 
+  ngOnInit(): void {
+    this.state.loadRepositories();
+  }
+
   openConnectModal(): void {
     this.showConnectModal = true;
+    this.fetchUserPlatformRepos();
   }
 
   closeConnectModal(): void {
     this.showConnectModal = false;
   }
 
-  onProviderChange(provider: 'github' | 'azure_devops' | 'jira' | 'local'): void {
-    this.connectProvider = provider;
-    if (provider === 'github') {
-      this.connectRepoName = 'kameswarpanda/project-changepilot';
-    } else if (provider === 'azure_devops') {
-      this.connectRepoName = 'https://dev.azure.com/org/project/_git/repo';
-    } else if (provider === 'jira') {
-      this.connectRepoName = 'https://gitlab.com/group/project';
-    } else {
-      this.connectRepoName = 'demo_repo';
+  switchConnectMode(mode: 'platform' | 'public_url'): void {
+    this.connectMode = mode;
+    if (mode === 'platform' && this.userPlatformRepos.length === 0) {
+      this.fetchUserPlatformRepos();
     }
   }
 
-  submitConnect(): void {
-    if (!this.connectRepoName.trim()) return;
+  fetchUserPlatformRepos(): void {
+    this.isLoadingPlatformRepos = true;
+    this.api.listUserPlatformRepos().subscribe({
+      next: (repos) => {
+        this.isLoadingPlatformRepos = false;
+        this.userPlatformRepos = repos;
+        if (repos.length > 0) {
+          this.selectedPlatformRepo = repos[0];
+        }
+      },
+      error: () => {
+        this.isLoadingPlatformRepos = false;
+      }
+    });
+  }
+
+  submitPlatformConnect(): void {
+    if (!this.selectedPlatformRepo) return;
     this.isLoading = true;
 
     this.state.connectNewRepository(
-      this.connectRepoName.trim(),
+      this.selectedPlatformRepo.full_name || this.selectedPlatformRepo.name,
       this.connectProvider,
-      this.connectBaseBranch,
-      this.connectIsPrivate
+      this.selectedPlatformRepo.default_branch || 'main',
+      this.selectedPlatformRepo.is_private || false
+    );
+
+    this.isLoading = false;
+    this.showConnectModal = false;
+  }
+
+  submitPublicUrlConnect(): void {
+    if (!this.publicGitUrl.trim()) return;
+    this.isLoading = true;
+
+    this.state.importPublicRepository(
+      this.publicGitUrl.trim(),
+      this.publicBaseBranch.trim()
     );
 
     this.isLoading = false;

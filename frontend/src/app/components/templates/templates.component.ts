@@ -20,11 +20,11 @@ export class TemplatesComponent {
       map(query => {
         if (!query.trim()) return this.state.storyTemplates;
         const q = query.toLowerCase();
-        return this.state.storyTemplates.filter(t =>
+        return this.state.storyTemplates.filter((t: StoryTemplate) =>
           t.title.toLowerCase().includes(q) ||
           t.description.toLowerCase().includes(q) ||
           t.category.toLowerCase().includes(q) ||
-          t.tags.some(tag => tag.toLowerCase().includes(q))
+          t.tags.some((tag: string) => tag.toLowerCase().includes(q))
         );
       })
     );

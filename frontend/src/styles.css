@@ -131,6 +131,28 @@ html.light .text-\[\#908fa0\] { color: var(--text-secondary) !important; }
 html.light .text-\[\#c7c4d7\] { color: var(--text-secondary) !important; }
 html.light .text-\[\#c0c1ff\] { color: var(--brand-primary) !important; }
 
+html.light .nav-link {
+  color: #57606a !important;
+}
+html.light .nav-link:hover {
+  background-color: #eaeef2 !important;
+  color: #1f2328 !important;
+}
+html.light .nav-link.active {
+  background-color: #8083ff !important;
+  color: #0d0096 !important;
+}
+
+html.light .hover\:bg-\[\#272a31\]:hover {
+  background-color: #eaeef2 !important;
+}
+html.light .hover\:bg-\[\#1d2026\]:hover {
+  background-color: #f3f4f6 !important;
+}
+html.light .hover\:bg-\[\#161B22\]:hover {
+  background-color: #f3f4f6 !important;
+}
+
 html.light input, html.light textarea, html.light select {
   background-color: var(--bg-input) !important;
   color: var(--text-primary) !important;

@@ -13,10 +13,10 @@ import { ExecutionMode } from '../../models';
   styleUrls: ['./change-requests.component.css']
 })
 export class ChangeRequestsComponent implements OnInit {
-  ticketId = 'CP-DEMO-1';
-  changeTitle = 'Add optional flat monetary discount to calculator';
-  requirements = 'Add an optional flat monetary discount parameter to calculate_total function. Preserve existing callers when discount is None. Reject negative discounts and discounts larger than calculated total with ValueError. Update unit tests.';
-  repository = 'demo_repo';
+  ticketId = 'CP-1042';
+  changeTitle = 'Add Percentage Discount Rule to Calculator Engine';
+  requirements = 'Implement apply_discount(total, percent) method with validation that percentage is between 0 and 100.';
+  repository = 'project-changepilot';
   branch = 'main';
   executionMode: ExecutionMode = 'BRANCH_COMMIT_PR';
 
@@ -32,6 +32,7 @@ export class ChangeRequestsComponent implements OnInit {
     this.state.repoLocation$.subscribe(val => this.repository = val);
     this.state.baseBranch$.subscribe(val => this.branch = val);
     this.state.executionMode$.subscribe(val => this.executionMode = val);
+    this.state.loadChangeRequests();
   }
 
   setExecutionMode(mode: ExecutionMode): void {
@@ -50,17 +51,19 @@ export class ChangeRequestsComponent implements OnInit {
 
   runChangePilot(): void {
     this.onFormSync();
-    this.state.runWorkflow();
+    this.state.executeWorkflow();
     this.state.setNav('pipelines');
   }
 
   saveDraft(): void {
     this.onFormSync();
-    this.notifService.addNotification(
-      'Draft Saved',
-      `Saved change request draft for ${this.ticketId}.`,
-      'info',
-      this.ticketId
-    );
+    this.state.createChangeRequest({
+      story_id: this.ticketId,
+      title: this.changeTitle,
+      description: this.requirements,
+      repository: this.repository,
+      base_branch: this.branch,
+      priority: 'HIGH'
+    });
   }
 }

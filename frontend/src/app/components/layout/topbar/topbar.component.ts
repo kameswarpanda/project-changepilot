@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ElementRef, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { WorkflowStateService } from '../../../services/workflow-state.service';
@@ -14,7 +14,6 @@ import { AuthService } from '../../../services/auth.service';
   styleUrls: ['./topbar.component.css']
 })
 export class TopbarComponent {
-  searchQuery: string = '';
   showNotificationsDropdown: boolean = false;
   showUserDropdown: boolean = false;
 
@@ -22,8 +21,17 @@ export class TopbarComponent {
     public state: WorkflowStateService,
     public themeService: ThemeService,
     public notifService: NotificationService,
-    public authService: AuthService
+    public authService: AuthService,
+    private elementRef: ElementRef
   ) {}
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    if (!this.elementRef.nativeElement.contains(event.target)) {
+      this.showNotificationsDropdown = false;
+      this.showUserDropdown = false;
+    }
+  }
 
   getUserInitials(user: any): string {
     if (!user || !user.display_name) return 'CP';
@@ -35,25 +43,16 @@ export class TopbarComponent {
     return name.substring(0, 2).toUpperCase();
   }
 
-  onSearchChange(): void {
-    this.state.setSearchQuery(this.searchQuery);
-  }
-
-  toggleNotifications(): void {
+  toggleNotifications(event?: MouseEvent): void {
+    if (event) event.stopPropagation();
     this.showNotificationsDropdown = !this.showNotificationsDropdown;
     this.showUserDropdown = false;
   }
 
-  toggleUserDropdown(): void {
+  toggleUserDropdown(event?: MouseEvent): void {
+    if (event) event.stopPropagation();
     this.showUserDropdown = !this.showUserDropdown;
     this.showNotificationsDropdown = false;
-  }
-
-  switchUser(username: string): void {
-    this.authService.loginDemo(username).subscribe(() => {
-      this.notifService.addNotification('Identity Switched', `Logged in as ${username}`, 'info');
-      this.showUserDropdown = false;
-    });
   }
 
   logout(): void {

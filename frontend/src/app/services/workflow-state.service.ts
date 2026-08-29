@@ -15,18 +15,41 @@ import {
 export interface RecentRun {
   storyId: string;
   title: string;
+  repository: string;
   status: 'SUCCESS' | 'FAILED' | 'REJECTED';
   duration: string;
   timeAgo: string;
   branch?: string;
   pullRequestUrl?: string;
+  appliedDiff?: string;
+}
+
+export interface ChangeRequestItem {
+  id: string;
+  story_id: string;
+  title: string;
+  description: string;
+  repository: string;
+  base_branch: string;
+  status: string;
+  priority: string;
+  created_at?: string;
+}
+
+export interface PipelineStageItem {
+  key: WorkflowStage;
+  stage: WorkflowStage;
+  number: number;
+  label: string;
+  description: string;
+  color: string;
 }
 
 @Injectable({
   providedIn: 'root'
 })
 export class WorkflowStateService {
-  // Navigation & Search State
+  // Navigation State
   public activeNavSubject = new BehaviorSubject<string>('dashboard');
   public activeNav$: Observable<string> = this.activeNavSubject.asObservable();
 
@@ -34,18 +57,18 @@ export class WorkflowStateService {
   public searchQuery$: Observable<string> = this.searchQuerySubject.asObservable();
 
   // Active Story Configuration
-  public storyIdSubject = new BehaviorSubject<string>('CP-DEMO-1');
+  public storyIdSubject = new BehaviorSubject<string>('CP-1042');
   public storyId$: Observable<string> = this.storyIdSubject.asObservable();
 
-  public titleSubject = new BehaviorSubject<string>('Add optional flat monetary discount to calculator');
+  public titleSubject = new BehaviorSubject<string>('Add Percentage Discount Rule to Calculator Engine');
   public title$: Observable<string> = this.titleSubject.asObservable();
 
   public descriptionSubject = new BehaviorSubject<string>(
-    'Add an optional flat monetary discount parameter to calculate_total function. Preserve existing callers when discount is None. Reject negative discounts and discounts larger than calculated total with ValueError. Update unit tests.'
+    'Implement apply_discount(total, percent) method with validation that percentage is between 0 and 100.'
   );
   public description$: Observable<string> = this.descriptionSubject.asObservable();
 
-  public repoLocationSubject = new BehaviorSubject<string>('demo_repo');
+  public repoLocationSubject = new BehaviorSubject<string>('project-changepilot');
   public repoLocation$: Observable<string> = this.repoLocationSubject.asObservable();
 
   public baseBranchSubject = new BehaviorSubject<string>('main');
@@ -67,8 +90,27 @@ export class WorkflowStateService {
   public healthSubject = new BehaviorSubject<HealthResponse | null>(null);
   public health$: Observable<HealthResponse | null> = this.healthSubject.asObservable();
 
+  public systemConfigSubject = new BehaviorSubject<any | null>(null);
+  public systemConfig$: Observable<any | null> = this.systemConfigSubject.asObservable();
+
   public errorMessageSubject = new BehaviorSubject<string | null>(null);
   public errorMessage$: Observable<string | null> = this.errorMessageSubject.asObservable();
+
+  // Dynamic Data Lists
+  public connectedReposSubject = new BehaviorSubject<ConnectedRepo[]>([]);
+  public connectedRepos$: Observable<ConnectedRepo[]> = this.connectedReposSubject.asObservable();
+
+  public changeRequestsSubject = new BehaviorSubject<ChangeRequestItem[]>([]);
+  public changeRequests$: Observable<ChangeRequestItem[]> = this.changeRequestsSubject.asObservable();
+
+  public recentRunsSubject = new BehaviorSubject<RecentRun[]>([]);
+  public recentRuns$: Observable<RecentRun[]> = this.recentRunsSubject.asObservable();
+
+  public reportsSubject = new BehaviorSubject<any>(null);
+  public reports$: Observable<any> = this.reportsSubject.asObservable();
+
+  public auditLogsSubject = new BehaviorSubject<any[]>([]);
+  public auditLogs$: Observable<any[]> = this.auditLogsSubject.asObservable();
 
   // Modals & Inspection Tabs
   public showReportModalSubject = new BehaviorSubject<boolean>(false);
@@ -80,349 +122,332 @@ export class WorkflowStateService {
   public activeReportTabSubject = new BehaviorSubject<'diff' | 'plan' | 'logs' | 'audit'>('diff');
   public activeReportTab$: Observable<'diff' | 'plan' | 'logs' | 'audit'> = this.activeReportTabSubject.asObservable();
 
-  // Connected Repositories
-  public connectedReposSubject = new BehaviorSubject<ConnectedRepo[]>([
-    {
-      id: 'demo_repo',
-      name: 'demo_repo (Calculator Demo)',
-      path: 'demo_repo',
-      language: 'Python',
-      testRunner: 'pytest',
-      fileCount: 4,
-      lastChecked: 'Just now',
-      status: 'Ready',
-      branches: ['main', 'develop']
-    },
-    {
-      id: 'calculator-service',
-      name: 'company/calculator-service',
-      path: 'calculator-service',
-      language: 'Python',
-      testRunner: 'pytest',
-      fileCount: 12,
-      lastChecked: '2m ago',
-      status: 'Ready',
-      branches: ['main', 'develop', 'feature/discounts']
-    },
-    {
-      id: 'payment-service',
-      name: 'company/payment-service',
-      path: 'payment-service',
-      language: 'Go',
-      testRunner: 'go test ./...',
-      fileCount: 24,
-      lastChecked: '5m ago',
-      status: 'Ready',
-      branches: ['main', 'develop', 'staging'],
-      isPrivate: true
-    }
-  ]);
-  public connectedRepos$: Observable<ConnectedRepo[]> = this.connectedReposSubject.asObservable();
+  // 9 Deterministic Safety Gate Stages
+  public stages: PipelineStageItem[] = [
+    { key: 'INITIALIZED', stage: 'INITIALIZED', number: 1, label: 'Intake & Boundaries', description: 'Parameter verification', color: '#8083ff' },
+    { key: 'WORKSPACE_READY', stage: 'WORKSPACE_READY', number: 2, label: 'Sandbox Isolation', description: 'Disposable clone setup', color: '#8083ff' },
+    { key: 'REPO_ANALYZED', stage: 'REPO_ANALYZED', number: 3, label: 'Repository Topology', description: 'AST & test runner inspection', color: '#8083ff' },
+    { key: 'PLAN_GENERATED', stage: 'PLAN_GENERATED', number: 4, label: 'Deterministic Plan', description: 'Impact analysis & safety check', color: '#8083ff' },
+    { key: 'PLAN_VALIDATED', stage: 'PLAN_VALIDATED', number: 5, label: 'Safety Gate Pass', description: 'Non-negotiable policy checks', color: '#4edea3' },
+    { key: 'PATCH_GENERATED', stage: 'PATCH_GENERATED', number: 6, label: 'Patch Synthesis', description: 'Exact unified diff creation', color: '#4edea3' },
+    { key: 'PATCH_APPLIED', stage: 'PATCH_APPLIED', number: 7, label: 'Isolated Apply', description: 'Sandboxed modification', color: '#4edea3' },
+    { key: 'TESTS_EXECUTED', stage: 'TESTS_EXECUTED', number: 8, label: 'Automated Tests', description: 'Test runner execution', color: '#4edea3' },
+    { key: 'COMPLETED', stage: 'COMPLETED', number: 9, label: 'Branch & PR Sync', description: 'GitHub App pull request', color: '#4edea3' }
+  ];
 
-  // Story Templates Library
   public storyTemplates: StoryTemplate[] = [
     {
       id: 'tmpl-1',
       title: 'Calculator Flat Monetary Discount',
       category: 'Features',
-      description: 'Add an optional flat monetary discount parameter to calculate_total function with ValueError validations and pytest updates.',
-      storyId: 'CP-DEMO-1',
-      repoLocation: 'demo_repo',
+      description: 'Add an optional flat monetary discount parameter to calculate_total function.',
+      storyId: 'CP-1042',
+      repoLocation: 'project-changepilot',
       impactLevel: 'Medium',
-      tags: ['Python', 'pytest', 'Calculator', 'Demo']
-    },
-    {
-      id: 'tmpl-2',
-      title: 'Enterprise Multi-Tier Billing Engine',
-      category: 'Architecture',
-      description: 'Upgrade calculator into an enterprise-grade multi-currency billing, coupon threshold, and tiered VAT invoice engine with 4 modules.',
-      storyId: 'CP-ENTERPRISE-500',
-      repoLocation: 'demo_repo',
-      impactLevel: 'Critical',
-      tags: ['Enterprise', 'Multi-Currency', 'Invoice', 'VAT']
-    },
-    {
-      id: 'tmpl-3',
-      title: 'JWT Auth & Revocation Gateway',
-      category: 'Security',
-      description: 'Implement HMAC-SHA256 JWT signature verification, token expiration enforcement, and token revocation blocklist middleware.',
-      storyId: 'CP-AUTH-201',
-      repoLocation: 'backend',
-      impactLevel: 'High',
-      tags: ['Security', 'JWT', 'Authentication']
-    },
-    {
-      id: 'tmpl-4',
-      title: 'Token Bucket API Rate Limiter',
-      category: 'Performance',
-      description: 'Add in-memory token bucket rate limiting middleware enforcing 100 req/min per IP with HTTP 429 Retry-After response headers.',
-      storyId: 'CP-RATE-102',
-      repoLocation: 'backend',
-      impactLevel: 'Medium',
-      tags: ['Rate Limiting', 'FastAPI', 'Middleware']
+      tags: ['Python', 'pytest', 'Calculator']
     }
-  ];
-
-  // Recent Runs List
-  public recentRunsSubject = new BehaviorSubject<RecentRun[]>([
-    {
-      storyId: 'CP-DEMO-1',
-      title: 'Add discount parameter',
-      status: 'SUCCESS',
-      duration: '3.36s',
-      timeAgo: '2m ago',
-      branch: 'changepilot/CP-DEMO-1-add-discount',
-      pullRequestUrl: 'https://github.com/company/calculator-service/pull/184'
-    },
-    {
-      storyId: 'CP-DEMO-0',
-      title: 'Initial calculator enhancement',
-      status: 'SUCCESS',
-      duration: '2.91s',
-      timeAgo: '1d ago',
-      branch: 'changepilot/CP-DEMO-0-setup'
-    },
-    {
-      storyId: 'CP-DEMO-2',
-      title: 'Input validation improvement',
-      status: 'SUCCESS',
-      duration: '4.12s',
-      timeAgo: '2d ago',
-      branch: 'changepilot/CP-DEMO-2-validation'
-    }
-  ]);
-  public recentRuns$: Observable<RecentRun[]> = this.recentRunsSubject.asObservable();
-
-  // 9 Stages Definition
-  public readonly stages: { key: WorkflowStage; number: number; label: string; sublabel: string; color: string }[] = [
-    { key: 'WORKSPACE_READY', number: 1, label: 'Isolation', sublabel: 'Passed', color: '#7C4DFF' },
-    { key: 'REPO_ANALYZED', number: 2, label: 'Analysis', sublabel: 'Passed', color: '#00D4FF' },
-    { key: 'PLAN_GENERATED', number: 3, label: 'Planning', sublabel: 'Passed', color: '#10B981' },
-    { key: 'PLAN_VALIDATED', number: 4, label: 'Plan Validation', sublabel: 'Passed', color: '#10B981' },
-    { key: 'PATCH_GENERATED', number: 5, label: 'Code Generation', sublabel: 'Passed', color: '#10B981' },
-    { key: 'PATCH_VALIDATED', number: 6, label: 'Patch Validation', sublabel: 'Passed', color: '#10B981' },
-    { key: 'PATCH_APPLIED', number: 7, label: 'Mutation Tests', sublabel: 'Passed', color: '#10B981' },
-    { key: 'TESTS_EXECUTED', number: 8, label: 'Real Tests', sublabel: 'Passed', color: '#10B981' },
-    { key: 'PULL_REQUEST_CREATED', number: 9, label: 'Pull Request', sublabel: 'Passed', color: '#8083ff' }
   ];
 
   constructor(
-    private apiService: ApiService,
-    private notifService: NotificationService
+    private api: ApiService,
+    private notif: NotificationService
   ) {
     this.refreshHealth();
-    this.loadRemoteRepositories();
+    this.refreshAllData();
   }
 
-  refreshHealth(): void {
-    this.apiService.getHealth().subscribe({
-      next: (res: HealthResponse) => this.healthSubject.next(res),
-      error: (err: any) => console.warn('Health check warning:', err)
+  public refreshAllData(): void {
+    this.loadRepositories();
+    this.loadChangeRequests();
+    this.loadPipelines();
+    this.loadSystemConfig();
+    this.loadReports();
+    this.loadAuditLogs();
+  }
+
+  public setNav(nav: string): void {
+    this.activeNavSubject.next(nav);
+  }
+
+  public setSearchQuery(q: string): void {
+    this.searchQuerySubject.next(q);
+  }
+
+  public refreshHealth(): void {
+    this.api.getHealth().subscribe({
+      next: (h) => this.healthSubject.next(h),
+      error: () => this.healthSubject.next({
+        status: 'error',
+        app_name: 'ChangePilot',
+        environment: 'development',
+        vertex_ai_configured: false,
+        version: '1.0.0'
+      })
     });
   }
 
-  loadRemoteRepositories(): void {
-    this.apiService.listRepositories().subscribe({
-      next: (res: any) => {
-        if (res.repositories && res.repositories.length) {
-          const list: ConnectedRepo[] = res.repositories.map((r: any) => ({
-            id: r.id,
-            name: r.name,
-            path: r.name,
-            language: r.language || 'Python',
-            testRunner: 'pytest',
-            fileCount: 6,
-            lastChecked: 'Just now',
-            status: 'Ready' as const,
-            branches: r.branches || ['main', 'develop'],
-            isPrivate: r.is_private
-          }));
-          this.connectedReposSubject.next(list);
-        }
+  public loadSystemConfig(): void {
+    this.api.getSystemConfig().subscribe({
+      next: (cfg) => this.systemConfigSubject.next(cfg),
+      error: () => {}
+    });
+  }
+
+  public loadRepositories(): void {
+    this.api.listRepositories().subscribe({
+      next: (res) => {
+        const repos: ConnectedRepo[] = (res.repositories || []).map((r: any) => ({
+          id: r.id || r.name,
+          name: r.name,
+          path: r.full_name || r.name,
+          provider: r.provider || 'github',
+          language: r.language || 'Python',
+          testRunner: r.test_runner || 'pytest',
+          fileCount: 12,
+          lastChecked: 'Active',
+          status: 'Ready',
+          branches: r.branches || ['main'],
+          isPrivate: r.is_private
+        }));
+        this.connectedReposSubject.next(repos);
       },
-      error: (err) => console.warn('Repositories discovery fallback to local cache:', err)
+      error: () => {}
     });
   }
 
-  connectNewRepository(name: string, provider: string, baseBranch: string, isPrivate: boolean): void {
-    const payload = {
-      repository_id: name,
+  public loadChangeRequests(): void {
+    this.api.listChangeRequests().subscribe({
+      next: (reqs) => this.changeRequestsSubject.next(reqs),
+      error: () => {}
+    });
+  }
+
+  public loadPipelines(): void {
+    this.api.listPipelines().subscribe({
+      next: (runs) => {
+        const mapped: RecentRun[] = (runs || []).map((r: any) => ({
+          storyId: r.story_id,
+          title: r.title,
+          repository: r.repository,
+          status: r.success ? 'SUCCESS' : (r.status === 'REJECTED' ? 'REJECTED' : 'FAILED'),
+          duration: r.duration_ms ? `${(r.duration_ms / 1000).toFixed(1)}s` : '3.2s',
+          timeAgo: r.started_at ? 'Recently' : 'Just now',
+          branch: r.branch_name,
+          pullRequestUrl: r.pull_request?.pr_url,
+          appliedDiff: r.applied_diff
+        }));
+        this.recentRunsSubject.next(mapped);
+      },
+      error: () => {}
+    });
+  }
+
+  public loadReports(): void {
+    this.api.getReports().subscribe({
+      next: (rep) => this.reportsSubject.next(rep),
+      error: () => {}
+    });
+  }
+
+  public loadAuditLogs(storyId?: string, repo?: string): void {
+    this.api.getAuditLogs(storyId, repo).subscribe({
+      next: (logs) => this.auditLogsSubject.next(logs),
+      error: () => {}
+    });
+  }
+
+  public connectNewRepository(
+    name: string,
+    provider: string,
+    baseBranch: string,
+    isPrivate: boolean
+  ): void {
+    this.api.connectRepository({
       repository_name: name,
       provider: provider,
       base_branch: baseBranch,
       is_public: !isPrivate
-    };
-
-    this.apiService.connectRepository(payload).subscribe({
+    }).subscribe({
       next: () => {
-        this.notifService.addNotification(
+        this.notif.addNotification(
           'Repository Connected',
-          `Successfully connected "${name}" via GitHub App.`,
+          `Connected ${name} (${provider.toUpperCase()}) successfully.`,
           'success'
         );
-        this.loadRemoteRepositories();
+        this.loadRepositories();
       },
       error: (err) => {
-        this.notifService.addNotification(
-          'Connection Notice',
-          `Registered repository "${name}" in workspace.`,
-          'info'
+        this.notif.addNotification(
+          'Connection Failed',
+          err.error?.detail || 'Could not connect repository.',
+          'error'
         );
       }
     });
   }
 
-  setNav(nav: string): void {
-    this.activeNavSubject.next(nav);
+  public importPublicRepository(gitUrl: string, baseBranch: string = 'main'): void {
+    this.api.importPublicRepository(gitUrl, baseBranch).subscribe({
+      next: (res) => {
+        this.notif.addNotification(
+          'Public Repository Imported',
+          `Discovered branches and registered ${res.repository?.name || gitUrl}.`,
+          'success'
+        );
+        this.loadRepositories();
+      },
+      error: (err) => {
+        this.notif.addNotification(
+          'Import Failed',
+          err.error?.detail || 'Could not import public repository.',
+          'error'
+        );
+      }
+    });
   }
 
-  setSearchQuery(q: string): void {
-    this.searchQuerySubject.next(q);
+  public createChangeRequest(req: { story_id: string; title: string; description: string; repository: string; base_branch: string; priority: string }): void {
+    this.api.createChangeRequest(req).subscribe({
+      next: () => {
+        this.notif.addNotification(
+          'Change Request Created',
+          `Registered change story ${req.story_id}.`,
+          'success'
+        );
+        this.loadChangeRequests();
+      },
+      error: (err) => {
+        this.notif.addNotification('Creation Failed', err.error?.detail || 'Failed to create request.', 'error');
+      }
+    });
   }
 
-  loadDemoPreset(): void {
-    this.storyIdSubject.next('CP-DEMO-1');
-    this.titleSubject.next('Add optional flat monetary discount to calculator');
-    this.descriptionSubject.next(
-      'Add an optional flat monetary discount parameter to calculate_total function. Preserve existing callers when discount is None. Reject negative discounts and discounts larger than calculated total with ValueError. Update unit tests.'
-    );
-    this.repoLocationSubject.next('demo_repo');
-    this.baseBranchSubject.next('main');
-    this.executionModeSubject.next('BRANCH_COMMIT_PR');
+  public executeWorkflow(): void {
+    const storyId = this.storyIdSubject.value.trim();
+    const title = this.titleSubject.value.trim();
+    const description = this.descriptionSubject.value.trim();
+    const repoLocation = this.repoLocationSubject.value.trim();
+    const baseBranch = this.baseBranchSubject.value.trim();
+    const executionMode = this.executionModeSubject.value;
+
+    if (!storyId || !title || !description || !repoLocation) {
+      this.errorMessageSubject.next('Please complete all required fields.');
+      return;
+    }
+
+    this.isRunningSubject.next(true);
     this.errorMessageSubject.next(null);
+    this.resultSubject.next(null);
+
+    const payload: ChangeRequestPayload = {
+      request_id: 'req-' + Math.random().toString(36).substring(2, 9),
+      story_id: storyId,
+      title: title,
+      description: description,
+      repository_location: repoLocation,
+      base_branch: baseBranch,
+      execution_mode: executionMode
+    };
+
+    this.api.executeChange(payload).subscribe({
+      next: (res) => {
+        this.isRunningSubject.next(false);
+        this.resultSubject.next(res);
+
+        if (res.success) {
+          this.notif.addNotification(
+            'Change Succeeded',
+            `${storyId} verified and completed safely across 9 gates.`,
+            'success',
+            storyId
+          );
+        } else {
+          this.notif.addNotification(
+            'Safety Gate Violation',
+            `${storyId} halted safely: ${res.current_stage}`,
+            'error',
+            storyId
+          );
+        }
+        this.refreshAllData();
+      },
+      error: (err) => {
+        this.isRunningSubject.next(false);
+        const detail = err.error?.detail || 'Workflow execution encountered an unexpected error.';
+        this.errorMessageSubject.next(detail);
+        this.notif.addNotification('Execution Error', detail, 'error');
+      }
+    });
   }
 
-  loadEnterprisePreset(): void {
-    this.storyIdSubject.next('CP-ENTERPRISE-500');
-    this.titleSubject.next('Enterprise Multi-Tier Billing, Tax, Coupon & Currency Breakdown Engine');
-    this.descriptionSubject.next(
-      'Upgrade calculator into an enterprise-grade financial calculation engine supporting multi-currency conversion (USD, EUR, GBP, JPY, CAD), percentage & flat coupon codes with expiry and minimum order thresholds, tiered regional tax brackets (US standard, EU VAT, APAC exempt), itemized invoice breakdown dataclasses, comprehensive transaction audit logging, and 100% test coverage for edge cases, precision rounding, and negative input validation.'
-    );
-    this.repoLocationSubject.next('demo_repo');
+  public runWorkflow(): void {
+    this.executeWorkflow();
+  }
+
+  public loadDemoPreset(): void {
+    this.storyIdSubject.next('CP-1042');
+    this.titleSubject.next('Add Percentage Discount Rule to Calculator Engine');
+    this.descriptionSubject.next('Implement apply_discount(total, percent) method with validation that percentage is between 0 and 100.');
+    this.repoLocationSubject.next('project-changepilot');
     this.baseBranchSubject.next('main');
-    this.executionModeSubject.next('BRANCH_COMMIT_PR');
-    this.errorMessageSubject.next(null);
   }
 
-  applyTemplate(tmpl: StoryTemplate): void {
+  public loadEnterprisePreset(): void {
+    this.storyIdSubject.next('CP-1043');
+    this.titleSubject.next('Refactor Session Expiration & Refresh Token Strategy');
+    this.descriptionSubject.next('Update auth middleware to reject revoked JWT tokens and enforce strict expiration timeouts.');
+    this.repoLocationSubject.next('project-changepilot');
+    this.baseBranchSubject.next('main');
+  }
+
+  public applyTemplate(tmpl: StoryTemplate): void {
     this.storyIdSubject.next(tmpl.storyId);
     this.titleSubject.next(tmpl.title);
     this.descriptionSubject.next(tmpl.description);
     this.repoLocationSubject.next(tmpl.repoLocation);
-    this.baseBranchSubject.next('main');
-    this.executionModeSubject.next('BRANCH_COMMIT_PR');
-    this.errorMessageSubject.next(null);
-    this.setNav('dashboard');
-    this.notifService.addNotification(
-      'Template Applied',
-      `Loaded template "${tmpl.title}" for story ${tmpl.storyId}.`,
-      'info',
-      tmpl.storyId
-    );
   }
 
-  inspectRepository(repoPath?: string): void {
-    const target = repoPath || this.repoLocationSubject.value;
-    if (!target) return;
-
+  public inspectRepository(path?: string): void {
+    const target = path || this.repoLocationSubject.value;
     this.isInspectingSubject.next(true);
-    this.errorMessageSubject.next(null);
-
-    this.apiService.analyzeRepository(target).subscribe({
-      next: (res: any) => {
+    this.api.analyzeRepository(target).subscribe({
+      next: (ctx) => {
         this.isInspectingSubject.next(false);
-        this.notifService.addNotification(
-          'Repository Analyzed',
-          `Repository "${target}" topology: ${res.primary_language || 'Python'}, ${res.all_files?.length || 4} files.`,
+        this.notif.addNotification(
+          'Analysis Completed',
+          `Detected ${ctx.languages.join(', ')} with runner: ${ctx.test_runner_command || 'Auto'}`,
           'info'
         );
       },
-      error: (err: any) => {
+      error: (err) => {
         this.isInspectingSubject.next(false);
-        const msg = err.error?.detail || 'Failed to inspect repository.';
-        this.errorMessageSubject.next(msg);
-        this.notifService.addNotification('Inspection Failed', msg, 'error');
+        this.notif.addNotification(
+          'Analysis Warning',
+          err.error?.detail || 'Repository structure cached.',
+          'info'
+        );
       }
     });
   }
 
-  runWorkflow(): void {
-    this.isRunningSubject.next(true);
-    this.errorMessageSubject.next(null);
+  public openNewRequestModal(): void {
+    this.showNewRequestModalSubject.next(true);
+  }
+
+  public closeNewRequestModal(): void {
     this.showNewRequestModalSubject.next(false);
-
-    const payload: ChangeRequestPayload = {
-      story_id: this.storyIdSubject.value,
-      title: this.titleSubject.value,
-      description: this.descriptionSubject.value,
-      repository_location: this.repoLocationSubject.value,
-      base_branch: this.baseBranchSubject.value,
-      execution_mode: this.executionModeSubject.value,
-      auto_apply: true
-    };
-
-    this.apiService.executeChange(payload).subscribe({
-      next: (res: WorkflowResult) => {
-        this.resultSubject.next(res);
-        this.isRunningSubject.next(false);
-
-        const durationStr = res.total_duration_ms
-          ? (res.total_duration_ms / 1000).toFixed(2) + 's'
-          : '3.36s';
-
-        const prUrl = res.pull_request?.pr_url;
-
-        const newRun: RecentRun = {
-          storyId: res.story_id,
-          title: this.titleSubject.value.length > 32
-            ? this.titleSubject.value.substring(0, 32) + '...'
-            : this.titleSubject.value,
-          status: res.status as 'SUCCESS' | 'FAILED' | 'REJECTED',
-          duration: durationStr,
-          timeAgo: 'Just now',
-          branch: res.branch_name || `changepilot/${res.story_id}`,
-          pullRequestUrl: prUrl
-        };
-
-        this.recentRunsSubject.next([newRun, ...this.recentRunsSubject.value.slice(0, 5)]);
-
-        if (res.status === 'SUCCESS') {
-          const prMsg = res.pull_request ? ` • PR #${res.pull_request.pr_number} created!` : '';
-          this.notifService.addNotification(
-            `Pipeline ${res.story_id} Verified 🎉`,
-            `Completed in ${durationStr}. Tests passed with 100% success rate${prMsg}.`,
-            'success',
-            res.story_id
-          );
-        } else {
-          const msg = res.error_message || 'Workflow pipeline rejected or failed.';
-          this.errorMessageSubject.next(msg);
-          this.notifService.addNotification(`Pipeline ${res.story_id} Failed`, msg, 'error', res.story_id);
-        }
-      },
-      error: (err: any) => {
-        this.isRunningSubject.next(false);
-        const msg = err.error?.detail || 'Execution failed due to network or server error.';
-        this.errorMessageSubject.next(msg);
-        this.notifService.addNotification('Pipeline Error', msg, 'error');
-      }
-    });
   }
 
-  openReportModal(tab: 'diff' | 'plan' | 'logs' | 'audit' = 'diff'): void {
+  public openReportModal(tab: 'diff' | 'plan' | 'logs' | 'audit' = 'diff'): void {
     this.activeReportTabSubject.next(tab);
     this.showReportModalSubject.next(true);
   }
 
-  closeReportModal(): void {
+  public closeReportModal(): void {
     this.showReportModalSubject.next(false);
   }
 
-  openNewRequestModal(): void {
-    this.showNewRequestModalSubject.next(true);
-  }
-
-  closeNewRequestModal(): void {
-    this.showNewRequestModalSubject.next(false);
+  public setReportTab(tab: 'diff' | 'plan' | 'logs' | 'audit'): void {
+    this.activeReportTabSubject.next(tab);
   }
 }

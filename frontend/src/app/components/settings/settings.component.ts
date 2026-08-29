@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { WorkflowStateService } from '../../services/workflow-state.service';
@@ -11,13 +11,18 @@ import { NotificationService } from '../../services/notification.service';
   templateUrl: './settings.component.html',
   styleUrls: ['./settings.component.css']
 })
-export class SettingsComponent {
+export class SettingsComponent implements OnInit {
   constructor(
     public state: WorkflowStateService,
     private notifService: NotificationService
   ) {}
 
+  ngOnInit(): void {
+    this.state.loadSystemConfig();
+  }
+
   save(): void {
-    this.notifService.addNotification('Settings Saved', 'Platform configuration updated successfully.', 'success');
+    this.state.loadSystemConfig();
+    this.notifService.addNotification('Settings Synchronized', 'Platform environment configuration verified.', 'success');
   }
 }

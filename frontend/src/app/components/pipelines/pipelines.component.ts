@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { WorkflowStateService } from '../../services/workflow-state.service';
 import { WorkflowStage } from '../../models';
@@ -10,11 +10,15 @@ import { WorkflowStage } from '../../models';
   templateUrl: './pipelines.component.html',
   styleUrls: ['./pipelines.component.css']
 })
-export class PipelinesComponent {
+export class PipelinesComponent implements OnInit {
   constructor(public state: WorkflowStateService) {}
 
+  ngOnInit(): void {
+    this.state.loadPipelines();
+  }
+
   trigger(): void {
-    this.state.runWorkflow();
+    this.state.executeWorkflow();
   }
 
   getStageStatus(stageKey: WorkflowStage, result: any, isRunning: boolean): 'completed' | 'current' | 'failed' | 'pending' {
