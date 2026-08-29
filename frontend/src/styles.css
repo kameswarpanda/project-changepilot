@@ -1,45 +1,83 @@
 /* ==============================================================================
-   ChangePilot Core Design System Styles (DESIGN.md & Stitch Specs)
+   ChangePilot Core Design System Styles (Dark & Light Mode Architecture)
    ============================================================================== */
 
 :root {
-  --surface: #10131a;
-  --surface-container-lowest: #0b0e14;
-  --surface-container-low: #161b22;
-  --surface-container: #1d2026;
-  --surface-container-high: #272a31;
-  --surface-container-highest: #32353c;
-  
-  --on-surface: #e1e2eb;
-  --on-surface-variant: #908fa0;
-  --outline: #908fa0;
-  --outline-variant: #30363d;
-  
-  --primary: #c0c1ff;
-  --primary-container: #8083ff;
-  --inverse-primary: #494bd6;
-  
-  --secondary: #4edea3;
-  --secondary-container: #00a572;
-  
-  --tertiary: #ffb783;
-  --tertiary-container: #d97721;
-  
-  --error: #ffb4ab;
-  --error-container: #93000a;
+  /* Default Dark Mode Surface & Text Tokens */
+  --bg-app: #0B0E14;
+  --bg-sidebar: #161B22;
+  --bg-topbar: #10131a;
+  --bg-card: #161B22;
+  --bg-card-header: #1d2026;
+  --bg-input: #10131a;
+  --bg-table-header: #10131a;
+  --bg-table-hover: #1d2026;
+  --bg-code: #0B0E14;
+  --bg-dropdown: #1C2128;
+
+  --border-color: #30363D;
+  --border-subtle: #21262d;
+  --border-focus: #8083ff;
+
+  --text-primary: #e1e2eb;
+  --text-secondary: #908fa0;
+  --text-muted: #6e7681;
+  --text-accent: #c0c1ff;
+
+  --brand-primary: #494bd6;
+  --brand-hover: #8083ff;
+  --brand-text: #ffffff;
+
+  --status-success: #4edea3;
+  --status-warning: #ffb783;
+  --status-error: #ffb4ab;
+  --status-info: #38BDF8;
+}
+
+html.light, body.light-theme {
+  /* Clean GitHub/Stitch Light Theme Tokens */
+  --bg-app: #f6f8fa;
+  --bg-sidebar: #ffffff;
+  --bg-topbar: #ffffff;
+  --bg-card: #ffffff;
+  --bg-card-header: #f6f8fa;
+  --bg-input: #ffffff;
+  --bg-table-header: #f6f8fa;
+  --bg-table-hover: #f3f4f6;
+  --bg-code: #f6f8fa;
+  --bg-dropdown: #ffffff;
+
+  --border-color: #d0d7de;
+  --border-subtle: #eaeef2;
+  --border-focus: #494bd6;
+
+  --text-primary: #1f2328;
+  --text-secondary: #57606a;
+  --text-muted: #8c959f;
+  --text-accent: #3b43db;
+
+  --brand-primary: #494bd6;
+  --brand-hover: #3b43db;
+  --brand-text: #ffffff;
+
+  --status-success: #1a7f37;
+  --status-warning: #9a6700;
+  --status-error: #cf222e;
+  --status-info: #0969da;
 }
 
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
 
 html, body {
   height: 100%;
   width: 100%;
-  background-color: #0b0e14;
-  color: #e1e2eb;
+  background-color: var(--bg-app);
+  color: var(--text-primary);
   font-family: 'Inter', sans-serif;
   font-size: 14px;
   line-height: 1.4;
@@ -77,14 +115,26 @@ html, body {
 .font-code-sm { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 400; line-height: 16px; }
 .font-label-caps { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; line-height: 12px; letter-spacing: 0.05em; text-transform: uppercase; }
 
-/* Structural Levels */
-.level-0 { background-color: #0b0e14; }
-.level-1 { background-color: #161b22; border: 1px solid #30363d; }
-.level-2 { background-color: #1d2026; border: 1px solid #30363d; }
+/* Dynamic Theme Surface & Class Mapping */
+html.light .bg-\[\#0B0E14\], html.light .bg-\[\#0b0e14\] { background-color: var(--bg-app) !important; }
+html.light .bg-\[\#161B22\], html.light .bg-\[\#161b22\] { background-color: var(--bg-card) !important; }
+html.light .bg-\[\#10131a\], html.light .bg-\[\#10131A\] { background-color: var(--bg-input) !important; }
+html.light .bg-\[\#1d2026\], html.light .bg-\[\#1D2026\] { background-color: var(--bg-card-header) !important; }
+html.light .bg-\[\#272a31\], html.light .bg-\[\#21262d\] { background-color: var(--bg-card-header) !important; }
+html.light .bg-\[\#1C2128\], html.light .bg-\[\#1c2128\] { background-color: var(--bg-dropdown) !important; }
 
-/* Table and Row interactions */
-.table-row-hover:hover {
-  background-color: #1d2026;
+html.light .border-\[\#30363D\], html.light .border-\[\#30363d\] { border-color: var(--border-color) !important; }
+html.light .border-\[\#464554\] { border-color: var(--border-color) !important; }
+
+html.light .text-\[\#e1e2eb\] { color: var(--text-primary) !important; }
+html.light .text-\[\#908fa0\] { color: var(--text-secondary) !important; }
+html.light .text-\[\#c7c4d7\] { color: var(--text-secondary) !important; }
+html.light .text-\[\#c0c1ff\] { color: var(--brand-primary) !important; }
+
+html.light input, html.light textarea, html.light select {
+  background-color: var(--bg-input) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
 }
 
 /* Spinner Animation */
@@ -101,12 +151,12 @@ html, body {
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #0b0e14;
+  background: var(--bg-app);
 }
 ::-webkit-scrollbar-thumb {
-  background: #30363d;
+  background: var(--border-color);
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #908fa0;
+  background: var(--text-secondary);
 }

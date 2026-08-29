@@ -34,10 +34,13 @@ class Settings(BaseSettings):
     github_client_id: Optional[str] = Field(default=None, alias="GITHUB_CLIENT_ID")
     github_client_secret: Optional[str] = Field(default=None, alias="GITHUB_CLIENT_SECRET")
 
-    # GitHub App Integration
+    # Repository Provider Access (GitHub, Azure DevOps, Jira)
+    github_token: Optional[str] = Field(default=None, alias="GITHUB_TOKEN", description="Personal Access Token or GitHub App Token")
     github_app_id: Optional[str] = Field(default=None, alias="GITHUB_APP_ID")
     github_app_private_key: Optional[str] = Field(default=None, alias="GITHUB_APP_PRIVATE_KEY")
     github_app_installation_id: Optional[str] = Field(default=None, alias="GITHUB_APP_INSTALLATION_ID")
+    azure_devops_token: Optional[str] = Field(default=None, alias="AZURE_DEVOPS_TOKEN")
+    jira_api_token: Optional[str] = Field(default=None, alias="JIRA_API_TOKEN")
 
     # Database Configuration (SQLite default for zero-config local/test, PostgreSQL in production)
     database_url: str = Field(
@@ -47,7 +50,6 @@ class Settings(BaseSettings):
     )
 
     # Vertex AI / Google GenAI Configuration
-    # Uses ADC (Application Default Credentials) by default
     google_genai_use_vertexai: bool = Field(default=True, alias="GOOGLE_GENAI_USE_VERTEXAI")
     google_cloud_project: Optional[str] = Field(default=None, alias="GOOGLE_CLOUD_PROJECT")
     google_cloud_location: str = Field(default="global", alias="GOOGLE_CLOUD_LOCATION")

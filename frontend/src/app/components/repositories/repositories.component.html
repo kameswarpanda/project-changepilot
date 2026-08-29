@@ -3,7 +3,7 @@
   <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
     <div>
       <h2 class="font-display-lg text-2xl font-bold text-[#e1e2eb]">Repositories</h2>
-      <p class="font-body-md text-xs text-[#908fa0] mt-1">Manage connected codebases monitored by ChangePilot via GitHub App.</p>
+      <p class="font-body-md text-xs text-[#908fa0] mt-1">Manage connected codebases monitored by ChangePilot via GitHub App, Azure DevOps, and Jira integrations.</p>
     </div>
     <div class="flex items-center gap-3">
       <button (click)="openConnectModal()" class="bg-[#494bd6] text-white font-semibold text-xs px-4 py-2 rounded-md hover:bg-[#8083ff] hover:text-[#0d0096] transition-colors flex items-center gap-2 shadow-sm">
@@ -22,10 +22,11 @@
     <!-- Toolbar -->
     <div class="p-4 border-b border-[#30363D] bg-[#1d2026] flex flex-col sm:flex-row gap-4 items-center justify-between">
       <div class="flex items-center gap-2 text-xs text-[#908fa0]">
-        <span>Connected Repositories (GitHub App Authorized)</span>
+        <span class="material-symbols-outlined text-[#4edea3] text-[16px]">verified</span>
+        <span>Connected Repositories & CI/CD Pipelines</span>
       </div>
       <div class="text-xs text-[#908fa0]">
-        <span>Sandbox isolation enabled for all branch operations.</span>
+        <span>Isolated sandbox branches created per change story.</span>
       </div>
     </div>
 
@@ -34,7 +35,7 @@
       <table class="w-full text-left border-collapse text-xs">
         <thead>
           <tr class="border-b border-[#30363D] bg-[#10131a]">
-            <th class="font-label-caps text-[#908fa0] py-3 px-4 w-[30%]">NAME</th>
+            <th class="font-label-caps text-[#908fa0] py-3 px-4 w-[30%]">NAME & PROVIDER</th>
             <th class="font-label-caps text-[#908fa0] py-3 px-4">LOCATION / ACCESS</th>
             <th class="font-label-caps text-[#908fa0] py-3 px-4">LANGUAGE / RUNNER</th>
             <th class="font-label-caps text-[#908fa0] py-3 px-4">DISCOVERED BRANCHES</th>
@@ -101,26 +102,38 @@
       </div>
 
       <div class="space-y-4 text-xs">
+        <!-- Provider Selection Pills -->
         <div>
-          <label class="font-title-sm text-xs text-[#908fa0] mb-1 block">Provider</label>
-          <div class="flex bg-[#10131a] rounded p-1 border border-[#30363D]">
-            <button (click)="connectProvider = 'github'" [ngClass]="connectProvider === 'github' ? 'bg-[#494bd6] text-white font-semibold' : 'text-[#908fa0]'" class="flex-1 py-1.5 rounded transition-colors flex items-center justify-center gap-1.5">
-              <span>GitHub App</span>
+          <label class="font-title-sm text-xs text-[#908fa0] mb-1.5 block">Repository Provider</label>
+          <div class="grid grid-cols-4 gap-1.5 bg-[#10131a] rounded p-1 border border-[#30363D]">
+            <button (click)="onProviderChange('github')" [ngClass]="connectProvider === 'github' ? 'bg-[#494bd6] text-white font-semibold' : 'text-[#908fa0]'" class="py-1.5 rounded transition-colors text-center">
+              GitHub
             </button>
-            <button (click)="connectProvider = 'local'" [ngClass]="connectProvider === 'local' ? 'bg-[#494bd6] text-white font-semibold' : 'text-[#908fa0]'" class="flex-1 py-1.5 rounded transition-colors flex items-center justify-center gap-1.5">
-              <span>Local Repo</span>
+            <button (click)="onProviderChange('azure_devops')" [ngClass]="connectProvider === 'azure_devops' ? 'bg-[#494bd6] text-white font-semibold' : 'text-[#908fa0]'" class="py-1.5 rounded transition-colors text-center">
+              Azure DevOps
+            </button>
+            <button (click)="onProviderChange('jira')" [ngClass]="connectProvider === 'jira' ? 'bg-[#494bd6] text-white font-semibold' : 'text-[#908fa0]'" class="py-1.5 rounded transition-colors text-center">
+              GitLab / Jira
+            </button>
+            <button (click)="onProviderChange('local')" [ngClass]="connectProvider === 'local' ? 'bg-[#494bd6] text-white font-semibold' : 'text-[#908fa0]'" class="py-1.5 rounded transition-colors text-center">
+              Local Repo
             </button>
           </div>
         </div>
 
         <div>
-          <label class="font-title-sm text-xs text-[#908fa0] mb-1 block">Repository Identifier / Path</label>
-          <input type="text" [(ngModel)]="connectRepoName" placeholder="e.g. company/payment-service or demo_repo" class="w-full bg-[#10131a] border border-[#30363D] rounded-md px-3 py-2 text-[#e1e2eb] font-mono text-xs focus:outline-none focus:border-[#8083ff]">
+          <label class="font-title-sm text-xs text-[#908fa0] mb-1 block">Repository Identifier / Clone URL</label>
+          <input type="text" [(ngModel)]="connectRepoName" placeholder="e.g. kameswarpanda/project-changepilot or https://github.com/org/repo.git" class="w-full bg-[#10131a] border border-[#30363D] rounded-md px-3 py-2 text-[#e1e2eb] font-mono text-xs focus:outline-none focus:border-[#8083ff]">
+        </div>
+
+        <div>
+          <label class="font-title-sm text-xs text-[#908fa0] mb-1 block">Access Token / PAT (Optional if set in .env)</label>
+          <input type="password" [(ngModel)]="connectToken" placeholder="ghp_... or DevOps PAT (stored locally in session)" class="w-full bg-[#10131a] border border-[#30363D] rounded-md px-3 py-2 text-[#e1e2eb] font-mono text-xs focus:outline-none focus:border-[#8083ff]">
         </div>
 
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="font-title-sm text-xs text-[#908fa0] mb-1 block">Base Branch</label>
+            <label class="font-title-sm text-xs text-[#908fa0] mb-1 block">Base Target Branch</label>
             <select [(ngModel)]="connectBaseBranch" class="w-full bg-[#10131a] border border-[#30363D] rounded-md px-3 py-2 text-[#e1e2eb] font-mono text-xs focus:outline-none focus:border-[#8083ff]">
               <option value="main">main</option>
               <option value="develop">develop</option>
@@ -131,23 +144,28 @@
           <div>
             <label class="font-title-sm text-xs text-[#908fa0] mb-1 block">Visibility</label>
             <select [(ngModel)]="connectIsPrivate" class="w-full bg-[#10131a] border border-[#30363D] rounded-md px-3 py-2 text-[#e1e2eb] text-xs focus:outline-none focus:border-[#8083ff]">
-              <option [ngValue]="false">Public</option>
               <option [ngValue]="true">Private</option>
+              <option [ngValue]="false">Public</option>
             </select>
           </div>
         </div>
 
         <div class="bg-[#10131a] p-3 rounded border border-[#30363D] text-[11px] text-[#908fa0] space-y-1">
-          <div class="text-[#e1e2eb] font-semibold">Permissions:</div>
-          <div>• Repository metadata: <strong>Read</strong></div>
-          <div>• Repository contents & branches: <strong>Read/Write</strong></div>
-          <div>• Pull Requests: <strong>Read/Write</strong></div>
+          <div class="text-[#e1e2eb] font-semibold flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-[#4edea3] text-[14px]">shield</span>
+            <span>Automated Operations Granted:</span>
+          </div>
+          <div>• Remote clone into isolated workspace sandbox</div>
+          <div>• Dynamic branch creation: <code class="text-[#38BDF8]">changepilot/&lt;story-id&gt;-&lt;slug&gt;</code></div>
+          <div>• Automated Git commit & Pull Request generation</div>
         </div>
       </div>
 
       <div class="flex justify-end gap-3 pt-3 border-t border-[#30363D]">
         <button (click)="closeConnectModal()" class="px-4 py-2 rounded border border-[#30363D] text-[#e1e2eb] text-xs hover:bg-[#272a31]">Cancel</button>
-        <button (click)="submitConnect()" class="px-5 py-2 rounded bg-[#494bd6] text-white font-semibold text-xs hover:bg-[#8083ff] hover:text-[#0d0096]">Connect Repository</button>
+        <button (click)="submitConnect()" class="px-5 py-2 rounded bg-[#494bd6] text-white font-semibold text-xs hover:bg-[#8083ff] hover:text-[#0d0096]">
+          {{ isLoading ? 'Connecting...' : 'Connect Repository' }}
+        </button>
       </div>
     </div>
   </div>

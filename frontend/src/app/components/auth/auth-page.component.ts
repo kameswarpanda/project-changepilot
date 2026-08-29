@@ -1,4 +1,4 @@
-import { Component, OnInit, AfterViewInit, NgZone } from '@angular/core';
+import { Component, OnInit, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
@@ -12,7 +12,7 @@ declare const google: any;
   templateUrl: './auth-page.component.html',
   styleUrls: ['./auth-page.component.css']
 })
-export class AuthPageComponent implements OnInit, AfterViewInit {
+export class AuthPageComponent implements OnInit {
   authMode: 'signin' | 'signup' = 'signin';
 
   // Sign In form
@@ -27,7 +27,6 @@ export class AuthPageComponent implements OnInit, AfterViewInit {
 
   // Google OAuth Client ID
   googleClientId = '189200132893-bigtbq45b7hupbhqpg44u517g42svhrm.apps.googleusercontent.com';
-  googleEmail = 'developer@google.com';
 
   isLoading = false;
   errorMessage: string | null = null;
@@ -38,9 +37,7 @@ export class AuthPageComponent implements OnInit, AfterViewInit {
     private ngZone: NgZone
   ) {}
 
-  ngOnInit(): void {}
-
-  ngAfterViewInit(): void {
+  ngOnInit(): void {
     this.initGoogleIdentity();
   }
 
@@ -53,19 +50,6 @@ export class AuthPageComponent implements OnInit, AfterViewInit {
           auto_select: false,
           cancel_on_tap_outside: true
         });
-
-        const btnElement = document.getElementById('google-btn-render');
-        if (btnElement) {
-          google.accounts.id.renderButton(btnElement, {
-            theme: 'outline',
-            size: 'large',
-            type: 'standard',
-            text: 'continue_with',
-            shape: 'rectangular',
-            logo_alignment: 'left',
-            width: 384
-          });
-        }
       } catch (e) {
         console.warn('Google Identity initialization notice:', e);
       }
@@ -99,13 +83,11 @@ export class AuthPageComponent implements OnInit, AfterViewInit {
     this.isLoading = true;
     this.errorMessage = null;
 
-    // If Google Identity prompt is available, try invoking it
     if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
       try {
         google.accounts.id.prompt((notification: any) => {
           this.ngZone.run(() => {
             if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-              // Fallback to direct instant Google sign-in
               this.executeGoogleDirectLogin();
             }
           });

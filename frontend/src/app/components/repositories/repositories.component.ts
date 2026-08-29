@@ -18,10 +18,12 @@ export class RepositoriesComponent {
 
   // Connect Modal State
   showConnectModal = false;
-  connectProvider = 'github';
-  connectRepoName = 'company/payment-service';
-  connectBaseBranch = 'develop';
-  connectIsPrivate = false;
+  connectProvider: 'github' | 'azure_devops' | 'jira' | 'local' = 'github';
+  connectRepoName = 'kameswarpanda/project-changepilot';
+  connectToken = '';
+  connectBaseBranch = 'main';
+  connectIsPrivate = true;
+  isLoading = false;
 
   constructor(public state: WorkflowStateService) {
     this.filteredRepos$ = combineLatest([
@@ -48,14 +50,31 @@ export class RepositoriesComponent {
     this.showConnectModal = false;
   }
 
+  onProviderChange(provider: 'github' | 'azure_devops' | 'jira' | 'local'): void {
+    this.connectProvider = provider;
+    if (provider === 'github') {
+      this.connectRepoName = 'kameswarpanda/project-changepilot';
+    } else if (provider === 'azure_devops') {
+      this.connectRepoName = 'https://dev.azure.com/org/project/_git/repo';
+    } else if (provider === 'jira') {
+      this.connectRepoName = 'https://gitlab.com/group/project';
+    } else {
+      this.connectRepoName = 'demo_repo';
+    }
+  }
+
   submitConnect(): void {
     if (!this.connectRepoName.trim()) return;
+    this.isLoading = true;
+
     this.state.connectNewRepository(
-      this.connectRepoName,
+      this.connectRepoName.trim(),
       this.connectProvider,
       this.connectBaseBranch,
       this.connectIsPrivate
     );
+
+    this.isLoading = false;
     this.showConnectModal = false;
   }
 
