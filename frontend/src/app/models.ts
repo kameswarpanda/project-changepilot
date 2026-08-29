@@ -117,3 +117,34 @@ export interface HealthResponse {
   vertex_ai_configured: boolean;
   version: string;
 }
+
+export interface AppNotification {
+  id: string;
+  title: string;
+  message: string;
+  type: 'success' | 'info' | 'warning' | 'error';
+  timestamp: string;
+  read: boolean;
+  storyId?: string;
+}
+
+export interface StoryTemplate {
+  id: string;
+  title: string;
+  category: string;
+  description: string;
+  storyId: string;
+  repoLocation: string;
+  impactLevel: 'Low' | 'Medium' | 'High' | 'Critical';
+  tags: string[];
+}
+
+export interface ConnectedRepo {
+  name: string;
+  path: string;
+  language: string;
+  testRunner: string;
+  fileCount: number;
+  lastChecked: string;
+  status: 'Ready' | 'Needs Inspection';
+}

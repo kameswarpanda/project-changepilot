@@ -1,51 +1,78 @@
 /* ==============================================================================
-   ChangePilot Design Tokens & Global Styles (Exact Reference Match)
+   ChangePilot Global Themes (Dark & Light) & Design Tokens
    ============================================================================== */
 
 :root {
-  /* Color Palette Tokens from Design Spec */
+  /* Common Brand Accents */
   --color-primary: #7C4DFF;
   --color-primary-hover: #6c3bee;
-  --color-primary-glow: rgba(124, 77, 255, 0.4);
+  --color-primary-glow: rgba(124, 77, 255, 0.35);
 
   --color-secondary: #00D4FF;
-  --color-secondary-glow: rgba(0, 212, 255, 0.4);
+  --color-secondary-glow: rgba(0, 212, 255, 0.35);
 
   --color-success: #10B981;
-  --color-success-glow: rgba(16, 185, 129, 0.4);
+  --color-success-glow: rgba(16, 185, 129, 0.35);
 
   --color-warning: #F59E0B;
-  --color-warning-glow: rgba(245, 158, 11, 0.4);
+  --color-warning-glow: rgba(245, 158, 11, 0.35);
 
   --color-danger: #EF4444;
-  --color-danger-glow: rgba(239, 68, 68, 0.4);
+  --color-danger-glow: rgba(239, 68, 68, 0.35);
 
   --color-info: #6366F1;
-  --color-info-glow: rgba(99, 102, 241, 0.4);
+  --color-info-glow: rgba(99, 102, 241, 0.35);
 
-  --color-dark-bg: #0B0F19;
-  --color-card-bg: #121827;
-  --color-card-surface: #172033;
+  /* Dark Theme Tokens (Default) */
+  --color-bg-root: #0B0F19;
+  --color-bg-sidebar: #0D121F;
+  --color-bg-header: rgba(11, 15, 25, 0.85);
+  --color-bg-card: rgba(18, 24, 39, 0.85);
+  --color-bg-card-hover: rgba(26, 34, 54, 0.95);
+  --color-bg-input: #0B0F19;
+  --color-bg-modal: #0F172A;
   --color-border: #1F2937;
+  --color-border-subtle: rgba(255, 255, 255, 0.07);
   --color-border-hover: #374151;
 
   --color-text-primary: #F9FAFB;
   --color-text-secondary: #9CA3AF;
   --color-text-muted: #6B7280;
+  --color-code-bg: #070A10;
 
-  --font-family-base: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-family-base: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-family-mono: 'Fira Code', 'JetBrains Mono', monospace;
+}
+
+/* Light Theme Tokens */
+body.light-theme {
+  --color-bg-root: #F8FAFC;
+  --color-bg-sidebar: #FFFFFF;
+  --color-bg-header: rgba(255, 255, 255, 0.9);
+  --color-bg-card: #FFFFFF;
+  --color-bg-card-hover: #F1F5F9;
+  --color-bg-input: #F8FAFC;
+  --color-bg-modal: #FFFFFF;
+  --color-border: #E2E8F0;
+  --color-border-subtle: rgba(0, 0, 0, 0.06);
+  --color-border-hover: #CBD5E1;
+
+  --color-text-primary: #0F172A;
+  --color-text-secondary: #475569;
+  --color-text-muted: #94A3B8;
+  --color-code-bg: #F1F5F9;
 }
 
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.15s ease;
 }
 
 html, body {
   height: 100%;
-  background-color: var(--color-dark-bg);
+  background-color: var(--color-bg-root);
   color: var(--color-text-primary);
   font-family: var(--font-family-base);
   -webkit-font-smoothing: antialiased;
@@ -59,36 +86,35 @@ html, body {
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--color-dark-bg);
+  background: var(--color-bg-root);
 }
 ::-webkit-scrollbar-thumb {
-  background: #1F2937;
+  background: var(--color-border);
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #374151;
+  background: var(--color-border-hover);
 }
 
 /* Glassmorphism & Soft Glow Shadows */
 .glass-card {
-  background: rgba(18, 24, 39, 0.85);
+  background: var(--color-bg-card);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--color-border);
   border-radius: 16px;
-  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.2);
 }
 
 .glass-card:hover {
-  border-color: rgba(124, 77, 255, 0.3);
-  box-shadow: 0 15px 35px -10px rgba(0, 0, 0, 0.6), 0 0 20px -5px var(--color-primary-glow);
+  border-color: rgba(124, 77, 255, 0.4);
+  box-shadow: 0 15px 35px -10px rgba(0, 0, 0, 0.3), 0 0 20px -5px var(--color-primary-glow);
 }
 
-/* Gradient Primary Action Button */
+/* Primary Action Gradient Button */
 .btn-primary-gradient {
   background: linear-gradient(135deg, #7C4DFF 0%, #00D4FF 100%);
-  color: #FFFFFF;
+  color: #FFFFFF !important;
   font-weight: 600;
   border: none;
   border-radius: 10px;
@@ -116,7 +142,7 @@ html, body {
 
 .badge-primary {
   background: rgba(124, 77, 255, 0.15);
-  color: #A78BFA;
+  color: var(--color-primary);
   border: 1px solid rgba(124, 77, 255, 0.3);
 }
 
