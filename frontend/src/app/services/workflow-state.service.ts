@@ -57,18 +57,16 @@ export class WorkflowStateService {
   public searchQuery$: Observable<string> = this.searchQuerySubject.asObservable();
 
   // Active Story Configuration
-  public storyIdSubject = new BehaviorSubject<string>('CP-1042');
+  public storyIdSubject = new BehaviorSubject<string>('');
   public storyId$: Observable<string> = this.storyIdSubject.asObservable();
 
-  public titleSubject = new BehaviorSubject<string>('Add Percentage Discount Rule to Calculator Engine');
+  public titleSubject = new BehaviorSubject<string>('');
   public title$: Observable<string> = this.titleSubject.asObservable();
 
-  public descriptionSubject = new BehaviorSubject<string>(
-    'Implement apply_discount(total, percent) method with validation that percentage is between 0 and 100.'
-  );
+  public descriptionSubject = new BehaviorSubject<string>('');
   public description$: Observable<string> = this.descriptionSubject.asObservable();
 
-  public repoLocationSubject = new BehaviorSubject<string>('project-changepilot');
+  public repoLocationSubject = new BehaviorSubject<string>('');
   public repoLocation$: Observable<string> = this.repoLocationSubject.asObservable();
 
   public baseBranchSubject = new BehaviorSubject<string>('main');

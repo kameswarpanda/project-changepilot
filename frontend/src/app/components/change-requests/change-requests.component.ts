@@ -13,10 +13,10 @@ import { ExecutionMode } from '../../models';
   styleUrls: ['./change-requests.component.css']
 })
 export class ChangeRequestsComponent implements OnInit {
-  ticketId = 'CP-1042';
-  changeTitle = 'Add Percentage Discount Rule to Calculator Engine';
-  requirements = 'Implement apply_discount(total, percent) method with validation that percentage is between 0 and 100.';
-  repository = 'project-changepilot';
+  ticketId = '';
+  changeTitle = '';
+  requirements = '';
+  repository = '';
   branch = 'main';
   executionMode: ExecutionMode = 'BRANCH_COMMIT_PR';
 

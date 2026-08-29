@@ -1,15 +1,24 @@
 """Tests for GitHub App repository/branch discovery and pull request creation."""
+from unittest.mock import MagicMock, patch
 from backend.src.repository.github_app import GitHubAppClient
 
 
 def test_github_app_repository_discovery():
-    """Verifies repository discovery returns sanitized repository metadata."""
-    client = GitHubAppClient()
-    repos = client.list_repositories()
-    assert len(repos) >= 2
-    repo_ids = [r["id"] for r in repos]
-    assert "calculator-service" in repo_ids
-    assert "payment-service" in repo_ids
+    """Verifies repository discovery returns sanitized repository metadata when token provided."""
+    client = GitHubAppClient(token="ghp_mocktoken123")
+    mock_resp = MagicMock()
+    mock_resp.status_code = 200
+    mock_resp.json.return_value = [
+        {"name": "calculator-service", "full_name": "company/calculator-service", "default_branch": "main", "private": False},
+        {"name": "payment-service", "full_name": "company/payment-service", "default_branch": "develop", "private": True}
+    ]
+
+    with patch("httpx.Client.get", return_value=mock_resp):
+        repos = client.list_repositories()
+        assert len(repos) >= 2
+        repo_ids = [r["id"] for r in repos]
+        assert "calculator-service" in repo_ids
+        assert "payment-service" in repo_ids
 
 
 def test_github_app_branch_discovery():

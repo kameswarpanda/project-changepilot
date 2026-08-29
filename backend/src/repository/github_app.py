@@ -25,10 +25,10 @@ class PullRequestInfo(BaseModel):
 class GitHubAppClient:
     """Handles GitHub App / Personal Token authorization, repo discovery, branch listing, and PR creation."""
 
-    def __init__(self):
-        self.token = settings.github_token
-        self.app_id = settings.github_app_id
-        self.installation_id = settings.github_app_installation_id
+    def __init__(self, token: Optional[str] = None, app_id: Optional[str] = None, installation_id: Optional[str] = None):
+        self.token = token or settings.github_token
+        self.app_id = app_id or settings.github_app_id
+        self.installation_id = installation_id or settings.github_app_installation_id
 
     def list_repositories(self, user_id: Optional[str] = None) -> List[dict]:
         """Lists connected GitHub repositories accessible via GitHub App / Token or workspace cache."""
@@ -63,39 +63,8 @@ class GitHubAppClient:
             except Exception as e:
                 logger.warning(f"Live GitHub API repo fetch warning (falling back to workspace list): {e}")
 
-        # 2. Default standard and stage repository list
-        return [
-            {
-                "id": "calculator-service",
-                "name": "calculator-service",
-                "full_name": "company/calculator-service",
-                "default_branch": "main",
-                "language": "Python",
-                "is_private": False,
-                "access": "WRITE",
-                "branches": ["main", "develop", "feature/discounts"]
-            },
-            {
-                "id": "payment-service",
-                "name": "payment-service",
-                "full_name": "company/payment-service",
-                "default_branch": "develop",
-                "language": "Go",
-                "is_private": True,
-                "access": "WRITE",
-                "branches": ["main", "develop", "staging"]
-            },
-            {
-                "id": "demo_repo",
-                "name": "demo_repo (Calculator Demo)",
-                "full_name": "local/demo_repo",
-                "default_branch": "main",
-                "language": "Python",
-                "is_private": False,
-                "access": "WRITE",
-                "branches": ["main", "develop"]
-            }
-        ]
+        # If no GitHub token is configured, return empty list (user can import via Public Git URL)
+        return []
 
     def list_branches(self, repository_name: str) -> List[str]:
         """Discovers branches for a given repository via live GitHub API or workspace topology."""

@@ -10,28 +10,11 @@ export class NotificationService {
   private notificationsSubject = new BehaviorSubject<AppNotification[]>([
     {
       id: 'notif-1',
-      title: 'Pipeline CP-DEMO-1 Passed',
-      message: 'Autonomous change verified with 100% test pass rate in 3.36s.',
+      title: 'Deterministic Safety Active',
+      message: 'Workspace isolation and 9-stage validation gates active in fail-closed mode.',
       type: 'success',
-      timestamp: '2 mins ago',
-      read: false,
-      storyId: 'CP-DEMO-1'
-    },
-    {
-      id: 'notif-2',
-      title: 'Repository Analyzed',
-      message: 'demo_repo analyzed successfully (Python 3, pytest, 4 files).',
-      type: 'info',
-      timestamp: '15 mins ago',
+      timestamp: 'Just now',
       read: false
-    },
-    {
-      id: 'notif-3',
-      title: 'Deterministic Gates Active',
-      message: 'Security, Plan, and Patch Consistency validators active in fail-closed mode.',
-      type: 'info',
-      timestamp: '1 hour ago',
-      read: true
     }
   ]);
 

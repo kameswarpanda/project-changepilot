@@ -29,7 +29,7 @@ export class RepositoriesComponent implements OnInit {
   isLoadingPlatformRepos = false;
 
   // Public Git URL input
-  publicGitUrl = 'https://github.com/kameswarpanda/project-changepilot.git';
+  publicGitUrl = '';
   publicBaseBranch = 'main';
 
   isLoading = false;
