@@ -1,0 +1,76 @@
+<section class="metrics-grid">
+  <!-- Card 1: Total Pipelines -->
+  <div class="metric-card">
+    <div class="metric-header">
+      <span class="metric-label">Total Pipelines</span>
+      <div class="metric-icon-box icon-purple">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+      </div>
+    </div>
+    <div class="metric-value">{{ totalPipelines$ | async }}</div>
+    <div class="metric-trend trend-up">
+      <span class="trend-arrow">▲</span>
+      <span>+12% vs last week</span>
+    </div>
+  </div>
+
+  <!-- Card 2: Success Rate -->
+  <div class="metric-card">
+    <div class="metric-header">
+      <span class="metric-label">Success Rate</span>
+      <div class="metric-icon-box icon-cyan">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+      </div>
+    </div>
+    <div class="metric-value">{{ successRate$ | async }}</div>
+    <div class="metric-trend trend-up">
+      <span class="trend-arrow">▲</span>
+      <span>+4.2% vs last week</span>
+    </div>
+  </div>
+
+  <!-- Card 3: Avg. Duration -->
+  <div class="metric-card">
+    <div class="metric-header">
+      <span class="metric-label">Avg. Duration</span>
+      <div class="metric-icon-box icon-green">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      </div>
+    </div>
+    <div class="metric-value">{{ avgDuration$ | async }}</div>
+    <div class="metric-trend trend-down">
+      <span class="trend-arrow">▼</span>
+      <span>1.2s vs baseline</span>
+    </div>
+  </div>
+
+  <!-- Card 4: Tests Passed -->
+  <div class="metric-card">
+    <div class="metric-header">
+      <span class="metric-label">Tests Passed</span>
+      <div class="metric-icon-box icon-orange">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+      </div>
+    </div>
+    <div class="metric-value">{{ testsPassed$ | async }}</div>
+    <div class="metric-trend trend-up">
+      <span class="trend-arrow">▲</span>
+      <span>+18 vs last week</span>
+    </div>
+  </div>
+
+  <!-- Card 5: Active Repos -->
+  <div class="metric-card">
+    <div class="metric-header">
+      <span class="metric-label">Active Repos</span>
+      <div class="metric-icon-box icon-pink">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z"/></svg>
+      </div>
+    </div>
+    <div class="metric-value">{{ activeRepos$ | async }}</div>
+    <div class="metric-trend trend-up">
+      <span class="trend-arrow">▲</span>
+      <span>+2 connected</span>
+    </div>
+  </div>
+</section>

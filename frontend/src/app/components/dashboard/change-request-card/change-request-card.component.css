@@ -1,0 +1,81 @@
+.dashboard-widget-card {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  min-height: 270px;
+}
+
+.widget-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.widget-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.preset-pill {
+  background: var(--color-border-subtle);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+  font-size: 0.68rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.preset-pill:hover {
+  color: var(--color-text-primary);
+  border-color: var(--color-primary);
+}
+
+.preset-highlight {
+  background: rgba(124, 77, 255, 0.15);
+  border-color: rgba(124, 77, 255, 0.4);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.widget-content {
+  flex: 1;
+}
+
+.detail-label {
+  display: block;
+  font-size: 0.68rem;
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+
+.detail-val-mono {
+  font-family: var(--font-family-mono);
+  font-size: 0.78rem;
+  color: var(--color-primary);
+  font-weight: 600;
+  margin-top: 0.1rem;
+}
+
+.detail-val-text {
+  font-size: 0.78rem;
+  color: var(--color-text-primary);
+  line-height: 1.35;
+  margin-top: 0.1rem;
+}
+
+.github-badge {
+  font-size: 0.65rem;
+  background-color: var(--color-border);
+  color: var(--color-text-secondary);
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+}
+
+.widget-footer {
+  margin-top: auto;
+  padding-top: 0.85rem;
+}

@@ -1,0 +1,98 @@
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 1.5rem;
+}
+
+.modal-content {
+  width: 100%;
+  max-width: 860px;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background-color: var(--color-bg-modal);
+  border: 1px solid var(--color-border);
+  border-radius: 18px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+}
+
+.modal-header {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.close-modal-btn {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+.close-modal-btn:hover {
+  color: var(--color-text-primary);
+}
+
+.modal-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--color-border);
+  background-color: var(--color-border-subtle);
+  padding: 0 1rem;
+}
+
+.tab-btn {
+  padding: 0.85rem 1rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tab-btn:hover {
+  color: var(--color-text-primary);
+}
+
+.tab-btn.tab-active {
+  color: var(--color-secondary);
+  border-bottom-color: var(--color-secondary);
+}
+
+.modal-tab-body {
+  padding: 1.5rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.diff-container, .logs-container {
+  background-color: var(--color-code-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 1rem;
+  max-height: 480px;
+  overflow-x: auto;
+}
+
+.diff-line {
+  padding: 0.15rem 0.5rem;
+  border-radius: 2px;
+}
+
+.diff-add { background-color: rgba(16, 185, 129, 0.15); color: #10B981; font-weight: 600; }
+.diff-del { background-color: rgba(239, 68, 68, 0.15); color: #EF4444; text-decoration: line-through; }
+.diff-header { color: var(--color-text-muted); font-weight: 700; }
+.diff-normal { color: var(--color-text-primary); }

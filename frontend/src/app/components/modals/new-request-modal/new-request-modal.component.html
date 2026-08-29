@@ -1,0 +1,49 @@
+<div *ngIf="(state.showNewRequestModal$ | async)" class="modal-backdrop" (click)="close()">
+  <div class="modal-content glass-card max-w-xl" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2 class="text-base font-bold text-white flex items-center gap-2">
+        <span>⚡</span> New Change Request
+      </h2>
+      <button (click)="close()" class="close-modal-btn">&times;</button>
+    </div>
+
+    <div class="p-5 space-y-4 text-xs">
+      <div class="flex items-center gap-2 pb-1">
+        <span class="text-slate-400 font-medium">Presets:</span>
+        <button (click)="loadDemo()" class="preset-pill">Calculator Discount</button>
+        <button (click)="loadEnterprise()" class="preset-pill preset-highlight">⚡ Enterprise Billing Engine</button>
+      </div>
+
+      <div>
+        <label class="block text-slate-400 font-semibold mb-1">Story / Ticket ID</label>
+        <input type="text" [(ngModel)]="storyId" class="modal-input font-mono">
+      </div>
+
+      <div>
+        <label class="block text-slate-400 font-semibold mb-1">Change Title</label>
+        <input type="text" [(ngModel)]="title" class="modal-input">
+      </div>
+
+      <div>
+        <label class="block text-slate-400 font-semibold mb-1">Detailed Requirements</label>
+        <textarea rows="4" [(ngModel)]="description" class="modal-input"></textarea>
+      </div>
+
+      <div>
+        <label class="block text-slate-400 font-semibold mb-1">Repository Location</label>
+        <div class="flex gap-2">
+          <input type="text" [(ngModel)]="repoLocation" class="modal-input font-mono flex-1">
+          <button (click)="inspect()" [disabled]="(state.isInspecting$ | async)" class="btn-secondary-outline px-3 cursor-pointer">
+            {{ (state.isInspecting$ | async) ? '...' : 'Inspect' }}
+          </button>
+        </div>
+      </div>
+
+      <div class="pt-3">
+        <button (click)="submit()" [disabled]="(state.isRunning$ | async)" class="btn-primary-gradient w-full py-2.5 flex items-center justify-center gap-2 cursor-pointer">
+          <span>{{ (state.isRunning$ | async) ? 'Running Pipeline...' : 'Submit & Execute Autonomous Pipeline' }}</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

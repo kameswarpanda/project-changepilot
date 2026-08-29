@@ -1,0 +1,33 @@
+<div class="view-container">
+  <div class="view-header">
+    <div>
+      <h1 class="view-title">Change Templates</h1>
+      <p class="view-subtitle">Pre-architected change requests ready to execute with 1-click.</p>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div *ngFor="let tmpl of (filteredTemplates$ | async)" class="glass-card p-5 flex flex-col justify-between">
+      <div>
+        <div class="flex items-center justify-between mb-2">
+          <span class="font-bold text-sm text-white">{{ tmpl.title }}</span>
+          <span class="badge-primary badge-pill text-[10px]">{{ tmpl.category }}</span>
+        </div>
+        <p class="text-xs text-slate-300 leading-relaxed mb-4">{{ tmpl.description }}</p>
+
+        <div class="flex flex-wrap gap-1.5 mb-4">
+          <span *ngFor="let tag of tmpl.tags" class="text-[10px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded border border-slate-700">
+            #{{ tag }}
+          </span>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between pt-3 border-t border-slate-800">
+        <span class="font-mono text-xs text-indigo-400 font-bold">{{ tmpl.storyId }}</span>
+        <button (click)="useTemplate(tmpl)" class="btn-primary-gradient px-4 py-1.5 text-xs cursor-pointer">
+          ⚡ Use Template
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,30 @@
+<div class="glass-card dashboard-widget-card">
+  <div class="widget-header">
+    <h3 class="widget-title">Recent Runs</h3>
+    <button (click)="viewAll()" class="view-all-link">View All</button>
+  </div>
+
+  <div class="widget-content recent-runs-list">
+    <div *ngFor="let run of (filteredRuns$ | async)" class="run-item" (click)="openRunDetails(run)">
+      <div class="run-info">
+        <span class="run-id font-mono">{{ run.storyId }}</span>
+        <span class="run-title truncate">{{ run.title }}</span>
+      </div>
+      <div class="run-badges">
+        <span class="badge-success badge-pill">{{ run.status }}</span>
+        <span class="run-duration font-mono">{{ run.duration }}</span>
+        <span class="run-time">{{ run.timeAgo }}</span>
+      </div>
+    </div>
+
+    <div *ngIf="(filteredRuns$ | async)?.length === 0" class="text-center text-xs text-slate-500 py-6 italic">
+      No matching runs found.
+    </div>
+  </div>
+
+  <div class="widget-footer pt-1">
+    <button (click)="openNewRequest()" class="btn-ghost-action w-full py-2">
+      + New Change Request
+    </button>
+  </div>
+</div>

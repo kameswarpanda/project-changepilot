@@ -1,0 +1,26 @@
+<section class="glass-card pipeline-stepper-card">
+  <div class="pipeline-card-header">
+    <h2 class="pipeline-card-title">Autonomous Execution Stages</h2>
+    <button (click)="viewDetails()" class="view-details-link">View Details</button>
+  </div>
+
+  <div class="stepper-container">
+    <div class="stepper-track"></div>
+    <div class="stepper-nodes">
+      <div *ngFor="let s of state.stages; let i = index" class="step-node-col" (click)="viewDetails()">
+        <div class="step-circle"
+             [ngClass]="{
+               'circle-active animate-pulse': (state.isRunning$ | async) && i === 1,
+               'circle-completed': !(state.isRunning$ | async) || i < 9
+             }"
+             [style.border-color]="s.color">
+          <span class="step-number">{{ s.number }}</span>
+        </div>
+        <span class="step-label">{{ s.label }}</span>
+        <span class="step-sublabel" [ngClass]="getStageStatus(s.key, state.result$ | async, (state.isRunning$ | async) ?? false) === 'failed' ? 'text-red' : 'text-green'">
+          ● {{ getStageStatus(s.key, state.result$ | async, (state.isRunning$ | async) ?? false) === 'failed' ? 'Failed' : 'Passed' }}
+        </span>
+      </div>
+    </div>
+  </div>
+</section>

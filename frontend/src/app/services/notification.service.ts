@@ -1,0 +1,81 @@
+import { Injectable } from '@angular/core';
+import { BehaviorSubject, Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
+import { AppNotification } from '../models';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class NotificationService {
+  private notificationsSubject = new BehaviorSubject<AppNotification[]>([
+    {
+      id: 'notif-1',
+      title: 'Pipeline CP-DEMO-1 Passed',
+      message: 'Autonomous change verified with 100% test pass rate in 3.36s.',
+      type: 'success',
+      timestamp: '2 mins ago',
+      read: false,
+      storyId: 'CP-DEMO-1'
+    },
+    {
+      id: 'notif-2',
+      title: 'Repository Analyzed',
+      message: 'demo_repo analyzed successfully (Python 3, pytest, 4 files).',
+      type: 'info',
+      timestamp: '15 mins ago',
+      read: false
+    },
+    {
+      id: 'notif-3',
+      title: 'Deterministic Gates Active',
+      message: 'Security, Plan, and Patch Consistency validators active in fail-closed mode.',
+      type: 'info',
+      timestamp: '1 hour ago',
+      read: true
+    }
+  ]);
+
+  public notifications$: Observable<AppNotification[]> = this.notificationsSubject.asObservable();
+  public unreadCount$: Observable<number> = this.notifications$.pipe(
+    map(list => list.filter(n => !n.read).length)
+  );
+
+  addNotification(
+    title: string,
+    message: string,
+    type: 'success' | 'info' | 'warning' | 'error' = 'info',
+    storyId?: string
+  ): void {
+    const newNotif: AppNotification = {
+      id: `notif-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      title,
+      message,
+      type,
+      timestamp: 'Just now',
+      read: false,
+      storyId
+    };
+    this.notificationsSubject.next([newNotif, ...this.notificationsSubject.value]);
+  }
+
+  markAllAsRead(): void {
+    const updated = this.notificationsSubject.value.map(n => ({ ...n, read: true }));
+    this.notificationsSubject.next(updated);
+  }
+
+  markAsRead(id: string): void {
+    const updated = this.notificationsSubject.value.map(n =>
+      n.id === id ? { ...n, read: true } : n
+    );
+    this.notificationsSubject.next(updated);
+  }
+
+  dismiss(id: string): void {
+    const updated = this.notificationsSubject.value.filter(n => n.id !== id);
+    this.notificationsSubject.next(updated);
+  }
+
+  clearAll(): void {
+    this.notificationsSubject.next([]);
+  }
+}

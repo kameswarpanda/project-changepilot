@@ -1,0 +1,34 @@
+<div class="view-container">
+  <div class="view-header">
+    <div>
+      <h1 class="view-title">Audit Trail & Gates</h1>
+      <p class="view-subtitle">Cryptographic validation receipts, path confinement logs, and gate evaluations.</p>
+    </div>
+    <button (click)="exportLogs()" class="btn-secondary-outline px-4 py-2 text-xs flex items-center gap-2 cursor-pointer">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+      <span>Export JSON Audit</span>
+    </button>
+  </div>
+
+  <div class="glass-card p-5 space-y-3 text-xs">
+    <div *ngIf="(state.result$ | async)?.audit_trail?.length">
+      <div *ngFor="let a of (state.result$ | async)?.audit_trail" class="p-3.5 bg-slate-900/80 border border-slate-800 rounded-lg flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <span class="dot dot-success"></span>
+          <div>
+            <strong class="text-white font-mono">{{ a.stage }}</strong>
+            <p class="text-slate-400 text-[11px] mt-0.5">{{ a.message }}</p>
+          </div>
+        </div>
+        <div class="text-right">
+          <span class="badge-success badge-pill">{{ a.status }}</span>
+          <div class="font-mono text-slate-500 text-[10px] mt-1">{{ a.duration_ms ? a.duration_ms + 'ms' : '-' }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="!(state.result$ | async)?.audit_trail?.length" class="p-8 text-center text-slate-500 italic">
+      Run a change request from the dashboard to view real-time stage audit trails.
+    </div>
+  </div>
+</div>

@@ -1,0 +1,115 @@
+.dashboard-widget-card {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  min-height: 270px;
+}
+
+.widget-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.widget-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.view-all-link {
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  font-size: 0.725rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.view-all-link:hover {
+  text-decoration: underline;
+}
+
+.recent-runs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.run-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.45rem 0.6rem;
+  background-color: var(--color-border-subtle);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.run-item:hover {
+  background-color: var(--color-bg-card-hover);
+  border-color: var(--color-primary);
+}
+
+.run-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.run-id {
+  font-size: 0.75rem;
+  color: var(--color-text-primary);
+  font-weight: 700;
+}
+
+.run-title {
+  font-size: 0.68rem;
+  color: var(--color-text-muted);
+}
+
+.run-badges {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.badge-pill {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0.15rem 0.4rem;
+  border-radius: 6px;
+}
+
+.run-duration {
+  font-size: 0.68rem;
+  color: var(--color-text-secondary);
+}
+
+.run-time {
+  font-size: 0.65rem;
+  color: var(--color-text-muted);
+}
+
+.btn-ghost-action {
+  background: transparent;
+  border: 1px dashed var(--color-border);
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+  font-weight: 500;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-ghost-action:hover {
+  color: var(--color-text-primary);
+  border-color: var(--color-info);
+  background: rgba(99, 102, 241, 0.05);
+}
+
+.widget-footer {
+  margin-top: auto;
+}

@@ -1,0 +1,57 @@
+<div class="view-container">
+  <div class="view-header">
+    <div>
+      <h1 class="view-title">Pipeline Monitor</h1>
+      <p class="view-subtitle">Real-time inspection of active and past autonomous execution stages.</p>
+    </div>
+    <button (click)="trigger()" [disabled]="(state.isRunning$ | async)" class="btn-primary-gradient px-4 py-2 text-xs flex items-center gap-2">
+      <span>⚡ Trigger Pipeline</span>
+    </button>
+  </div>
+
+  <!-- Live Pipeline Execution Card -->
+  <div class="glass-card p-5 space-y-6">
+    <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+      <div>
+        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+          <span>Active Target:</span>
+          <code class="font-mono text-indigo-400">{{ state.storyIdSubject | async }}</code>
+        </h3>
+        <p class="text-xs text-slate-400 mt-0.5">{{ state.titleSubject | async }}</p>
+      </div>
+      <span class="badge-success badge-pill text-xs">
+        {{ (state.isRunning$ | async) ? 'IN_PROGRESS' : ((state.result$ | async)?.status || 'COMPLETED') }}
+      </span>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div *ngFor="let s of state.stages" class="p-3 bg-slate-900/80 border border-slate-800 rounded-lg flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-7 h-7 rounded-full border flex items-center justify-center font-bold text-xs" [style.border-color]="s.color">
+            {{ s.number }}
+          </div>
+          <div>
+            <strong class="text-xs text-slate-200">{{ s.label }}</strong>
+            <p class="text-[10px] text-slate-400">{{ s.sublabel }}</p>
+          </div>
+        </div>
+        <span class="badge-pill uppercase text-[10px]"
+              [ngClass]="getStageStatus(s.key, state.result$ | async, (state.isRunning$ | async) ?? false) === 'failed' ? 'badge-danger' : 'badge-success'">
+          {{ getStageStatus(s.key, state.result$ | async, (state.isRunning$ | async) ?? false) }}
+        </span>
+      </div>
+    </div>
+
+    <div class="flex justify-end gap-3 pt-2">
+      <button (click)="openReport('diff')" class="btn-secondary-outline px-4 py-2 text-xs">
+        Open Unified Diff
+      </button>
+      <button (click)="openReport('logs')" class="btn-secondary-outline px-4 py-2 text-xs">
+        Open Test Logs
+      </button>
+      <button (click)="openReport('audit')" class="btn-secondary-outline px-4 py-2 text-xs">
+        Open Full Audit Trail
+      </button>
+    </div>
+  </div>
+</div>

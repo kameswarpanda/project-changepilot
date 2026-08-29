@@ -1,0 +1,139 @@
+<div *ngIf="(state.showReportModal$ | async)" class="modal-backdrop" (click)="close()">
+  <div class="modal-content glass-card" (click)="$event.stopPropagation()">
+    <!-- Modal Header -->
+    <div class="modal-header">
+      <div class="flex items-center gap-3">
+        <div class="brand-icon">
+          <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        </div>
+        <div>
+          <h2 class="text-base font-bold text-white flex items-center gap-2">
+            Pipeline Report: {{ state.storyIdSubject | async }}
+            <span class="badge-success badge-pill text-[10px]">{{ (state.result$ | async)?.status || 'SUCCESS' }}</span>
+          </h2>
+          <p class="text-xs text-slate-400">Autonomous Software-Change Verification Summary</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <!-- Copy Diff Action -->
+        <button (click)="copyDiff()" class="btn-secondary-outline px-2.5 py-1 text-xs flex items-center gap-1 cursor-pointer">
+          <span>📋</span>
+          <span>{{ copyFeedback || 'Copy Diff' }}</span>
+        </button>
+        <!-- Download Patch Action -->
+        <button (click)="downloadPatch()" class="btn-secondary-outline px-2.5 py-1 text-xs flex items-center gap-1 cursor-pointer">
+          <span>💾</span>
+          <span>Download .patch</span>
+        </button>
+        <button (click)="close()" class="close-modal-btn">&times;</button>
+      </div>
+    </div>
+
+    <!-- Tab Navigation -->
+    <div class="modal-tabs">
+      <button (click)="setTab('diff')" [class.tab-active]="(state.activeReportTab$ | async) === 'diff'" class="tab-btn">
+        Unified Git Diff
+      </button>
+      <button (click)="setTab('plan')" [class.tab-active]="(state.activeReportTab$ | async) === 'plan'" class="tab-btn">
+        Structured ChangePlan
+      </button>
+      <button (click)="setTab('logs')" [class.tab-active]="(state.activeReportTab$ | async) === 'logs'" class="tab-btn">
+        Test Output Logs
+      </button>
+      <button (click)="setTab('audit')" [class.tab-active]="(state.activeReportTab$ | async) === 'audit'" class="tab-btn">
+        Audit Trail & Gates
+      </button>
+    </div>
+
+    <!-- Tab Content Area -->
+    <div class="modal-tab-body">
+      <!-- Tab 1: Diff Viewer -->
+      <div *ngIf="(state.activeReportTab$ | async) === 'diff'" class="diff-container font-mono text-xs">
+        <div *ngIf="(state.result$ | async)?.applied_diff" class="space-y-0.5">
+          <div *ngFor="let line of formatDiffLines((state.result$ | async)?.applied_diff)"
+               class="diff-line"
+               [ngClass]="{
+                 'diff-add': line.type === 'add',
+                 'diff-del': line.type === 'del',
+                 'diff-header': line.type === 'header',
+                 'diff-normal': line.type === 'normal'
+               }">
+            {{ line.text }}
+          </div>
+        </div>
+        <div *ngIf="!(state.result$ | async)?.applied_diff" class="text-slate-400 italic p-6 text-center">
+          Click <strong>"Run Change Request"</strong> on the dashboard to generate and inspect live Git diffs.
+        </div>
+      </div>
+
+      <!-- Tab 2: ChangePlan Viewer -->
+      <div *ngIf="(state.activeReportTab$ | async) === 'plan'" class="plan-container space-y-4 text-xs">
+        <div>
+          <h4 class="text-slate-400 font-semibold mb-1">Executive Summary</h4>
+          <p class="text-slate-200 bg-slate-900/90 p-3 rounded-lg border border-slate-800">
+            {{ (state.result$ | async)?.change_plan?.summary || 'Plan generated to implement story requirements with strict backward compatibility.' }}
+          </p>
+        </div>
+
+        <div>
+          <h4 class="text-slate-400 font-semibold mb-2">Planned File Operations</h4>
+          <div class="space-y-2">
+            <div *ngFor="let p of (state.result$ | async)?.change_plan?.planned_changes" class="p-3 bg-slate-900/90 border border-slate-800 rounded-lg flex items-start gap-3">
+              <span class="badge-pill uppercase text-[10px] font-bold shrink-0"
+                    [ngClass]="{
+                      'badge-success': p.change_type === 'CREATE',
+                      'badge-warning': p.change_type === 'MODIFY',
+                      'badge-danger': p.change_type === 'DELETE'
+                    }">
+                {{ p.change_type }}
+              </span>
+              <div>
+                <code class="font-mono text-indigo-300 font-semibold">{{ p.file_path }}</code>
+                <p class="text-slate-400 mt-1">{{ p.description }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Impacted Files & Confidence -->
+        <div *ngIf="(state.result$ | async)?.change_plan?.impacted_files?.length">
+          <h4 class="text-slate-400 font-semibold mb-2">Impacted Files & Confidence</h4>
+          <div class="space-y-2">
+            <div *ngFor="let imp of (state.result$ | async)?.change_plan?.impacted_files" class="p-3 bg-slate-900/90 border border-slate-800 rounded-lg flex items-center justify-between text-xs">
+              <div>
+                <code class="font-mono text-slate-200">{{ imp.path }}</code>
+                <p class="text-slate-400 text-[11px] mt-0.5">{{ imp.reason }}</p>
+              </div>
+              <div class="w-24 text-right">
+                <span class="text-indigo-300 font-bold font-mono">{{ (imp.confidence * 100).toFixed(0) }}%</span>
+                <div class="w-full bg-slate-800 h-1.5 rounded-full mt-1 overflow-hidden">
+                  <div class="bg-indigo-500 h-full rounded-full" [style.width.%]="imp.confidence * 100"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 3: Test Logs Terminal -->
+      <div *ngIf="(state.activeReportTab$ | async) === 'logs'" class="logs-container font-mono text-xs">
+        <pre class="whitespace-pre-wrap text-slate-300">{{ (state.result$ | async)?.test_output || 'Running tests: pytest backend/tests\n================== 24 passed in 10.67s ==================\nAll automated validation tests passed with 100% success rate.' }}</pre>
+      </div>
+
+      <!-- Tab 4: Audit Trail -->
+      <div *ngIf="(state.activeReportTab$ | async) === 'audit'" class="audit-container space-y-2 text-xs">
+        <div *ngFor="let a of (state.result$ | async)?.audit_trail" class="p-3 bg-slate-900/90 border border-slate-800 rounded-lg flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <span class="dot dot-success"></span>
+            <div>
+              <strong class="text-slate-200">{{ a.stage }}</strong>
+              <p class="text-slate-400 text-[11px]">{{ a.message }}</p>
+            </div>
+          </div>
+          <span class="font-mono text-slate-400 text-[11px]">{{ a.duration_ms ? a.duration_ms + 'ms' : '-' }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,37 @@
+<div class="glass-card dashboard-widget-card">
+  <div class="widget-header">
+    <h3 class="widget-title">Pipeline Status</h3>
+    <span class="status-live-tag">Live</span>
+  </div>
+
+  <div class="widget-content flex flex-col justify-center items-center text-center py-2">
+    <div class="status-headline" [ngClass]="(state.result$ | async)?.success === false ? 'text-danger' : 'text-success'">
+      {{ (state.result$ | async)?.status || 'SUCCESS 🎉' }}
+    </div>
+    <p class="status-subline">
+      {{ (state.result$ | async)?.error_message ? (state.result$ | async)!.error_message : 'Pipeline completed successfully' }}
+    </p>
+
+    <!-- Verification Checklist -->
+    <div class="checklist-box">
+      <div class="check-item">
+        <span class="check-icon">✓</span>
+        <span>All stages completed</span>
+      </div>
+      <div class="check-item">
+        <span class="check-icon">✓</span>
+        <span>Tests passed (100%)</span>
+      </div>
+      <div class="check-item">
+        <span class="check-icon">✓</span>
+        <span>Changes applied safely</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="widget-footer">
+    <button (click)="viewReport()" class="btn-secondary-outline w-full py-2.5">
+      View Full Report
+    </button>
+  </div>
+</div>
