@@ -51,11 +51,20 @@ export class AuthService {
     });
   }
 
-  loginWithGoogle(emailOrToken: string = 'developer@google.com'): Observable<AuthSessionResponse> {
-    return this.http.post<AuthSessionResponse>(`${this.apiUrl}/login`, {
-      provider: 'google',
-      email: emailOrToken
-    }).pipe(
+  loginWithGoogle(emailOrToken?: string): Observable<AuthSessionResponse> {
+    const isToken = emailOrToken && (emailOrToken.startsWith('eyJ') || emailOrToken.length > 50);
+    const payload: any = {
+      provider: 'google'
+    };
+    if (isToken) {
+      payload.token_or_code = emailOrToken;
+    } else if (emailOrToken) {
+      payload.email = emailOrToken;
+    } else {
+      payload.email = 'developer@google.com';
+    }
+
+    return this.http.post<AuthSessionResponse>(`${this.apiUrl}/login`, payload).pipe(
       tap((res) => this.handleAuthSuccess(res))
     );
   }

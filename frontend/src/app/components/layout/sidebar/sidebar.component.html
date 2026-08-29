@@ -79,12 +79,18 @@
   <!-- Authenticated User Profile Section -->
   <div class="px-5 mt-auto pt-4 border-t border-[#30363D]">
     <div class="flex items-center gap-3">
-      <div class="w-8 h-8 rounded-full bg-[#32353c] border border-[#464554] flex items-center justify-center text-[#c0c1ff] font-bold text-xs">
-        {{ (authService.currentUser$ | async)?.display_name?.substring(0, 2)?.toUpperCase() || 'KM' }}
+      <div class="w-8 h-8 rounded-full bg-[#32353c] border border-[#464554] overflow-hidden flex items-center justify-center text-[#c0c1ff] font-bold text-xs">
+        <img *ngIf="(authService.currentUser$ | async)?.avatar_url" 
+             [src]="(authService.currentUser$ | async)?.avatar_url" 
+             alt="Avatar" 
+             class="w-full h-full object-cover">
+        <span *ngIf="!(authService.currentUser$ | async)?.avatar_url">
+          {{ getUserInitials(authService.currentUser$ | async) }}
+        </span>
       </div>
       <div class="flex flex-col min-w-0">
-        <span class="font-title-sm text-[13px] text-[#e1e2eb] font-semibold truncate">{{ (authService.currentUser$ | async)?.display_name }}</span>
-        <span class="font-body-sm text-[11px] text-[#908fa0] capitalize">{{ (authService.currentUser$ | async)?.roles?.[0] || 'Developer' }} • GitHub</span>
+        <span class="font-title-sm text-[13px] text-[#e1e2eb] font-semibold truncate">{{ (authService.currentUser$ | async)?.display_name || 'Developer' }}</span>
+        <span class="font-body-sm text-[11px] text-[#908fa0] capitalize">{{ (authService.currentUser$ | async)?.roles?.[0] || 'Developer' }} • {{ (authService.currentUser$ | async)?.provider || 'Google' }}</span>
       </div>
     </div>
   </div>
