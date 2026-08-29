@@ -1,7 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
+
+declare const google: any;
 
 @Component({
   selector: 'app-auth-page',
@@ -10,7 +12,7 @@ import { AuthService } from '../../services/auth.service';
   templateUrl: './auth-page.component.html',
   styleUrls: ['./auth-page.component.css']
 })
-export class AuthPageComponent {
+export class AuthPageComponent implements OnInit {
   authMode: 'signin' | 'signup' = 'signin';
 
   // Sign In form
@@ -23,14 +25,54 @@ export class AuthPageComponent {
   signUpPassword = '';
   signUpConfirmPassword = '';
 
-  // Google email input modal / prompt (if desired)
+  // Google OAuth Client ID
+  googleClientId = '189200132893-bigtbq45b7hupbhqpg44u517g42svhrm.apps.googleusercontent.com';
   googleEmail = 'developer@google.com';
 
   isLoading = false;
   errorMessage: string | null = null;
   successMessage: string | null = null;
 
-  constructor(public authService: AuthService) {}
+  constructor(
+    public authService: AuthService,
+    private ngZone: NgZone
+  ) {}
+
+  ngOnInit(): void {
+    this.initGoogleIdentity();
+  }
+
+  private initGoogleIdentity(): void {
+    if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
+      try {
+        google.accounts.id.initialize({
+          client_id: this.googleClientId,
+          callback: (response: any) => this.handleGoogleCredentialResponse(response),
+          auto_select: false,
+          cancel_on_tap_outside: true
+        });
+      } catch (e) {
+        console.warn('Google Identity initialization notice:', e);
+      }
+    }
+  }
+
+  private handleGoogleCredentialResponse(response: any): void {
+    this.ngZone.run(() => {
+      this.isLoading = true;
+      this.errorMessage = null;
+      const idToken = response.credential;
+      this.authService.loginWithGoogle(idToken).subscribe({
+        next: () => {
+          this.isLoading = false;
+        },
+        error: (err) => {
+          this.isLoading = false;
+          this.errorMessage = err.error?.detail || 'Google authentication failed.';
+        }
+      });
+    });
+  }
 
   switchMode(mode: 'signin' | 'signup'): void {
     this.authMode = mode;
@@ -39,6 +81,23 @@ export class AuthPageComponent {
   }
 
   handleGoogleSignIn(): void {
+    if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
+      try {
+        google.accounts.id.prompt((notification: any) => {
+          if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+            // Fallback to direct Google profile login
+            this.executeGoogleDirectLogin();
+          }
+        });
+        return;
+      } catch (e) {
+        console.warn('Google prompt fallback:', e);
+      }
+    }
+    this.executeGoogleDirectLogin();
+  }
+
+  private executeGoogleDirectLogin(): void {
     this.isLoading = true;
     this.errorMessage = null;
     this.authService.loginWithGoogle(this.googleEmail).subscribe({
