@@ -17,6 +17,8 @@ class WorkflowStage(str, Enum):
     PATCH_VALIDATED = "PATCH_VALIDATED"
     PATCH_APPLIED = "PATCH_APPLIED"
     TESTS_EXECUTED = "TESTS_EXECUTED"
+    BRANCH_COMMITTED = "BRANCH_COMMITTED"
+    PULL_REQUEST_CREATED = "PULL_REQUEST_CREATED"
     COMPLETED = "COMPLETED"
     FAILED = "FAILED"
 
@@ -71,6 +73,8 @@ class WorkflowResult(BaseModel):
     test_output: Optional[str] = None
     test_passed: Optional[bool] = None
     branch_name: Optional[str] = None
+    commit_sha: Optional[str] = None
+    pull_request: Optional[Dict[str, Any]] = None
 
     # Audit trail and diagnostics
     audit_trail: List[StageExecutionRecord] = Field(default_factory=list)

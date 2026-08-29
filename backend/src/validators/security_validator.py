@@ -14,13 +14,17 @@ class SecurityValidator:
 
     # Allowed test runner binaries
     ALLOWED_COMMAND_BINARIES = {
-        "pytest", "python", "python3", "npm", "mvn", "gradle", "cargo", "go", "dotnet", "make"
+        "pytest", "python", "python3", "npm", "npx", "mvn", "gradle", "cargo", "go", "dotnet", "make", "ctest"
     }
 
-    @staticmethod
-    def validate_path_confinement(workspace_root: Path, relative_file_path: str) -> ValidationResult:
+    # Protected sensitive filenames/extensions
+    SENSITIVE_PATTERNS = [
+        ".git", ".env", ".aws", ".gcp", "id_rsa", "id_ed25519", "credentials", "secrets", ".key", ".pem"
+    ]
+
+    @classmethod
+    def validate_path_confinement(cls, workspace_root: Path, relative_file_path: str) -> ValidationResult:
         """Verifies that the target path strictly resolves inside the workspace root."""
-        errors: List[str] = []
         clean_rel = relative_file_path.strip().replace("\\", "/")
 
         if not clean_rel:
@@ -31,7 +35,8 @@ class SecurityValidator:
             )
 
         # Explicitly check for directory traversal attempts
-        if ".." in clean_rel.split("/"):
+        parts = [p for p in clean_rel.split("/") if p]
+        if ".." in parts:
             return ValidationResult(
                 validator_name="SecurityValidator.validate_path_confinement",
                 passed=False,
@@ -47,12 +52,13 @@ class SecurityValidator:
 
         # Check against disallowed sensitive patterns
         lower_path = clean_rel.lower()
-        for forbidden in settings.disallowed_path_patterns:
-            if forbidden in lower_path.split("/"):
+        for forbidden in (settings.disallowed_path_patterns + cls.SENSITIVE_PATTERNS):
+            f_lower = forbidden.lower()
+            if any(f_lower in part or part.startswith(f_lower) or part.endswith(f_lower) for part in parts):
                 return ValidationResult(
                     validator_name="SecurityValidator.validate_path_confinement",
                     passed=False,
-                    errors=[f"Operation on protected/sensitive path '{forbidden}' is forbidden."]
+                    errors=[f"Operation on protected/sensitive path pattern '{forbidden}' is forbidden."]
                 )
 
         # Resolve path and verify confinement to workspace root
@@ -78,7 +84,6 @@ class SecurityValidator:
     @classmethod
     def validate_command_safety(cls, command: str) -> ValidationResult:
         """Validates that a test/build command is safe and allowlisted."""
-        errors: List[str] = []
         cmd_str = command.strip()
 
         if not cmd_str:

@@ -1,83 +1,98 @@
 /* ==============================================================================
-   ChangePilot Global Themes (Dark & Light) & Design Tokens
+   ChangePilot Core Design System Styles (DESIGN.md & Stitch Specs)
    ============================================================================== */
 
 :root {
-  /* Common Brand Accents */
-  --color-primary: #7C4DFF;
-  --color-primary-hover: #6c3bee;
-  --color-primary-glow: rgba(124, 77, 255, 0.35);
-
-  --color-secondary: #00D4FF;
-  --color-secondary-glow: rgba(0, 212, 255, 0.35);
-
-  --color-success: #10B981;
-  --color-success-glow: rgba(16, 185, 129, 0.35);
-
-  --color-warning: #F59E0B;
-  --color-warning-glow: rgba(245, 158, 11, 0.35);
-
-  --color-danger: #EF4444;
-  --color-danger-glow: rgba(239, 68, 68, 0.35);
-
-  --color-info: #6366F1;
-  --color-info-glow: rgba(99, 102, 241, 0.35);
-
-  /* Dark Theme Tokens (Default) */
-  --color-bg-root: #0B0F19;
-  --color-bg-sidebar: #0D121F;
-  --color-bg-header: rgba(11, 15, 25, 0.85);
-  --color-bg-card: rgba(18, 24, 39, 0.85);
-  --color-bg-card-hover: rgba(26, 34, 54, 0.95);
-  --color-bg-input: #0B0F19;
-  --color-bg-modal: #0F172A;
-  --color-border: #1F2937;
-  --color-border-subtle: rgba(255, 255, 255, 0.07);
-  --color-border-hover: #374151;
-
-  --color-text-primary: #F9FAFB;
-  --color-text-secondary: #9CA3AF;
-  --color-text-muted: #6B7280;
-  --color-code-bg: #070A10;
-
-  --font-family-base: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-family-mono: 'Fira Code', 'JetBrains Mono', monospace;
-}
-
-/* Light Theme Tokens */
-body.light-theme {
-  --color-bg-root: #F8FAFC;
-  --color-bg-sidebar: #FFFFFF;
-  --color-bg-header: rgba(255, 255, 255, 0.9);
-  --color-bg-card: #FFFFFF;
-  --color-bg-card-hover: #F1F5F9;
-  --color-bg-input: #F8FAFC;
-  --color-bg-modal: #FFFFFF;
-  --color-border: #E2E8F0;
-  --color-border-subtle: rgba(0, 0, 0, 0.06);
-  --color-border-hover: #CBD5E1;
-
-  --color-text-primary: #0F172A;
-  --color-text-secondary: #475569;
-  --color-text-muted: #94A3B8;
-  --color-code-bg: #F1F5F9;
+  --surface: #10131a;
+  --surface-container-lowest: #0b0e14;
+  --surface-container-low: #161b22;
+  --surface-container: #1d2026;
+  --surface-container-high: #272a31;
+  --surface-container-highest: #32353c;
+  
+  --on-surface: #e1e2eb;
+  --on-surface-variant: #908fa0;
+  --outline: #908fa0;
+  --outline-variant: #30363d;
+  
+  --primary: #c0c1ff;
+  --primary-container: #8083ff;
+  --inverse-primary: #494bd6;
+  
+  --secondary: #4edea3;
+  --secondary-container: #00a572;
+  
+  --tertiary: #ffb783;
+  --tertiary-container: #d97721;
+  
+  --error: #ffb4ab;
+  --error-container: #93000a;
 }
 
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.15s ease;
 }
 
 html, body {
   height: 100%;
-  background-color: var(--color-bg-root);
-  color: var(--color-text-primary);
-  font-family: var(--font-family-base);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  overflow-x: hidden;
+  width: 100%;
+  background-color: #0b0e14;
+  color: #e1e2eb;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  line-height: 1.4;
+  overflow: hidden;
+}
+
+/* Material Symbols Outlined Icon Styling */
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 20px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+}
+
+.material-symbols-outlined.fill-icon,
+.material-symbols-outlined.icon-fill {
+  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+}
+
+/* Typography Classes */
+.font-display-lg { font-family: 'Geist', sans-serif; font-size: 28px; font-weight: 700; line-height: 36px; letter-spacing: -0.02em; }
+.font-headline-md { font-family: 'Geist', sans-serif; font-size: 22px; font-weight: 600; line-height: 30px; letter-spacing: -0.01em; }
+.font-title-sm { font-family: 'Inter', sans-serif; font-size: 16px; font-weight: 600; line-height: 24px; }
+.font-body-md { font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 400; line-height: 20px; }
+.font-body-sm { font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 400; line-height: 18px; }
+.font-code-md { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 400; line-height: 20px; }
+.font-code-sm { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 400; line-height: 16px; }
+.font-label-caps { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; line-height: 12px; letter-spacing: 0.05em; text-transform: uppercase; }
+
+/* Structural Levels */
+.level-0 { background-color: #0b0e14; }
+.level-1 { background-color: #161b22; border: 1px solid #30363d; }
+.level-2 { background-color: #1d2026; border: 1px solid #30363d; }
+
+/* Table and Row interactions */
+.table-row-hover:hover {
+  background-color: #1d2026;
+}
+
+/* Spinner Animation */
+@keyframes spin {
+  100% { transform: rotate(360deg); }
+}
+.animate-spin {
+  animation: spin 1.2s linear infinite;
 }
 
 /* Custom Scrollbars */
@@ -86,80 +101,12 @@ html, body {
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--color-bg-root);
+  background: #0b0e14;
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--color-border);
-  border-radius: 9999px;
+  background: #30363d;
+  border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-border-hover);
-}
-
-/* Glassmorphism & Soft Glow Shadows */
-.glass-card {
-  background: var(--color-bg-card);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--color-border);
-  border-radius: 16px;
-  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.2);
-}
-
-.glass-card:hover {
-  border-color: rgba(124, 77, 255, 0.4);
-  box-shadow: 0 15px 35px -10px rgba(0, 0, 0, 0.3), 0 0 20px -5px var(--color-primary-glow);
-}
-
-/* Primary Action Gradient Button */
-.btn-primary-gradient {
-  background: linear-gradient(135deg, #7C4DFF 0%, #00D4FF 100%);
-  color: #FFFFFF !important;
-  font-weight: 600;
-  border: none;
-  border-radius: 10px;
-  box-shadow: 0 4px 20px -2px rgba(124, 77, 255, 0.5);
-  transition: all 0.2s ease;
-  cursor: pointer;
-}
-
-.btn-primary-gradient:hover {
-  opacity: 0.95;
-  transform: translateY(-1px);
-  box-shadow: 0 6px 25px 0px rgba(0, 212, 255, 0.6);
-}
-
-.btn-primary-gradient:active {
-  transform: translateY(0);
-}
-
-/* Status Badges */
-.badge-success {
-  background: rgba(16, 185, 129, 0.15);
-  color: var(--color-success);
-  border: 1px solid rgba(16, 185, 129, 0.3);
-}
-
-.badge-primary {
-  background: rgba(124, 77, 255, 0.15);
-  color: var(--color-primary);
-  border: 1px solid rgba(124, 77, 255, 0.3);
-}
-
-.badge-info {
-  background: rgba(0, 212, 255, 0.15);
-  color: var(--color-secondary);
-  border: 1px solid rgba(0, 212, 255, 0.3);
-}
-
-.badge-warning {
-  background: rgba(245, 158, 11, 0.15);
-  color: var(--color-warning);
-  border: 1px solid rgba(245, 158, 11, 0.3);
-}
-
-.badge-danger {
-  background: rgba(239, 68, 68, 0.15);
-  color: var(--color-danger);
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: #908fa0;
 }

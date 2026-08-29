@@ -1,60 +1,91 @@
-<aside class="sidebar">
-  <!-- Brand Logo -->
-  <div class="brand-header">
-    <div class="brand-icon">
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-      </svg>
+<aside class="sidebar hidden md:flex flex-col w-[260px] h-screen sticky left-0 top-0 bg-[#161B22] border-r border-[#30363D] py-6 z-40 shrink-0">
+  <!-- Brand Header -->
+  <div class="px-6 mb-6 flex items-center gap-3">
+    <div class="w-9 h-9 rounded-lg bg-[#8083ff] flex items-center justify-center text-[#0d0096] shrink-0 shadow-sm">
+      <span class="material-symbols-outlined fill-icon text-[20px]">terminal</span>
     </div>
-    <span class="brand-title">ChangePilot</span>
+    <div>
+      <h1 class="font-headline-md text-[18px] font-bold text-[#e1e2eb] leading-tight">ChangePilot</h1>
+      <p class="font-body-sm text-[11px] text-[#908fa0] leading-tight">Autonomous Infrastructure</p>
+    </div>
   </div>
 
-  <!-- Navigation Links -->
-  <nav class="sidebar-nav">
-    <a (click)="navigate('dashboard')" [class.active]="(state.activeNav$ | async) === 'dashboard'" class="nav-item">
-      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+  <!-- Navigation Menu -->
+  <nav class="flex-1 overflow-y-auto px-3 space-y-1">
+    <a (click)="navigate('dashboard')" 
+       [class.active]="(state.activeNav$ | async) === 'dashboard'" 
+       class="nav-link">
+      <span class="material-symbols-outlined text-[20px]" [class.fill-icon]="(state.activeNav$ | async) === 'dashboard'">dashboard</span>
       <span>Dashboard</span>
     </a>
 
-    <a (click)="navigate('requests')" [class.active]="(state.activeNav$ | async) === 'requests'" class="nav-item">
-      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+    <a (click)="navigate('requests')" 
+       [class.active]="(state.activeNav$ | async) === 'requests'" 
+       class="nav-link">
+      <span class="material-symbols-outlined text-[20px]" [class.fill-icon]="(state.activeNav$ | async) === 'requests'">account_tree</span>
       <span>Change Requests</span>
     </a>
 
-    <a (click)="navigate('pipelines')" [class.active]="(state.activeNav$ | async) === 'pipelines'" class="nav-item">
-      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+    <a (click)="navigate('pipelines')" 
+       [class.active]="(state.activeNav$ | async) === 'pipelines'" 
+       class="nav-link">
+      <span class="material-symbols-outlined text-[20px]" [class.fill-icon]="(state.activeNav$ | async) === 'pipelines'">lan</span>
       <span>Pipelines</span>
     </a>
 
-    <a (click)="navigate('repositories')" [class.active]="(state.activeNav$ | async) === 'repositories'" class="nav-item">
-      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+    <a (click)="navigate('results')" 
+       [class.active]="(state.activeNav$ | async) === 'results'" 
+       class="nav-link">
+      <span class="material-symbols-outlined text-[20px]" [class.fill-icon]="(state.activeNav$ | async) === 'results'">task_alt</span>
+      <span>Change Results</span>
+    </a>
+
+    <a (click)="navigate('repositories')" 
+       [class.active]="(state.activeNav$ | async) === 'repositories'" 
+       class="nav-link">
+      <span class="material-symbols-outlined text-[20px]" [class.fill-icon]="(state.activeNav$ | async) === 'repositories'">database</span>
       <span>Repositories</span>
     </a>
 
-    <a (click)="navigate('templates')" [class.active]="(state.activeNav$ | async) === 'templates'" class="nav-item">
-      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"/></svg>
+    <a (click)="navigate('templates')" 
+       [class.active]="(state.activeNav$ | async) === 'templates'" 
+       class="nav-link">
+      <span class="material-symbols-outlined text-[20px]" [class.fill-icon]="(state.activeNav$ | async) === 'templates'">description</span>
       <span>Templates</span>
     </a>
 
-    <a (click)="navigate('audit')" [class.active]="(state.activeNav$ | async) === 'audit'" class="nav-item">
-      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
+    <a (click)="navigate('audit')" 
+       [class.active]="(state.activeNav$ | async) === 'audit'" 
+       class="nav-link">
+      <span class="material-symbols-outlined text-[20px]" [class.fill-icon]="(state.activeNav$ | async) === 'audit'">assignment</span>
       <span>Audit Logs</span>
     </a>
 
-    <a (click)="navigate('settings')" [class.active]="(state.activeNav$ | async) === 'settings'" class="nav-item">
-      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+    <a (click)="navigate('reports')" 
+       [class.active]="(state.activeNav$ | async) === 'reports'" 
+       class="nav-link">
+      <span class="material-symbols-outlined text-[20px]" [class.fill-icon]="(state.activeNav$ | async) === 'reports'">analytics</span>
+      <span>Reports</span>
+    </a>
+
+    <a (click)="navigate('settings')" 
+       [class.active]="(state.activeNav$ | async) === 'settings'" 
+       class="nav-link mt-auto">
+      <span class="material-symbols-outlined text-[20px]" [class.fill-icon]="(state.activeNav$ | async) === 'settings'">settings</span>
       <span>Settings</span>
     </a>
   </nav>
 
-  <!-- User Profile Pill -->
-  <div class="user-profile-pill">
-    <div class="avatar-circle">
-      <span>K</span>
-    </div>
-    <div class="user-meta">
-      <span class="user-name">Kameswar</span>
-      <span class="user-role">Admin</span>
+  <!-- Authenticated User Profile Section -->
+  <div class="px-5 mt-auto pt-4 border-t border-[#30363D]">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-full bg-[#32353c] border border-[#464554] flex items-center justify-center text-[#c0c1ff] font-bold text-xs">
+        {{ (authService.currentUser$ | async)?.display_name?.substring(0, 2)?.toUpperCase() || 'KM' }}
+      </div>
+      <div class="flex flex-col min-w-0">
+        <span class="font-title-sm text-[13px] text-[#e1e2eb] font-semibold truncate">{{ (authService.currentUser$ | async)?.display_name }}</span>
+        <span class="font-body-sm text-[11px] text-[#908fa0] capitalize">{{ (authService.currentUser$ | async)?.roles?.[0] || 'Developer' }} • GitHub</span>
+      </div>
     </div>
   </div>
 </aside>

@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { WorkflowStateService } from '../../../services/workflow-state.service';
+import { AuthService } from '../../../services/auth.service';
 
 @Component({
   selector: 'app-sidebar',
@@ -10,7 +11,10 @@ import { WorkflowStateService } from '../../../services/workflow-state.service';
   styleUrls: ['./sidebar.component.css']
 })
 export class SidebarComponent {
-  constructor(public state: WorkflowStateService) {}
+  constructor(
+    public state: WorkflowStateService,
+    public authService: AuthService
+  ) {}
 
   navigate(nav: string): void {
     this.state.setNav(nav);

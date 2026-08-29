@@ -27,6 +27,10 @@ class CommandExecutionResult(BaseModel):
     error: Optional[str] = None
 
 
+# Alias for backward compatibility
+ExecutionResult = CommandExecutionResult
+
+
 class ValidationEngine:
     """Bounded, deterministic test and build executor."""
 

@@ -1,46 +1,153 @@
-<div class="view-container">
-  <div class="view-header">
+<div class="p-6 max-w-[1400px] mx-auto space-y-6">
+  <!-- Page Header -->
+  <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
     <div>
-      <h1 class="view-title">Connected Repositories</h1>
-      <p class="view-subtitle">Deterministic topology analysis, test frameworks, and sandbox isolation.</p>
+      <h2 class="font-display-lg text-2xl font-bold text-[#e1e2eb]">Repositories</h2>
+      <p class="font-body-md text-xs text-[#908fa0] mt-1">Manage connected codebases monitored by ChangePilot via GitHub App.</p>
     </div>
-    <button (click)="state.inspectRepository()" class="btn-primary-gradient px-4 py-2 text-xs">
-      <span>+ Analyze Repository</span>
-    </button>
+    <div class="flex items-center gap-3">
+      <button (click)="openConnectModal()" class="bg-[#494bd6] text-white font-semibold text-xs px-4 py-2 rounded-md hover:bg-[#8083ff] hover:text-[#0d0096] transition-colors flex items-center gap-2 shadow-sm">
+        <span class="material-symbols-outlined text-[16px]">add_link</span>
+        <span>+ Connect Repository</span>
+      </button>
+      <button (click)="state.inspectRepository()" class="bg-[#161B22] border border-[#30363D] text-[#e1e2eb] font-semibold text-xs px-4 py-2 rounded-md hover:bg-[#272a31] transition-colors flex items-center gap-2">
+        <span class="material-symbols-outlined text-[16px]">sync</span>
+        <span>Re-Analyze All</span>
+      </button>
+    </div>
   </div>
 
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-    <div *ngFor="let repo of (filteredRepos$ | async)" class="glass-card p-5 flex flex-col justify-between">
-      <div>
-        <div class="flex items-center justify-between mb-3">
-          <span class="font-mono text-sm font-bold text-white">{{ repo.name }}</span>
-          <span class="badge-success badge-pill">{{ repo.status }}</span>
-        </div>
-        <p class="text-xs text-slate-400 mb-4">Location: <code class="font-mono text-slate-300">{{ repo.path }}</code></p>
+  <!-- Repositories Table Card -->
+  <div class="bg-[#161B22] border border-[#30363D] rounded-lg overflow-hidden flex flex-col">
+    <!-- Toolbar -->
+    <div class="p-4 border-b border-[#30363D] bg-[#1d2026] flex flex-col sm:flex-row gap-4 items-center justify-between">
+      <div class="flex items-center gap-2 text-xs text-[#908fa0]">
+        <span>Connected Repositories (GitHub App Authorized)</span>
+      </div>
+      <div class="text-xs text-[#908fa0]">
+        <span>Sandbox isolation enabled for all branch operations.</span>
+      </div>
+    </div>
 
-        <div class="space-y-1.5 text-xs text-slate-300">
-          <div class="flex justify-between">
-            <span class="text-slate-400">Language:</span>
-            <strong>{{ repo.language }}</strong>
+    <!-- Table -->
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse text-xs">
+        <thead>
+          <tr class="border-b border-[#30363D] bg-[#10131a]">
+            <th class="font-label-caps text-[#908fa0] py-3 px-4 w-[30%]">NAME</th>
+            <th class="font-label-caps text-[#908fa0] py-3 px-4">LOCATION / ACCESS</th>
+            <th class="font-label-caps text-[#908fa0] py-3 px-4">LANGUAGE / RUNNER</th>
+            <th class="font-label-caps text-[#908fa0] py-3 px-4">DISCOVERED BRANCHES</th>
+            <th class="font-label-caps text-[#908fa0] py-3 px-4 text-center">STATUS</th>
+            <th class="font-label-caps text-[#908fa0] py-3 px-4 text-right">ACTION</th>
+          </tr>
+        </thead>
+        <tbody class="text-[#e1e2eb]">
+          <tr *ngFor="let repo of (filteredRepos$ | async)" class="border-b border-[#30363D] hover:bg-[#1d2026] transition-colors">
+            <td class="py-3 px-4">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded bg-[#10131a] flex items-center justify-center border border-[#30363D] text-[#c0c1ff]">
+                  <span class="material-symbols-outlined text-[18px]">folder_code</span>
+                </div>
+                <div>
+                  <div class="font-mono text-xs font-semibold text-[#c0c1ff]">{{ repo.name }}</div>
+                  <div class="text-[11px] text-[#908fa0]">{{ repo.isPrivate ? 'Private Repository' : 'Public Repository' }}</div>
+                </div>
+              </div>
+            </td>
+            <td class="py-3 px-4">
+              <div class="flex items-center gap-1.5 text-[#908fa0]">
+                <span class="material-symbols-outlined text-[16px]">verified</span>
+                <span class="font-mono">{{ repo.path }}</span>
+              </div>
+            </td>
+            <td class="py-3 px-4">
+              <div class="flex flex-col">
+                <span class="font-semibold">{{ repo.language }}</span>
+                <span class="text-[11px] text-[#908fa0]">{{ repo.testRunner }}</span>
+              </div>
+            </td>
+            <td class="py-3 px-4">
+              <div class="flex flex-wrap gap-1">
+                <span *ngFor="let b of (repo.branches || ['main'])" class="bg-[#10131a] border border-[#30363D] rounded px-1.5 py-0.5 font-mono text-[10px] text-[#38BDF8]">
+                  {{ b }}
+                </span>
+              </div>
+            </td>
+            <td class="py-3 px-4 text-center">
+              <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-[#4edea3]/10 text-[#4edea3]">
+                ACTIVE
+              </span>
+            </td>
+            <td class="py-3 px-4 text-right space-x-2">
+              <button (click)="inspect(repo)" class="text-[#c0c1ff] hover:underline font-semibold">Inspect</button>
+              <button (click)="select(repo)" class="text-[#4edea3] hover:underline font-semibold">Create Change</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Connect Repository Modal Dialog -->
+  <div *ngIf="showConnectModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+    <div class="bg-[#161B22] border border-[#30363D] rounded-xl w-full max-w-lg overflow-hidden shadow-2xl space-y-5 p-6">
+      <div class="flex justify-between items-center pb-3 border-b border-[#30363D]">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-[#8083ff]">add_link</span>
+          <h3 class="font-title-sm text-base font-bold text-[#e1e2eb]">Connect Repository</h3>
+        </div>
+        <button (click)="closeConnectModal()" class="text-[#908fa0] hover:text-[#e1e2eb] text-lg font-bold">&times;</button>
+      </div>
+
+      <div class="space-y-4 text-xs">
+        <div>
+          <label class="font-title-sm text-xs text-[#908fa0] mb-1 block">Provider</label>
+          <div class="flex bg-[#10131a] rounded p-1 border border-[#30363D]">
+            <button (click)="connectProvider = 'github'" [ngClass]="connectProvider === 'github' ? 'bg-[#494bd6] text-white font-semibold' : 'text-[#908fa0]'" class="flex-1 py-1.5 rounded transition-colors flex items-center justify-center gap-1.5">
+              <span>GitHub App</span>
+            </button>
+            <button (click)="connectProvider = 'local'" [ngClass]="connectProvider === 'local' ? 'bg-[#494bd6] text-white font-semibold' : 'text-[#908fa0]'" class="flex-1 py-1.5 rounded transition-colors flex items-center justify-center gap-1.5">
+              <span>Local Repo</span>
+            </button>
           </div>
-          <div class="flex justify-between">
-            <span class="text-slate-400">Test Runner:</span>
-            <code class="font-mono text-indigo-300">{{ repo.testRunner }}</code>
+        </div>
+
+        <div>
+          <label class="font-title-sm text-xs text-[#908fa0] mb-1 block">Repository Identifier / Path</label>
+          <input type="text" [(ngModel)]="connectRepoName" placeholder="e.g. company/payment-service or demo_repo" class="w-full bg-[#10131a] border border-[#30363D] rounded-md px-3 py-2 text-[#e1e2eb] font-mono text-xs focus:outline-none focus:border-[#8083ff]">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="font-title-sm text-xs text-[#908fa0] mb-1 block">Base Branch</label>
+            <select [(ngModel)]="connectBaseBranch" class="w-full bg-[#10131a] border border-[#30363D] rounded-md px-3 py-2 text-[#e1e2eb] font-mono text-xs focus:outline-none focus:border-[#8083ff]">
+              <option value="main">main</option>
+              <option value="develop">develop</option>
+              <option value="master">master</option>
+            </select>
           </div>
-          <div class="flex justify-between">
-            <span class="text-slate-400">Files:</span>
-            <span>{{ repo.fileCount }} files</span>
+
+          <div>
+            <label class="font-title-sm text-xs text-[#908fa0] mb-1 block">Visibility</label>
+            <select [(ngModel)]="connectIsPrivate" class="w-full bg-[#10131a] border border-[#30363D] rounded-md px-3 py-2 text-[#e1e2eb] text-xs focus:outline-none focus:border-[#8083ff]">
+              <option [ngValue]="false">Public</option>
+              <option [ngValue]="true">Private</option>
+            </select>
           </div>
+        </div>
+
+        <div class="bg-[#10131a] p-3 rounded border border-[#30363D] text-[11px] text-[#908fa0] space-y-1">
+          <div class="text-[#e1e2eb] font-semibold">Permissions:</div>
+          <div>• Repository metadata: <strong>Read</strong></div>
+          <div>• Repository contents & branches: <strong>Read/Write</strong></div>
+          <div>• Pull Requests: <strong>Read/Write</strong></div>
         </div>
       </div>
 
-      <div class="flex items-center gap-2 mt-6 pt-3 border-t border-slate-800">
-        <button (click)="inspect(repo)" class="btn-secondary-outline flex-1 py-1.5 text-xs cursor-pointer">
-          Inspect
-        </button>
-        <button (click)="select(repo)" class="btn-primary-gradient flex-1 py-1.5 text-xs cursor-pointer">
-          Select
-        </button>
+      <div class="flex justify-end gap-3 pt-3 border-t border-[#30363D]">
+        <button (click)="closeConnectModal()" class="px-4 py-2 rounded border border-[#30363D] text-[#e1e2eb] text-xs hover:bg-[#272a31]">Cancel</button>
+        <button (click)="submitConnect()" class="px-5 py-2 rounded bg-[#494bd6] text-white font-semibold text-xs hover:bg-[#8083ff] hover:text-[#0d0096]">Connect Repository</button>
       </div>
     </div>
   </div>

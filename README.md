@@ -10,18 +10,18 @@ ChangePilot enforces a strict **trust boundary**: User requests, repository code
 
 ```mermaid
 graph TD
-    User([Developer / CI System]) -->|ChangeRequest| Frontend[Angular 19 UI]
+    User([Developer / CI System]) -->|ChangeRequest| Frontend[Angular 19 Dark-Theme UI]
     Frontend -->|REST HTTP / Correlation ID| API[FastAPI Transport Layer]
     API --> Orchestrator[Workflow Orchestrator]
 
     subgraph "Phase 1: Deterministic Intelligence"
         Orchestrator --> RepoMgr[Repository Manager]
         RepoMgr -->|Clone & Isolate| Sandbox[Isolated Workspace Sandbox]
-        Orchestrator --> RepoAnalyzer[Repository Analyzer]
-        Sandbox -->|Inspect Topology| RepoAnalyzer
+        Orchestrator --> RepoAnalyzer[Repository Analyzer + BuildDetector + ImpactAnalyzer]
+        Sandbox -->|Inspect Topology & Manifests| RepoAnalyzer
     end
 
-    subgraph "Phase 2: AI Reasoning (Vertex AI)"
+    subgraph "Phase 2: AI Reasoning (Vertex AI / ADC)"
         RepoAnalyzer -->|Repository Context| AnalystAgent[Change Analyst Agent]
         AnalystAgent -->|ChangePlan| PlanGate{ChangePlan Validator Gate}
         PlanGate -->|Approved Plan| CodeAgent[Code Generator Agent]
@@ -37,7 +37,7 @@ graph TD
         Applier -->|Filesystem Mutation| Sandbox
         Sandbox -->|Git Commit & Diff| Applier
         Applier --> ValEngine[Validation Engine]
-        ValEngine -->|Bounded Execution| TestRunner[Real Test Runner: pytest / npm test]
+        ValEngine -->|Bounded Execution| TestRunner[Real Test Runner: pytest / npm test / mvn]
         TestRunner --> Sandbox
     end
 
@@ -59,11 +59,13 @@ graph TD
 | **Workflow Orchestrator** | `backend.src.workflow` | Owns complete execution lifecycle across 9 discrete stages with guaranteed workspace cleanup in `finally` blocks. |
 | **Repository Manager** | `backend.src.repository.manager` | Creates isolated workspace per run, enforces Git URL allowlists, clone timeouts, repository byte/file limits. |
 | **Repository Analyzer** | `backend.src.repository.analyzer` | Deterministic language detection, framework recognition (pytest, FastAPI, Angular, etc.), manifest parsing. |
+| **Build & Test Detector**| `backend.src.repository.build_detector` | Multi-ecosystem detector supporting Python, TypeScript, Angular, React, Java, Go, Rust, C#, C++. |
+| **Impact Analyzer** | `backend.src.repository.impact_analyzer` | Predicts affected modules and calculates confidence scores from requirements and keyword overlap. |
 | **Change Analyst Agent** | `backend.src.agents.change_analyst` | Generates typed `ChangePlan` strictly grounded in repository evidence without mutating filesystem. |
 | **ChangePlan Validator** | `backend.src.validators.change_plan_validator` | Rejects ungrounded file modifications, non-existent targets, or path traversals. |
 | **Code Generator Agent** | `backend.src.agents.code_generator` | Proposes exact `FilePatch` objects conforming to the approved `ChangePlan`. |
-| **Patch Consistency Validator**| `backend.src.validators.patch_plan_consistency_validator` | Enforces strict 1-to-1 consistency between generated patches and approved `ChangePlan`. |
-| **Patch Safety Validator** | `backend.src.validators.patch_validator` | Verifies structural syntax, size limits, and path confinement (`Path.resolve().relative_to(root)`). |
+| **Patch Consistency Gate**| `backend.src.validators.patch_plan_consistency_validator` | Enforces strict 1-to-1 consistency between generated patches and approved `ChangePlan`. |
+| **Patch Safety Gate** | `backend.src.validators.patch_validator` | Verifies structural syntax, size limits, and path confinement (`Path.resolve().relative_to(root)`). |
 | **Patch Applier** | `backend.src.executor.applier` | Filesystem mutation boundary (CREATE only if nonexistent, MODIFY only if exists, DELETE only if planned). |
 | **Validation Engine** | `backend.src.executor.validation_engine` | Executes allowlisted test commands (`pytest`, `npm test`) with hard timeout and output capture. |
 | **Angular 19 UI** | `frontend/` | Dashboard with pipeline stage progress stepper, unified diff viewer, interactive test logs, and audit trail. |
@@ -72,9 +74,9 @@ graph TD
 
 ## 3. Safety & Security Architecture
 
-1. **Path Confinement**: All file mutations resolve absolute paths and verify `resolved.relative_to(workspace_root)`. Path traversal attacks (`../`, absolute drive roots) fail closed.
-2. **Command Abuse Prevention**: Shell chaining operators (`;`, `&&`, `||`, `` ` ``, `$`, `>`, `<`) are rejected. Only allowlisted test runners (`pytest`, `python`, `npm`, `mvn`, `gradle`, `cargo`, `go`, `dotnet`) execute.
-3. **Secret Hygiene**: Environment variables with sensitive tokens (`GEMINI_API_KEY`, `AWS_SECRET_ACCESS_KEY`, `GITHUB_TOKEN`) are stripped before executing test subprocesses. `.env` is never copied into container images.
+1. **Path Confinement**: All file mutations resolve absolute paths and verify `resolved.relative_to(workspace_root)`. Path traversal attacks (`../`, `..\\`, absolute drive roots) fail closed.
+2. **Command Abuse Prevention**: Shell chaining operators (`;`, `&&`, `||`, `` ` ``, `$`, `>`, `<`) are rejected. Only allowlisted test runners (`pytest`, `python`, `npm`, `npx`, `mvn`, `gradle`, `cargo`, `go`, `dotnet`, `make`, `ctest`) execute.
+3. **Secret Hygiene**: Environment variables with sensitive tokens (`GEMINI_API_KEY`, `GOOGLE_API_KEY`, `AWS_SECRET_ACCESS_KEY`, `GITHUB_TOKEN`) are stripped before executing test subprocesses. `.env` is never copied into container images.
 4. **Isolated Sandboxing**: Every run executes in a dedicated temporary workspace directory on a dynamically created Git branch (`changepilot/<story-id>-<uuid>`).
 5. **Non-Root Runtime**: Production Docker container runs under unprivileged UID `10001` (`appuser`).
 
@@ -112,21 +114,33 @@ python -m venv .venv
 pip install -r backend/requirements.txt
 ```
 
-### 2. Run Backend Tests (100% Automated Coverage)
+### 2. Run Backend Test Suite (39 Passing Tests)
 ```bash
 pytest backend/tests -v
 ```
 
-### 3. Run FastAPI Backend Server
+### 3. Run Headless CLI Demo Runner
 ```bash
+python run_demo.py
+```
+
+### 4. Run FastAPI Backend Server
+```bash
+# Windows
+start_backend.bat
+
+# Or manual
 python -m uvicorn backend.src.api.server:app --host 0.0.0.0 --port 8000 --reload
 ```
 API Documentation available at: `http://localhost:8000/docs`
 
-### 4. Run Angular Frontend
+### 5. Run Angular Frontend
 ```bash
+# Windows
+start_frontend.bat
+
+# Or manual
 cd frontend
-npm install
 npm start
 ```
 Access UI at: `http://localhost:4200`
@@ -153,7 +167,8 @@ curl http://localhost:8000/health
 | Scenario | Tested Behavior | Status |
 | :--- | :--- | :--- |
 | **Invalid Repository Location** | Rejected at `WORKSPACE_READY` before clone | ✅ Passed |
-| **Path Traversal Attack** (`../escape.py`) | Traversal detected, operation rejected | ✅ Passed |
+| **Path Traversal Attack** (`../escape.py`, `../../etc/passwd`) | Traversal detected, operation rejected | ✅ Passed |
+| **Sensitive File Access** (`.env`, `id_rsa`, `.git/config`) | Target forbidden by security gate | ✅ Passed |
 | **Ungrounded ChangePlan** | Rejected at `PLAN_VALIDATED` gate | ✅ Passed |
 | **Inconsistent Code Patch** | Patch touching unapproved file rejected at `PATCH_VALIDATED` | ✅ Passed |
 | **Execution Timeout** | Hard timeout safely aborts runaway process | ✅ Passed |

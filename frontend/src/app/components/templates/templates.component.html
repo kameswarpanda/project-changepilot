@@ -1,33 +1,141 @@
-<div class="view-container">
-  <div class="view-header">
+<div class="p-6 max-w-[1400px] mx-auto space-y-6">
+  <!-- Page Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
     <div>
-      <h1 class="view-title">Change Templates</h1>
-      <p class="view-subtitle">Pre-architected change requests ready to execute with 1-click.</p>
+      <h2 class="font-display-lg text-2xl font-bold text-[#e1e2eb]">Standardized Change Templates</h2>
+      <p class="font-body-md text-xs text-[#908fa0] mt-1 max-w-2xl">
+        Standardized workflows for autonomous change implementation. Select a template to initialize a new standardized pipeline.
+      </p>
     </div>
   </div>
 
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-    <div *ngFor="let tmpl of (filteredTemplates$ | async)" class="glass-card p-5 flex flex-col justify-between">
-      <div>
-        <div class="flex items-center justify-between mb-2">
-          <span class="font-bold text-sm text-white">{{ tmpl.title }}</span>
-          <span class="badge-primary badge-pill text-[10px]">{{ tmpl.category }}</span>
-        </div>
-        <p class="text-xs text-slate-300 leading-relaxed mb-4">{{ tmpl.description }}</p>
+  <!-- Bento Grid - Templates -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
 
-        <div class="flex flex-wrap gap-1.5 mb-4">
-          <span *ngFor="let tag of tmpl.tags" class="text-[10px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded border border-slate-700">
-            #{{ tag }}
+    <!-- Add Feature Template -->
+    <div class="group relative bg-[#161B22] border border-[#30363D] rounded-xl p-5 flex flex-col justify-between hover:bg-[#1d2026] hover:border-[#8083ff]/40 transition-all duration-200">
+      <div>
+        <div class="flex justify-between items-start mb-4">
+          <div class="w-10 h-10 rounded-lg bg-[#10131a] flex items-center justify-center border border-[#30363D] text-[#c0c1ff]">
+            <span class="material-symbols-outlined text-[20px]">add_circle</span>
+          </div>
+          <span class="font-label-caps text-[10px] bg-[#c0c1ff]/10 text-[#c0c1ff] px-2 py-0.5 rounded border border-[#c0c1ff]/20">
+            FEATURE
           </span>
         </div>
+        <h3 class="font-title-sm text-sm font-semibold text-[#e1e2eb] mb-1.5">Add Feature (Discount Parameter)</h3>
+        <p class="font-body-sm text-xs text-[#908fa0] leading-relaxed">
+          Scaffolds optional flat discount parameter into calculate_total with backward compatibility assertions and pytest suite updates.
+        </p>
       </div>
-
-      <div class="flex items-center justify-between pt-3 border-t border-slate-800">
-        <span class="font-mono text-xs text-indigo-400 font-bold">{{ tmpl.storyId }}</span>
-        <button (click)="useTemplate(tmpl)" class="btn-primary-gradient px-4 py-1.5 text-xs cursor-pointer">
-          ⚡ Use Template
-        </button>
-      </div>
+      <button (click)="state.loadDemoPreset(); state.setNav('requests')" 
+              class="mt-6 w-full py-2 px-4 rounded bg-[#10131a] border border-[#30363D] text-[#e1e2eb] font-semibold text-xs hover:bg-[#494bd6] hover:text-white hover:border-[#494bd6] transition-all flex items-center justify-center gap-2">
+        <span>Use Template</span>
+        <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+      </button>
     </div>
+
+    <!-- Fix Bug Template -->
+    <div class="group relative bg-[#161B22] border border-[#30363D] rounded-xl p-5 flex flex-col justify-between hover:bg-[#1d2026] hover:border-[#ffb4ab]/40 transition-all duration-200">
+      <div>
+        <div class="flex justify-between items-start mb-4">
+          <div class="w-10 h-10 rounded-lg bg-[#10131a] flex items-center justify-center border border-[#30363D] text-[#ffb4ab]">
+            <span class="material-symbols-outlined text-[20px]">bug_report</span>
+          </div>
+          <span class="font-label-caps text-[10px] bg-[#ffb4ab]/10 text-[#ffb4ab] px-2 py-0.5 rounded border border-[#ffb4ab]/20">
+            HOTFIX
+          </span>
+        </div>
+        <h3 class="font-title-sm text-sm font-semibold text-[#e1e2eb] mb-1.5">Fix Bug & Regression</h3>
+        <p class="font-body-sm text-xs text-[#908fa0] leading-relaxed">
+          Initializes a prioritized pipeline for urgent bug fixes. Enforces strict regression assertions and edge-case testing before sandbox merge.
+        </p>
+      </div>
+      <button (click)="state.loadDemoPreset(); state.setNav('requests')" 
+              class="mt-6 w-full py-2 px-4 rounded bg-[#10131a] border border-[#30363D] text-[#e1e2eb] font-semibold text-xs hover:bg-[#494bd6] hover:text-white hover:border-[#494bd6] transition-all flex items-center justify-center gap-2">
+        <span>Use Template</span>
+        <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+      </button>
+    </div>
+
+    <!-- Enterprise Multi-Tier Billing Engine -->
+    <div class="group relative bg-[#161B22] border border-[#30363D] rounded-xl p-5 flex flex-col justify-between hover:bg-[#1d2026] hover:border-[#ffb783]/40 transition-all duration-200">
+      <div>
+        <div class="flex justify-between items-start mb-4">
+          <div class="w-10 h-10 rounded-lg bg-[#10131a] flex items-center justify-center border border-[#30363D] text-[#ffb783]">
+            <span class="material-symbols-outlined text-[20px]">architecture</span>
+          </div>
+          <span class="font-label-caps text-[10px] bg-[#ffb783]/10 text-[#ffb783] px-2 py-0.5 rounded border border-[#ffb783]/20">
+            ENTERPRISE
+          </span>
+        </div>
+        <h3 class="font-title-sm text-sm font-semibold text-[#e1e2eb] mb-1.5">Enterprise Multi-Tier Billing</h3>
+        <p class="font-body-sm text-xs text-[#908fa0] leading-relaxed">
+          Transforms calculator into multi-currency engine supporting USD/EUR/GBP/JPY, coupon thresholds, VAT tax brackets, and itemized invoice records.
+        </p>
+      </div>
+      <button (click)="state.loadEnterprisePreset(); state.setNav('requests')" 
+              class="mt-6 w-full py-2 px-4 rounded bg-[#10131a] border border-[#30363D] text-[#e1e2eb] font-semibold text-xs hover:bg-[#494bd6] hover:text-white hover:border-[#494bd6] transition-all flex items-center justify-center gap-2">
+        <span>Use Template</span>
+        <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+      </button>
+    </div>
+
+    <!-- Update API Template -->
+    <div class="group relative bg-[#161B22] border border-[#30363D] rounded-xl p-5 flex flex-col justify-between hover:bg-[#1d2026] hover:border-[#4edea3]/40 transition-all duration-200">
+      <div>
+        <div class="flex justify-between items-start mb-4">
+          <div class="w-10 h-10 rounded-lg bg-[#10131a] flex items-center justify-center border border-[#30363D] text-[#4edea3]">
+            <span class="material-symbols-outlined text-[20px]">api</span>
+          </div>
+          <span class="font-label-caps text-[10px] bg-[#4edea3]/10 text-[#4edea3] px-2 py-0.5 rounded border border-[#4edea3]/20">
+            INTEGRATION
+          </span>
+        </div>
+        <h3 class="font-title-sm text-sm font-semibold text-[#e1e2eb] mb-1.5">Update API & Route Schemas</h3>
+        <p class="font-body-sm text-xs text-[#908fa0] leading-relaxed">
+          Modifies endpoint definitions and route schemas. Automatically verifies OpenAPI schema validation and request typing.
+        </p>
+      </div>
+      <button (click)="state.loadDemoPreset(); state.setNav('requests')" 
+              class="mt-6 w-full py-2 px-4 rounded bg-[#10131a] border border-[#30363D] text-[#e1e2eb] font-semibold text-xs hover:bg-[#494bd6] hover:text-white hover:border-[#494bd6] transition-all flex items-center justify-center gap-2">
+        <span>Use Template</span>
+        <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+      </button>
+    </div>
+
+    <!-- Add Validation Template -->
+    <div class="group relative bg-[#161B22] border border-[#30363D] rounded-xl p-5 flex flex-col justify-between hover:bg-[#1d2026] hover:border-[#8083ff]/40 transition-all duration-200">
+      <div>
+        <div class="flex justify-between items-start mb-4">
+          <div class="w-10 h-10 rounded-lg bg-[#10131a] flex items-center justify-center border border-[#30363D] text-[#8083ff]">
+            <span class="material-symbols-outlined text-[20px]">rule</span>
+          </div>
+          <span class="font-label-caps text-[10px] bg-[#8083ff]/10 text-[#8083ff] px-2 py-0.5 rounded border border-[#8083ff]/20">
+            SECURITY
+          </span>
+        </div>
+        <h3 class="font-title-sm text-sm font-semibold text-[#e1e2eb] mb-1.5">Security & Input Validation</h3>
+        <p class="font-body-sm text-xs text-[#908fa0] leading-relaxed">
+          Implements deterministic input sanitization, path traversal checks, and strict parameter boundary conditions across repositories.
+        </p>
+      </div>
+      <button (click)="state.loadDemoPreset(); state.setNav('requests')" 
+              class="mt-6 w-full py-2 px-4 rounded bg-[#10131a] border border-[#30363D] text-[#e1e2eb] font-semibold text-xs hover:bg-[#494bd6] hover:text-white hover:border-[#494bd6] transition-all flex items-center justify-center gap-2">
+        <span>Use Template</span>
+        <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+      </button>
+    </div>
+
+    <!-- Create Custom Template Card -->
+    <div (click)="state.setNav('requests')" 
+         class="group relative bg-transparent border border-dashed border-[#30363D] rounded-xl p-5 flex flex-col items-center justify-center text-center cursor-pointer hover:border-[#8083ff] hover:bg-[#8083ff]/5 transition-all">
+      <div class="w-12 h-12 rounded-full bg-[#10131a] flex items-center justify-center border border-[#30363D] text-[#908fa0] group-hover:text-[#c0c1ff] group-hover:border-[#8083ff]/40 transition-colors mb-3">
+        <span class="material-symbols-outlined text-[24px]">add</span>
+      </div>
+      <h3 class="font-title-sm text-sm font-semibold text-[#e1e2eb] group-hover:text-[#c0c1ff] transition-colors mb-1">Create Custom</h3>
+      <p class="font-body-sm text-xs text-[#908fa0]">Define a new custom change specification for your codebase.</p>
+    </div>
+
   </div>
 </div>

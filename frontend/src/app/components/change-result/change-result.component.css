@@ -1,0 +1,5 @@
+/* Change Result Component CSS */
+:host {
+  display: block;
+  width: 100%;
+}

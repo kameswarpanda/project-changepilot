@@ -1,32 +1,5 @@
-.view-container {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.view-title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--color-text-primary);
-  letter-spacing: -0.025em;
-}
-
-.view-subtitle {
-  font-size: 0.85rem;
-  color: var(--color-text-secondary);
-}
-
-.modal-input {
+/* Settings Component CSS */
+:host {
+  display: block;
   width: 100%;
-  padding: 0.6rem 0.85rem;
-  background-color: var(--color-bg-input);
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  color: var(--color-text-primary);
-  outline: none;
-}
-
-.modal-input:focus {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 10px var(--color-primary-glow);
 }

@@ -1,3 +1,33 @@
+export type ExecutionMode = 'ANALYZE_ONLY' | 'LOCAL_WORKSPACE' | 'BRANCH_COMMIT_PR';
+
+export interface User {
+  id: string;
+  identity_provider_id: string;
+  username: string;
+  display_name: string;
+  email: string;
+  avatar_url?: string;
+  provider: 'github' | 'google' | 'local';
+  roles: string[];
+}
+
+export interface AuthSessionResponse {
+  access_token: string;
+  token_type: string;
+  expires_in: number;
+  user: User;
+}
+
+export interface PullRequestInfo {
+  pr_number: number;
+  pr_url: string;
+  title: string;
+  body: string;
+  base_branch: string;
+  head_branch: string;
+  status: string;
+}
+
 export interface ChangeRequestPayload {
   story_id: string;
   title: string;
@@ -5,6 +35,7 @@ export interface ChangeRequestPayload {
   repository_location: string;
   base_branch: string;
   target_branch?: string;
+  execution_mode?: ExecutionMode;
   auto_apply: boolean;
 }
 
@@ -57,6 +88,7 @@ export type WorkflowStage =
   | 'PATCH_VALIDATED'
   | 'PATCH_APPLIED'
   | 'TESTS_EXECUTED'
+  | 'PULL_REQUEST_CREATED'
   | 'COMPLETED'
   | 'FAILED';
 
@@ -105,6 +137,8 @@ export interface WorkflowResult {
   test_output?: string;
   test_passed?: boolean;
   branch_name?: string;
+  commit_sha?: string;
+  pull_request?: PullRequestInfo;
   audit_trail: StageExecutionRecord[];
   error_stage?: WorkflowStage;
   error_message?: string;
@@ -140,6 +174,7 @@ export interface StoryTemplate {
 }
 
 export interface ConnectedRepo {
+  id?: string;
   name: string;
   path: string;
   language: string;
@@ -147,4 +182,6 @@ export interface ConnectedRepo {
   fileCount: number;
   lastChecked: string;
   status: 'Ready' | 'Needs Inspection';
+  branches?: string[];
+  isPrivate?: boolean;
 }

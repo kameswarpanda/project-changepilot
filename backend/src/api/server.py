@@ -1,13 +1,14 @@
 """FastAPI application entrypoint for ChangePilot."""
 import logging
 from pathlib import Path
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse, JSONResponse
 
 from backend.src.api.routes import router
 from backend.src.config import settings
+from backend.src.database.session import init_db
 
 # Configure root logger
 logging.basicConfig(
@@ -16,10 +17,21 @@ logging.basicConfig(
 )
 logger = logging.getLogger("changepilot.server")
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Lifecycle manager for initializing database and services."""
+    logger.info("Initializing ChangePilot database schema...")
+    init_db()
+    yield
+    logger.info("ChangePilot application shutdown.")
+
+
 app = FastAPI(
     title="ChangePilot API",
     description="Autonomous Software Change Platform with Deterministic Safety Boundaries",
     version="1.0.0",
+    lifespan=lifespan,
     docs_url="/docs",
     redoc_url="/redoc"
 )
@@ -31,9 +43,10 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"]
 )
 
-# Attach API routes
+# Attach API routes first
 app.include_router(router)
 
 
@@ -47,11 +60,36 @@ async def global_exception_handler(request: Request, exc: Exception):
     )
 
 
-# Serve compiled Angular static frontend if present (for production Docker container)
-static_dist = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist" / "changepilot" / "browser"
-if static_dist.exists():
-    app.mount("/", StaticFiles(directory=str(static_dist), html=True), name="static")
-    logger.info(f"Mounted static frontend from {static_dist}")
+# Serve compiled Angular static frontend (for production and standalone local serving)
+STATIC_DIR = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist" / "changepilot" / "browser"
+
+
+@app.get("/{full_path:path}", include_in_schema=False)
+async def serve_spa_or_static(full_path: str):
+    """Serves static assets or falls back to Angular index.html for SPA routing."""
+    # Never intercept API or health endpoints
+    if full_path.startswith("api/") or full_path.startswith("health") or full_path.startswith("docs") or full_path.startswith("openapi.json"):
+        return JSONResponse(status_code=404, content={"detail": "Not found"})
+
+    if STATIC_DIR.exists():
+        target_file = STATIC_DIR / full_path
+        if target_file.is_file():
+            return FileResponse(str(target_file))
+
+        index_file = STATIC_DIR / "index.html"
+        if index_file.exists():
+            return FileResponse(str(index_file))
+
+    return JSONResponse(
+        status_code=200,
+        content={
+            "service": "ChangePilot API",
+            "status": "running",
+            "docs": "/docs",
+            "health": "/health",
+            "ui_status": "Start Angular frontend via 'npm start' on port 4200 or compile with 'npm run build'."
+        }
+    )
 
 
 if __name__ == "__main__":

@@ -1,4 +1,8 @@
-# Python
+# ==============================================================================
+# ChangePilot .gitignore
+# ==============================================================================
+
+# Python & Virtual Environments
 __pycache__/
 *.py[cod]
 *$py.class
@@ -24,7 +28,7 @@ wheels/
 .installed.cfg
 *.egg
 
-# Testing & Coverage
+# Testing, Coverage & Quality
 .pytest_cache/
 .coverage
 htmlcov/
@@ -32,25 +36,36 @@ htmlcov/
 .nox/
 .hypothesis/
 
-# Node / Angular
+# Node.js & Angular Frontend
 node_modules/
+frontend/node_modules/
+.angular/
+frontend/.angular/
+dist/
+frontend/dist/
+coverage/
+frontend/coverage/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-.angular/
-dist/
-coverage/
 
-# IDEs & OS
-.idea/
-.vscode/
-*.swp
-*.swo
-*~
-.DS_Store
-Thumbs.db
+# Database & SQLite Files
+*.db
+*.sqlite
+*.sqlite3
+changepilot.db
 
-# Environment & Secrets
+# Workspace Isolation & Temporary Directories
+temp_workspaces/
+.workspaces/
+.system_generated/
+
+# Design Artifacts & Local Mockups
+UI Designs/
+UI Designs*/
+*.fig
+
+# Environment Variables & Secrets
 .env
 *.env.local
 *.pem
@@ -59,7 +74,14 @@ Thumbs.db
 credentials.json
 service_account.json
 
-# Local temporary workspaces
-.workspaces/
-temp_workspaces/
+# IDEs & System Files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Logs
 *.log

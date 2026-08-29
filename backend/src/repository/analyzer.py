@@ -2,33 +2,9 @@
 import os
 from pathlib import Path
 from typing import Dict, List, Optional
-from pydantic import BaseModel, Field
 
 from backend.src.config import settings
-
-
-class FileInfo(BaseModel):
-    """Metadata about a repository file."""
-    path: str
-    size_bytes: int
-    is_test: bool
-    language: Optional[str] = None
-
-
-class RepositoryContext(BaseModel):
-    """Structured context extracted deterministically from the repository."""
-    root_path: str
-    primary_language: str
-    detected_languages: List[str]
-    detected_frameworks: List[str]
-    detected_build_tool: Optional[str] = None
-    test_runner_command: Optional[str] = None
-    build_command: Optional[str] = None
-    all_files: List[str] = Field(default_factory=list)
-    source_files: List[FileInfo] = Field(default_factory=list)
-    test_files: List[FileInfo] = Field(default_factory=list)
-    manifest_contents: Dict[str, str] = Field(default_factory=dict)
-    key_file_excerpts: Dict[str, str] = Field(default_factory=dict)
+from backend.src.repository.context_builder import FileInfo, RepositoryContext, RepositoryContextBuilder
 
 
 class RepositoryAnalyzer:
@@ -65,14 +41,18 @@ class RepositoryAnalyzer:
         "pyproject.toml", "requirements.txt", "setup.py", "Pipfile",
         "package.json", "angular.json", "tsconfig.json",
         "pom.xml", "build.gradle", "build.gradle.kts",
-        "Cargo.toml", "go.mod", "*.csproj"
+        "Cargo.toml", "go.mod", "*.csproj", "CMakeLists.txt", "Makefile"
     ]
 
-    def analyze(self, workspace_path: Path) -> RepositoryContext:
+    def analyze(
+        self,
+        workspace_path: Path,
+        title: Optional[str] = None,
+        description: Optional[str] = None
+    ) -> RepositoryContext:
         """Deterministically inspects the repository and returns rich structured context."""
         workspace_path = workspace_path.resolve()
         detected_languages: Dict[str, int] = {}
-        detected_frameworks: List[str] = []
         source_files: List[FileInfo] = []
         test_files: List[FileInfo] = []
         all_rel_paths: List[str] = []
@@ -128,14 +108,8 @@ class RepositoryAnalyzer:
         sorted_languages = sorted(detected_languages.keys(), key=lambda k: detected_languages[k], reverse=True)
         primary_language = sorted_languages[0] if sorted_languages else "Unknown"
 
-        # Detect Frameworks & Commands
-        detected_build_tool, test_runner_cmd, build_cmd, frameworks = self._detect_tooling(
-            workspace_path, primary_language, manifest_contents, all_rel_paths
-        )
-        detected_frameworks.extend(frameworks)
-
         # Read key source file excerpts (bounded for LLM context)
-        for s_file in (source_files + test_files)[:15]:
+        for s_file in (source_files + test_files)[:20]:
             if s_file.size_bytes <= settings.max_file_size_bytes:
                 fp = workspace_path / Path(s_file.path)
                 try:
@@ -144,84 +118,16 @@ class RepositoryAnalyzer:
                 except Exception:
                     pass
 
-        return RepositoryContext(
-            root_path=str(workspace_path),
+        # Delegate context synthesis to RepositoryContextBuilder
+        return RepositoryContextBuilder.build(
+            root_path=workspace_path,
             primary_language=primary_language,
             detected_languages=sorted_languages,
-            detected_frameworks=detected_frameworks,
-            detected_build_tool=detected_build_tool,
-            test_runner_command=test_runner_cmd,
-            build_command=build_cmd,
             all_files=all_rel_paths,
             source_files=source_files,
             test_files=test_files,
             manifest_contents=manifest_contents,
             key_file_excerpts=key_file_excerpts,
+            title=title,
+            description=description
         )
-
-    def _detect_tooling(
-        self,
-        root: Path,
-        primary_lang: str,
-        manifests: Dict[str, str],
-        all_files: List[str]
-    ) -> tuple[Optional[str], Optional[str], Optional[str], List[str]]:
-        """Detects build tools, test commands, and frameworks based on manifest files."""
-        frameworks: List[str] = []
-        build_tool: Optional[str] = None
-        test_cmd: Optional[str] = None
-        build_cmd: Optional[str] = None
-
-        if primary_lang == "Python" or any(f.endswith(".py") for f in all_files):
-            build_tool = "pip"
-            test_cmd = "pytest"
-            frameworks.append("pytest")
-            for name, content in manifests.items():
-                if "fastapi" in content.lower():
-                    frameworks.append("FastAPI")
-                if "django" in content.lower():
-                    frameworks.append("Django")
-                if "flask" in content.lower():
-                    frameworks.append("Flask")
-
-        elif primary_lang in ["TypeScript", "JavaScript", "React/TypeScript", "React/JavaScript"]:
-            build_tool = "npm"
-            test_cmd = "npm test"
-            build_cmd = "npm run build"
-            if "angular.json" in manifests or any("angular" in f.lower() for f in manifests):
-                frameworks.append("Angular")
-                test_cmd = "npm test -- --watch=false"
-            elif any("react" in content.lower() for content in manifests.values()):
-                frameworks.append("React")
-
-        elif primary_lang == "Java":
-            if (root / "pom.xml").exists():
-                build_tool = "Maven"
-                test_cmd = "mvn test"
-                build_cmd = "mvn compile"
-                frameworks.append("Maven")
-            elif (root / "build.gradle").exists() or (root / "build.gradle.kts").exists():
-                build_tool = "Gradle"
-                test_cmd = "gradle test"
-                build_cmd = "gradle build"
-                frameworks.append("Gradle")
-
-        elif primary_lang == "Go":
-            build_tool = "go"
-            test_cmd = "go test ./..."
-            build_cmd = "go build ./..."
-            frameworks.append("Go Standard Toolchain")
-
-        elif primary_lang == "Rust":
-            build_tool = "cargo"
-            test_cmd = "cargo test"
-            build_cmd = "cargo build"
-            frameworks.append("Cargo")
-
-        elif primary_lang == "C#":
-            build_tool = "dotnet"
-            test_cmd = "dotnet test"
-            build_cmd = "dotnet build"
-            frameworks.append(".NET Core")
-
-        return build_tool, test_cmd, build_cmd, frameworks

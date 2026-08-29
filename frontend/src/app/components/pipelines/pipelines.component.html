@@ -1,57 +1,137 @@
-<div class="view-container">
-  <div class="view-header">
-    <div>
-      <h1 class="view-title">Pipeline Monitor</h1>
-      <p class="view-subtitle">Real-time inspection of active and past autonomous execution stages.</p>
-    </div>
-    <button (click)="trigger()" [disabled]="(state.isRunning$ | async)" class="btn-primary-gradient px-4 py-2 text-xs flex items-center gap-2">
-      <span>⚡ Trigger Pipeline</span>
-    </button>
-  </div>
-
-  <!-- Live Pipeline Execution Card -->
-  <div class="glass-card p-5 space-y-6">
-    <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+<div class="p-6 max-w-[1400px] mx-auto space-y-6">
+  <!-- Top Pipeline Header Card with 9-Stage Node Track -->
+  <section class="bg-[#161B22] border border-[#30363D] rounded-lg p-6 flex flex-col space-y-6">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
       <div>
-        <h3 class="text-sm font-bold text-white flex items-center gap-2">
-          <span>Active Target:</span>
-          <code class="font-mono text-indigo-400">{{ state.storyIdSubject | async }}</code>
-        </h3>
-        <p class="text-xs text-slate-400 mt-0.5">{{ state.titleSubject | async }}</p>
-      </div>
-      <span class="badge-success badge-pill text-xs">
-        {{ (state.isRunning$ | async) ? 'IN_PROGRESS' : ((state.result$ | async)?.status || 'COMPLETED') }}
-      </span>
-    </div>
-
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div *ngFor="let s of state.stages" class="p-3 bg-slate-900/80 border border-slate-800 rounded-lg flex items-center justify-between">
         <div class="flex items-center gap-3">
-          <div class="w-7 h-7 rounded-full border flex items-center justify-center font-bold text-xs" [style.border-color]="s.color">
-            {{ s.number }}
-          </div>
-          <div>
-            <strong class="text-xs text-slate-200">{{ s.label }}</strong>
-            <p class="text-[10px] text-slate-400">{{ s.sublabel }}</p>
-          </div>
+          <h2 class="font-display-lg text-2xl font-bold text-[#e1e2eb]">
+            Pipeline: #{{ state.storyIdSubject | async }}
+          </h2>
+          <span class="px-2.5 py-0.5 rounded text-[11px] font-bold tracking-wide uppercase"
+                [ngClass]="(state.isRunning$ | async) ? 'bg-[#c0c1ff]/10 text-[#c0c1ff] border border-[#c0c1ff]/20' : 'bg-[#4edea3]/10 text-[#4edea3] border border-[#4edea3]/20'">
+            {{ (state.isRunning$ | async) ? 'RUNNING' : 'SUCCESS' }}
+          </span>
         </div>
-        <span class="badge-pill uppercase text-[10px]"
-              [ngClass]="getStageStatus(s.key, state.result$ | async, (state.isRunning$ | async) ?? false) === 'failed' ? 'badge-danger' : 'badge-success'">
-          {{ getStageStatus(s.key, state.result$ | async, (state.isRunning$ | async) ?? false) }}
-        </span>
+        <p class="font-body-md text-xs text-[#908fa0] mt-1 font-mono">
+          {{ state.titleSubject | async }} • {{ state.repoLocationSubject | async }}
+        </p>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <button (click)="trigger()" [disabled]="(state.isRunning$ | async)" class="px-4 py-2 rounded-md bg-[#8083ff] text-[#0d0096] text-xs font-semibold hover:bg-[#c0c1ff] transition-colors flex items-center gap-2 disabled:opacity-60">
+          <span *ngIf="!(state.isRunning$ | async)" class="material-symbols-outlined text-[16px]">play_arrow</span>
+          <span *ngIf="(state.isRunning$ | async)" class="material-symbols-outlined text-[16px] animate-spin">autorenew</span>
+          <span>{{ (state.isRunning$ | async) ? 'Running Pipeline...' : 'Re-run Pipeline' }}</span>
+        </button>
+        <button (click)="state.setNav('results')" class="px-4 py-2 rounded-md border border-[#30363D] text-[#e1e2eb] text-xs font-semibold hover:bg-[#272a31] transition-colors flex items-center gap-2">
+          <span class="material-symbols-outlined text-[16px]">task_alt</span>
+          <span>View Result Diff</span>
+        </button>
       </div>
     </div>
 
-    <div class="flex justify-end gap-3 pt-2">
-      <button (click)="openReport('diff')" class="btn-secondary-outline px-4 py-2 text-xs">
-        Open Unified Diff
-      </button>
-      <button (click)="openReport('logs')" class="btn-secondary-outline px-4 py-2 text-xs">
-        Open Test Logs
-      </button>
-      <button (click)="openReport('audit')" class="btn-secondary-outline px-4 py-2 text-xs">
-        Open Full Audit Trail
-      </button>
+    <!-- 9-Stage Connected Node Track -->
+    <div class="overflow-x-auto pb-4 pt-2">
+      <div class="flex items-center justify-between min-w-[800px] px-4 relative">
+        <div *ngFor="let s of state.stages; let i = index" class="flex flex-col items-center gap-2 z-10 w-24">
+          <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all shadow-md"
+               [ngClass]="{
+                 'bg-[#4edea3] text-[#003824] ring-2 ring-[#8083ff] ring-offset-2 ring-offset-[#161B22]': !(state.isRunning$ | async) || i < 8,
+                 'border-2 border-[#8083ff] bg-[#10131a] text-[#8083ff] animate-spin': (state.isRunning$ | async) && i === 1,
+                 'border-2 border-[#464554] bg-[#10131a] text-[#908fa0]': (state.isRunning$ | async) && i > 1
+               }">
+            <span *ngIf="!(state.isRunning$ | async) || i < 8" class="material-symbols-outlined text-[16px]">check</span>
+            <span *ngIf="(state.isRunning$ | async) && i === 1" class="material-symbols-outlined text-[16px]">sync</span>
+            <span *ngIf="(state.isRunning$ | async) && i > 1" class="w-2.5 h-2.5 rounded-full border border-[#464554]"></span>
+          </div>
+          <span class="font-body-sm text-[11px] text-center"
+                [ngClass]="((state.isRunning$ | async) && i === 1) ? 'text-[#c0c1ff] font-bold' : 'text-[#e1e2eb]'">
+            {{ s.label }}
+          </span>
+        </div>
+      </div>
     </div>
+  </section>
+
+  <!-- Details & Terminal Logs Grid -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Left Detail Pane (1 Col) -->
+    <aside class="col-span-1 bg-[#161B22] border border-[#30363D] rounded-lg flex flex-col overflow-hidden">
+      <div class="p-4 border-b border-[#30363D] bg-[#1d2026] flex justify-between items-center">
+        <h3 class="font-title-sm text-xs font-semibold text-[#e1e2eb]">Repository Analysis</h3>
+        <span class="font-label-caps text-[10px] text-[#4edea3] bg-[#4edea3]/10 px-2 py-0.5 rounded">COMPLETED</span>
+      </div>
+
+      <div class="p-4 overflow-y-auto flex-1 space-y-4">
+        <dl class="space-y-3 text-xs">
+          <div class="bg-[#10131a] p-3 rounded border border-[#30363D]">
+            <dt class="font-label-caps text-[10px] text-[#908fa0] mb-1">Language</dt>
+            <dd class="text-[#e1e2eb] font-semibold flex items-center gap-2">
+              <span class="material-symbols-outlined text-[16px] text-[#ffb783]">code</span>
+              Python 3.11+
+            </dd>
+          </div>
+
+          <div class="bg-[#10131a] p-3 rounded border border-[#30363D]">
+            <dt class="font-label-caps text-[10px] text-[#908fa0] mb-1">Build System</dt>
+            <dd class="text-[#e1e2eb] font-semibold">pip / pyproject.toml</dd>
+          </div>
+
+          <div class="bg-[#10131a] p-3 rounded border border-[#30363D]">
+            <dt class="font-label-caps text-[10px] text-[#908fa0] mb-1">Test Runner</dt>
+            <dd class="text-[#e1e2eb] font-semibold">pytest</dd>
+          </div>
+        </dl>
+
+        <div class="pt-2">
+          <h4 class="font-label-caps text-[10px] text-[#908fa0] mb-2">Relevant Files Mapped (4)</h4>
+          <ul class="space-y-1 font-mono text-xs text-[#908fa0]">
+            <li class="flex items-center gap-2 p-1.5 rounded hover:bg-[#10131a] text-[#e1e2eb]">
+              <span class="material-symbols-outlined text-[14px]">draft</span>
+              calculator.py
+            </li>
+            <li class="flex items-center gap-2 p-1.5 rounded hover:bg-[#10131a] text-[#e1e2eb]">
+              <span class="material-symbols-outlined text-[14px]">science</span>
+              test_calculator.py
+            </li>
+            <li class="flex items-center gap-2 p-1.5 rounded hover:bg-[#10131a]">
+              <span class="material-symbols-outlined text-[14px]">data_object</span>
+              requirements.txt
+            </li>
+            <li class="flex items-center gap-2 p-1.5 rounded hover:bg-[#10131a]">
+              <span class="material-symbols-outlined text-[14px]">description</span>
+              README.md
+            </li>
+          </ul>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Right Technical Logs (2 Cols) -->
+    <section class="col-span-1 lg:col-span-2 bg-[#0B0E14] border border-[#30363D] rounded-lg flex flex-col overflow-hidden">
+      <div class="px-4 py-3 border-b border-[#30363D] bg-[#161B22] flex justify-between items-center shrink-0">
+        <div class="flex items-center gap-2 text-xs">
+          <span class="material-symbols-outlined text-[16px] text-[#908fa0]">terminal</span>
+          <h3 class="font-label-caps text-xs font-semibold text-[#e1e2eb]">Console Output (Sandbox Runner)</h3>
+        </div>
+        <div class="flex items-center gap-1">
+          <button (click)="trigger()" class="p-1 rounded hover:bg-[#272a31] text-[#908fa0] transition-colors" title="Rerun">
+            <span class="material-symbols-outlined text-[16px]">sync</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="p-4 font-mono text-xs overflow-y-auto flex-1 text-[#908fa0] space-y-1.5 leading-relaxed max-h-[480px]">
+        <div class="flex"><span class="w-8 text-[#908fa0]/60 select-none">1</span><span class="text-[#4edea3]">[INFO]</span><span class="ml-2">Workspace isolation verified on branch changepilot/CP-DEMO-1</span></div>
+        <div class="flex"><span class="w-8 text-[#908fa0]/60 select-none">2</span><span class="text-[#4edea3]">[INFO]</span><span class="ml-2">Repository analyzer mapped Python environment and pytest runner</span></div>
+        <div class="flex"><span class="w-8 text-[#908fa0]/60 select-none">3</span><span class="text-[#8083ff]">[AI]</span><span class="ml-2">ChangeAnalyst proposed 2 planned changes with 0.95 confidence</span></div>
+        <div class="flex"><span class="w-8 text-[#908fa0]/60 select-none">4</span><span class="text-[#4edea3]">[GATE]</span><span class="ml-2">ChangePlan passed deterministic path confinement checks</span></div>
+        <div class="flex"><span class="w-8 text-[#908fa0]/60 select-none">5</span><span class="text-[#8083ff]">[AI]</span><span class="ml-2">CodeGenerator synthesized atomic FilePatch objects</span></div>
+        <div class="flex"><span class="w-8 text-[#908fa0]/60 select-none">6</span><span class="text-[#4edea3]">[GATE]</span><span class="ml-2">PatchPlan consistency validator verified 1-to-1 plan alignment</span></div>
+        <div class="flex"><span class="w-8 text-[#908fa0]/60 select-none">7</span><span class="text-[#4edea3]">[INFO]</span><span class="ml-2">Patch applier committed changes to sandbox branch</span></div>
+        <div class="flex"><span class="w-8 text-[#908fa0]/60 select-none">8</span><span class="text-[#4edea3]">[TEST]</span><span class="ml-2 text-[#e1e2eb]">Executing bounded pytest suite: 7/7 tests passed in 0.04s</span></div>
+        <div class="flex"><span class="w-8 text-[#908fa0]/60 select-none">9</span><span class="text-[#4edea3]">[SUCCESS]</span><span class="ml-2 text-[#4edea3]">Pipeline execution completed successfully with 100% test pass rate.</span></div>
+      </div>
+    </section>
   </div>
 </div>

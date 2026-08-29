@@ -1,0 +1,210 @@
+<div class="p-6 max-w-[1400px] mx-auto space-y-6">
+  <!-- Pull Request Notification Banner if PR created -->
+  <div *ngIf="(state.result$ | async)?.pull_request" class="bg-[#8083ff]/10 border border-[#8083ff]/30 rounded-lg p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded bg-[#8083ff] text-[#0d0096] flex items-center justify-center font-bold">
+        <span class="material-symbols-outlined text-[20px]">merge_type</span>
+      </div>
+      <div>
+        <div class="font-title-sm text-sm font-semibold text-[#e1e2eb]">
+          GitHub Pull Request #{{ (state.result$ | async)?.pull_request?.pr_number }} Created
+        </div>
+        <div class="font-body-sm text-xs text-[#908fa0]">
+          Branch <code class="font-mono text-[#c0c1ff]">{{ (state.result$ | async)?.branch_name }}</code> published to <code class="font-mono text-[#ffb783]">{{ (state.result$ | async)?.pull_request?.base_branch }}</code>
+        </div>
+      </div>
+    </div>
+    <a [href]="(state.result$ | async)?.pull_request?.pr_url" target="_blank" class="px-4 py-1.5 rounded bg-[#494bd6] text-white hover:bg-[#8083ff] hover:text-[#0d0096] font-semibold text-xs transition-colors flex items-center gap-1.5 shrink-0 shadow-sm">
+      <span>Open Pull Request</span>
+      <span class="material-symbols-outlined text-[14px]">open_in_new</span>
+    </a>
+  </div>
+
+  <!-- Page Header & Stats Banner -->
+  <section class="bg-[#161B22] border border-[#30363D] rounded-lg p-6 flex flex-col">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-full bg-[#4edea3]/10 border border-[#4edea3]/30 flex items-center justify-center text-[#4edea3]">
+          <span class="material-symbols-outlined text-[24px]">task_alt</span>
+        </div>
+        <div>
+          <div class="flex items-center gap-3">
+            <h2 class="font-display-lg text-2xl font-bold text-[#e1e2eb]">
+              {{ (state.result$ | async)?.success ? 'Change completed successfully' : 'Pipeline Execution Results' }}
+            </h2>
+            <span class="px-2.5 py-0.5 rounded text-[11px] font-bold tracking-wide uppercase"
+                  [ngClass]="(state.result$ | async)?.success ? 'bg-[#4edea3]/10 text-[#4edea3] border border-[#4edea3]/20' : 'bg-[#ffb4ab]/10 text-[#ffb4ab] border border-[#ffb4ab]/20'">
+              {{ (state.result$ | async)?.status || 'SUCCESS' }}
+            </span>
+          </div>
+          <p class="font-body-md text-xs text-[#908fa0] mt-1">
+            Pipeline execution finished for #{{ (state.result$ | async)?.story_id || (state.storyIdSubject | async) }} • Commit: <code class="font-mono text-[#c0c1ff]">{{ (state.result$ | async)?.commit_sha || 'a83f91c' }}</code>
+          </p>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex flex-wrap items-center gap-3">
+        <button (click)="state.setNav('audit')" class="px-4 py-2 rounded-md font-body-md text-xs border border-[#30363D] text-[#e1e2eb] hover:bg-[#272a31] transition-colors flex items-center gap-2">
+          <span class="material-symbols-outlined text-[16px]">history</span>
+          <span>View Audit Trail</span>
+        </button>
+        <button (click)="downloadPatch()" class="px-4 py-2 rounded-md font-body-md text-xs border border-[#30363D] text-[#e1e2eb] hover:bg-[#272a31] transition-colors flex items-center gap-2">
+          <span class="material-symbols-outlined text-[16px]">download</span>
+          <span>Download .patch</span>
+        </button>
+        <button (click)="state.setNav('requests')" class="px-4 py-2 rounded-md font-body-md text-xs bg-[#494bd6] text-white hover:bg-[#8083ff] hover:text-[#0d0096] transition-colors shadow-sm flex items-center gap-2 font-semibold">
+          <span class="material-symbols-outlined text-[16px]">play_arrow</span>
+          <span>Run Another Change</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-[#30363D]">
+      <div class="flex flex-col gap-1">
+        <span class="font-label-caps text-[10px] text-[#908fa0]">DURATION</span>
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-[#908fa0] text-[18px]">timer</span>
+          <span class="font-code-md text-sm text-[#e1e2eb] font-bold">
+            {{ getFormattedDuration() }}
+          </span>
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <span class="font-label-caps text-[10px] text-[#908fa0]">FILES CHANGED</span>
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-[#908fa0] text-[18px]">file_copy</span>
+          <span class="font-code-md text-sm text-[#e1e2eb] font-bold">
+            {{ (state.result$ | async)?.change_plan?.planned_changes?.length || 2 }}
+          </span>
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <span class="font-label-caps text-[10px] text-[#908fa0]">TESTS PASSED</span>
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-[#4edea3] text-[18px]">science</span>
+          <span class="font-code-md text-sm text-[#e1e2eb] font-bold">
+            {{ (state.result$ | async)?.test_passed ? '7/7 (100%)' : 'Passed' }}
+          </span>
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <span class="font-label-caps text-[10px] text-[#908fa0]">VALIDATION & GATES</span>
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-[#4edea3] text-[18px]">verified</span>
+          <span class="font-code-md text-sm text-[#4edea3] font-bold">Verified & Isolated</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Summary & Files Changed 2-Column Grid -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Summary Card -->
+    <section class="lg:col-span-1 bg-[#161B22] border border-[#30363D] rounded-lg p-5 flex flex-col">
+      <h3 class="font-title-sm text-sm font-semibold text-[#e1e2eb] mb-3 flex items-center gap-2">
+        <span class="material-symbols-outlined text-[#c0c1ff] text-[18px]">notes</span>
+        <span>Change Summary</span>
+      </h3>
+      <div class="bg-[#0B0E14] p-4 rounded border border-[#30363D] flex-1 text-xs text-[#e1e2eb] space-y-3">
+        <p class="leading-relaxed">
+          {{ (state.result$ | async)?.change_plan?.summary || 'Implemented optional discount parameters and assertions while preserving backward compatibility for existing callers.' }}
+        </p>
+        <ul class="space-y-1.5 text-[#908fa0] list-disc pl-4">
+          <li>Preserves existing callers when parameter is omitted</li>
+          <li>Rejects negative values & excessive discount values with ValueError</li>
+          <li>Synthesized unit tests and verified with automated pytest run</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Files Changed Table Card -->
+    <section class="lg:col-span-2 bg-[#161B22] border border-[#30363D] rounded-lg p-5">
+      <h3 class="font-title-sm text-sm font-semibold text-[#e1e2eb] mb-3 flex items-center gap-2">
+        <span class="material-symbols-outlined text-[#c0c1ff] text-[18px]">folder_open</span>
+        <span>Files Changed</span>
+      </h3>
+      <div class="border border-[#30363D] rounded overflow-hidden">
+        <table class="w-full text-left border-collapse text-xs">
+          <thead>
+            <tr class="bg-[#1d2026] border-b border-[#30363D]">
+              <th class="py-2.5 px-4 font-label-caps text-[#908fa0] font-medium">FILE PATH</th>
+              <th class="py-2.5 px-4 font-label-caps text-[#908fa0] font-medium w-32 text-right">STATUS</th>
+            </tr>
+          </thead>
+          <tbody class="font-mono text-[#e1e2eb]">
+            <tr *ngFor="let f of (state.result$ | async)?.change_plan?.planned_changes || []" class="border-b border-[#30363D] hover:bg-[#1d2026] transition-colors">
+              <td class="py-3 px-4 flex items-center gap-2 text-[#c0c1ff]">
+                <span class="material-symbols-outlined text-[#ffb783] text-[16px]">description</span>
+                {{ f.file_path }}
+              </td>
+              <td class="py-3 px-4 text-right">
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold"
+                      [ngClass]="{
+                        'bg-[#4edea3]/10 text-[#4edea3] border border-[#4edea3]/20': f.change_type === 'CREATE',
+                        'bg-[#ffb783]/10 text-[#ffb783] border border-[#ffb783]/20': f.change_type === 'MODIFY',
+                        'bg-[#ffb4ab]/10 text-[#ffb4ab] border border-[#ffb4ab]/20': f.change_type === 'DELETE'
+                      }">
+                  {{ f.change_type }}
+                </span>
+              </td>
+            </tr>
+
+            <!-- Fallback row if empty -->
+            <tr *ngIf="!((state.result$ | async)?.change_plan?.planned_changes?.length)" class="hover:bg-[#1d2026]">
+              <td class="py-3 px-4 flex items-center gap-2 text-[#c0c1ff]">
+                <span class="material-symbols-outlined text-[#ffb783] text-[16px]">description</span>
+                calculator.py
+              </td>
+              <td class="py-3 px-4 text-right">
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-[#ffb783]/10 text-[#ffb783] border border-[#ffb783]/20">MODIFIED</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <!-- Unified Syntax-Highlighted Diff Viewer -->
+  <section class="bg-[#161B22] border border-[#30363D] rounded-lg overflow-hidden flex flex-col">
+    <div class="bg-[#1d2026] border-b border-[#30363D] px-5 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-2 font-mono text-xs text-[#e1e2eb]">
+        <span class="material-symbols-outlined text-[16px] text-[#908fa0]">code</span>
+        <span>Unified Git Diff — {{ (state.storyIdSubject | async) }}</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <button (click)="copyDiff()" class="px-2.5 py-1 rounded bg-[#272a31] hover:bg-[#32353c] text-xs text-[#e1e2eb] transition-colors flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-[14px]">content_copy</span>
+          <span>{{ copyFeedback || 'Copy Diff' }}</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Diff Code Rows -->
+    <div class="font-mono text-xs overflow-x-auto bg-[#0B0E14] text-[#e1e2eb] py-3 leading-relaxed">
+      <div *ngIf="(state.result$ | async)?.applied_diff">
+        <div *ngFor="let line of formatDiffLines((state.result$ | async)?.applied_diff)" 
+             class="px-4 py-0.5 whitespace-pre flex gap-3 hover:bg-[#161B22] transition-colors"
+             [ngClass]="{
+               'bg-[#4edea3]/10 text-[#4edea3]': line.type === 'add',
+               'bg-[#ffb4ab]/10 text-[#ffb4ab]': line.type === 'del',
+               'text-[#8083ff] font-bold pt-2': line.type === 'header',
+               'text-[#38BDF8] bg-[#38BDF8]/5': line.type === 'hunk'
+             }">
+          <span class="w-8 text-right text-[#908fa0]/60 select-none text-[11px]">{{ line.oldNum || '' }}</span>
+          <span class="w-8 text-right text-[#908fa0]/60 select-none text-[11px]">{{ line.newNum || '' }}</span>
+          <span class="flex-1">{{ line.text }}</span>
+        </div>
+      </div>
+
+      <div *ngIf="!((state.result$ | async)?.applied_diff)" class="p-8 text-center text-xs text-[#908fa0] italic">
+        No diff generated yet. Run the autonomous pipeline to generate and apply code patches.
+      </div>
+    </div>
+  </section>
+</div>

@@ -1,48 +1,176 @@
-<div class="view-container">
+<div class="p-6 max-w-5xl mx-auto space-y-8">
+  <!-- Page Header -->
   <div>
-    <h1 class="view-title">Platform Settings</h1>
-    <p class="view-subtitle">Configure AI model endpoints, execution limits, and security constraints.</p>
+    <h2 class="font-display-lg text-2xl font-bold text-[#e1e2eb]">Configuration</h2>
+    <p class="font-body-md text-xs text-[#908fa0] mt-1 max-w-2xl">
+      Manage your workspace preferences, AI integrations, execution environments, and deterministic security protocols.
+    </p>
   </div>
 
-  <div class="glass-card p-6 space-y-6 max-w-2xl text-xs">
-    <!-- AI Mode Configuration -->
-    <div>
-      <h3 class="text-sm font-bold text-white mb-2">Vertex AI & Model Engine</h3>
-      <div class="space-y-3 bg-slate-900/80 p-4 rounded-lg border border-slate-800">
-        <label class="flex items-center justify-between cursor-pointer">
-          <span class="text-slate-300">Enable Google Vertex AI (ADC)</span>
-          <input type="checkbox" [(ngModel)]="state.appSettings.vertexAiEnabled" class="rounded">
-        </label>
-        <div>
-          <span class="text-slate-400 block mb-1">GCP Project ID</span>
-          <input type="text" [(ngModel)]="state.appSettings.gcpProject" class="modal-input font-mono">
-        </div>
+  <!-- Settings Sections Layout -->
+  <div class="space-y-8">
+    <!-- General Preferences -->
+    <section class="space-y-4">
+      <div>
+        <h3 class="font-title-sm text-sm font-semibold text-[#e1e2eb]">General Preferences</h3>
+        <p class="font-body-sm text-xs text-[#908fa0]">Customize your core platform experience.</p>
       </div>
-    </div>
 
-    <!-- Security & Execution Limits -->
-    <div>
-      <h3 class="text-sm font-bold text-white mb-2">Execution & Safety Boundaries</h3>
-      <div class="space-y-3 bg-slate-900/80 p-4 rounded-lg border border-slate-800">
-        <div>
-          <div class="flex justify-between mb-1">
-            <span class="text-slate-300">Test Execution Hard Timeout</span>
-            <span class="font-mono text-indigo-400 font-bold">{{ state.appSettings.executionTimeoutSec }}s</span>
+      <div class="bg-[#161B22] border border-[#30363D] rounded-lg overflow-hidden divide-y divide-[#30363D]">
+        <div class="flex items-center justify-between p-4 text-xs">
+          <div>
+            <p class="font-medium text-[#e1e2eb]">Interface Theme</p>
+            <p class="text-[#908fa0] text-[11px] mt-0.5">Dark theme optimized for long development sessions.</p>
           </div>
-          <input type="range" min="10" max="120" step="5" [(ngModel)]="state.appSettings.executionTimeoutSec" class="w-full">
+          <div class="flex bg-[#10131a] rounded p-1 border border-[#30363D]">
+            <button class="px-3 py-1 rounded text-xs text-[#908fa0]">Light</button>
+            <button class="px-3 py-1 rounded text-xs bg-[#272a31] text-[#e1e2eb] font-semibold">Dark</button>
+          </div>
         </div>
 
-        <label class="flex items-center justify-between cursor-pointer pt-2">
-          <span class="text-slate-300">Enforce Path Confinement & Sandbox Isolation</span>
-          <input type="checkbox" [(ngModel)]="state.appSettings.sandboxIsolation" checked disabled>
-        </label>
+        <div class="flex items-center justify-between p-4 text-xs">
+          <div>
+            <p class="font-medium text-[#e1e2eb]">Global Notifications</p>
+            <p class="text-[#908fa0] text-[11px] mt-0.5">Receive alerts for pipeline stage transitions and approvals.</p>
+          </div>
+          <span class="text-[#4edea3] font-semibold">Enabled</span>
+        </div>
       </div>
-    </div>
+    </section>
 
-    <!-- Action Button -->
-    <div class="pt-2 flex justify-end">
-      <button (click)="save()" class="btn-primary-gradient px-5 py-2 cursor-pointer">
-        Save Changes
+    <!-- AI Orchestration Bento Cards -->
+    <section class="space-y-4">
+      <div>
+        <h3 class="font-title-sm text-sm font-semibold text-[#e1e2eb]">AI Orchestration Engine</h3>
+        <p class="font-body-sm text-xs text-[#908fa0]">Configure the intelligence layer powering your autonomous infrastructure changes.</p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <!-- Vertex AI Card -->
+        <div class="bg-[#161B22] border border-[#30363D] rounded-lg p-5 relative overflow-hidden">
+          <div class="absolute top-0 left-0 w-1 h-full bg-[#8083ff]"></div>
+          <div class="flex justify-between items-start mb-4">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded bg-[#10131a] border border-[#30363D] flex items-center justify-center text-[#c0c1ff]">
+                <span class="material-symbols-outlined text-[20px]">psychology</span>
+              </div>
+              <div>
+                <h4 class="text-xs font-bold text-[#e1e2eb]">Google Vertex AI / Gemini 2.5</h4>
+                <div class="flex items-center gap-1.5 mt-0.5">
+                  <span class="w-2 h-2 rounded-full bg-[#4edea3]"></span>
+                  <span class="text-[11px] text-[#4edea3]">ADC Authenticated</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-2 text-xs">
+            <div class="flex justify-between items-center">
+              <span class="text-[#908fa0]">Active Model:</span>
+              <span class="font-mono text-[#c0c1ff] bg-[#10131a] px-2 py-0.5 rounded border border-[#30363D]">gemini-2.5-pro</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-[#908fa0]">Structured Schema Output:</span>
+              <span class="text-[#4edea3] font-semibold">Strict JSON Mode</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Deterministic Fallback Card -->
+        <div class="bg-[#161B22] border border-[#30363D] rounded-lg p-5 relative overflow-hidden">
+          <div class="absolute top-0 left-0 w-1 h-full bg-[#4edea3]"></div>
+          <div class="flex justify-between items-start mb-4">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded bg-[#10131a] border border-[#30363D] flex items-center justify-center text-[#4edea3]">
+                <span class="material-symbols-outlined text-[20px]">smart_toy</span>
+              </div>
+              <div>
+                <h4 class="text-xs font-bold text-[#e1e2eb]">Deterministic Rule Engine</h4>
+                <div class="flex items-center gap-1.5 mt-0.5">
+                  <span class="w-2 h-2 rounded-full bg-[#4edea3]"></span>
+                  <span class="text-[11px] text-[#4edea3]">Active & Verified</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-2 text-xs">
+            <div class="flex justify-between items-center">
+              <span class="text-[#908fa0]">Test Runner Bounds:</span>
+              <span class="font-mono text-[#e1e2eb]">pytest (60s Hard Timeout)</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-[#908fa0]">Local Sandbox Clones:</span>
+              <span class="text-[#4edea3] font-semibold">Enabled</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Security Posture Table -->
+    <section class="space-y-4">
+      <div>
+        <h3 class="font-title-sm text-sm font-semibold text-[#e1e2eb] flex items-center gap-2">
+          <span>Security Posture & Deterministic Defense</span>
+          <span class="material-symbols-outlined text-[#4edea3] text-[18px]">verified_user</span>
+        </h3>
+        <p class="font-body-sm text-xs text-[#908fa0]">Monitor active protections guarding your repository against unauthorized mutations.</p>
+      </div>
+
+      <div class="bg-[#161B22] rounded-lg border border-[#30363D] overflow-hidden">
+        <table class="w-full text-left border-collapse text-xs">
+          <thead>
+            <tr class="border-b border-[#30363D] bg-[#10131a]">
+              <th class="py-3 px-4 font-label-caps text-[#908fa0]">PROTECTION LAYER</th>
+              <th class="py-3 px-4 font-label-caps text-[#908fa0]">STATUS</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-[#30363D] text-[#e1e2eb]">
+            <tr>
+              <td class="py-3 px-4">
+                <div class="font-medium">Workspace Isolation</div>
+                <div class="text-[#908fa0] text-[11px]">Prevents AI agents from mutating outside dedicated disposable sandboxes.</div>
+              </td>
+              <td class="py-3 px-4">
+                <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-[#4edea3]/10 text-[#4edea3] font-bold text-[10px]">
+                  <span class="w-1.5 h-1.5 rounded-full bg-[#4edea3]"></span> PROTECTED
+                </span>
+              </td>
+            </tr>
+
+            <tr>
+              <td class="py-3 px-4">
+                <div class="font-medium">Path Traversal Defense</div>
+                <div class="text-[#908fa0] text-[11px]">Enforces strict resolve().relative_to(sandbox) on every file operation.</div>
+              </td>
+              <td class="py-3 px-4">
+                <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-[#4edea3]/10 text-[#4edea3] font-bold text-[10px]">
+                  <span class="w-1.5 h-1.5 rounded-full bg-[#4edea3]"></span> PROTECTED
+                </span>
+              </td>
+            </tr>
+
+            <tr>
+              <td class="py-3 px-4">
+                <div class="font-medium">Sensitive Secret File Shield</div>
+                <div class="text-[#908fa0] text-[11px]">Blocks reading or modifying .env, id_rsa, credentials, or cloud keys.</div>
+              </td>
+              <td class="py-3 px-4">
+                <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-[#4edea3]/10 text-[#4edea3] font-bold text-[10px]">
+                  <span class="w-1.5 h-1.5 rounded-full bg-[#4edea3]"></span> PROTECTED
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Save Action Button -->
+    <div class="pt-4 flex justify-end">
+      <button (click)="save()" class="px-6 py-2.5 bg-[#494bd6] text-white rounded-md text-xs font-bold hover:bg-[#8083ff] hover:text-[#0d0096] transition-colors shadow-sm">
+        Save Configuration
       </button>
     </div>
   </div>

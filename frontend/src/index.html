@@ -1,17 +1,99 @@
 <!doctype html>
-<html lang="en">
+<html class="dark" lang="en">
 <head>
   <meta charset="utf-8">
   <title>ChangePilot — Autonomous Software-Change Platform</title>
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
-  <!-- Modern Inter & JetBrains Mono Fonts -->
+  <!-- Fonts: Geist, Inter, JetBrains Mono, and Google Material Symbols -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+  
+  <!-- Tailwind CSS Engine with Stitch Design Tokens -->
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "outline-variant": "#30363D",
+            "secondary-container": "#00a572",
+            "background": "#0B0E14",
+            "on-background": "#e1e2eb",
+            "inverse-surface": "#e1e2eb",
+            "on-error-container": "#ffdad6",
+            "tertiary": "#ffb783",
+            "on-primary": "#1000a9",
+            "tertiary-container": "#d97721",
+            "primary-container": "#8083ff",
+            "error-container": "#93000a",
+            "surface": "#10131a",
+            "tertiary-fixed": "#ffdcc5",
+            "surface-variant": "#32353c",
+            "on-error": "#690005",
+            "on-tertiary-fixed": "#301400",
+            "primary-fixed-dim": "#c0c1ff",
+            "on-secondary-fixed-variant": "#005236",
+            "on-secondary": "#003824",
+            "surface-container-lowest": "#0B0E14",
+            "inverse-primary": "#494bd6",
+            "on-tertiary-fixed-variant": "#703700",
+            "primary": "#c0c1ff",
+            "outline": "#908fa0",
+            "on-surface-variant": "#908fa0",
+            "on-secondary-fixed": "#002113",
+            "on-tertiary": "#4f2500",
+            "on-primary-container": "#0d0096",
+            "error": "#ffb4ab",
+            "surface-container-low": "#161B22",
+            "inverse-on-surface": "#2e3037",
+            "surface-container": "#1d2026",
+            "secondary": "#4edea3",
+            "surface-container-highest": "#32353c",
+            "tertiary-fixed-dim": "#ffb783",
+            "on-primary-fixed": "#07006c",
+            "surface-container-high": "#272a31",
+            "secondary-fixed": "#6ffbbe",
+            "on-tertiary-container": "#452000",
+            "on-surface": "#e1e2eb",
+            "primary-fixed": "#e1e0ff",
+            "on-primary-fixed-variant": "#2f2ebe",
+            "secondary-fixed-dim": "#4edea3",
+            "surface-tint": "#c0c1ff",
+            "surface-dim": "#10131a",
+            "surface-bright": "#363940",
+            "on-secondary-container": "#00311f"
+          },
+          borderRadius: {
+            DEFAULT: "0.375rem",
+            md: "0.5rem",
+            lg: "0.75rem",
+            xl: "1rem",
+            full: "9999px"
+          },
+          spacing: {
+            sidebar_width: "260px"
+          },
+          fontFamily: {
+            "headline-md": ["Geist", "sans-serif"],
+            "title-sm": ["Inter", "sans-serif"],
+            "body-sm": ["Inter", "sans-serif"],
+            "body-md": ["Inter", "sans-serif"],
+            "code-md": ["JetBrains Mono", "monospace"],
+            "display-lg": ["Geist", "sans-serif"],
+            "code-sm": ["JetBrains Mono", "monospace"],
+            "label-caps": ["JetBrains Mono", "monospace"]
+          }
+        }
+      }
+    };
+  </script>
 </head>
-<body class="bg-slate-950 text-slate-100 antialiased selection:bg-indigo-500 selection:text-white">
+<body class="bg-[#0B0E14] text-[#e1e2eb] font-sans antialiased selection:bg-[#8083ff]/30 overflow-hidden h-screen">
   <app-root></app-root>
 </body>
 </html>

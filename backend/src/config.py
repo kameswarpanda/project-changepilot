@@ -19,6 +19,33 @@ class Settings(BaseSettings):
     host: str = Field(default="0.0.0.0", description="API listen host")
     port: int = Field(default=8000, description="API listen port")
 
+    # Authentication & JWT Configuration
+    jwt_secret_key: str = Field(
+        default="changepilot-dev-secret-key-super-secure-for-local-hackathon-2026",
+        alias="JWT_SECRET_KEY",
+        description="HMAC secret key for signing JWT sessions"
+    )
+    jwt_algorithm: str = Field(default="HS256", description="Algorithm for JWT signing")
+    jwt_access_token_expire_minutes: int = Field(default=1440, description="Token expiration duration (24h)")
+    
+    # Identity Platform / OAuth Providers
+    google_client_id: Optional[str] = Field(default=None, alias="GOOGLE_CLIENT_ID")
+    google_client_secret: Optional[str] = Field(default=None, alias="GOOGLE_CLIENT_SECRET")
+    github_client_id: Optional[str] = Field(default=None, alias="GITHUB_CLIENT_ID")
+    github_client_secret: Optional[str] = Field(default=None, alias="GITHUB_CLIENT_SECRET")
+
+    # GitHub App Integration
+    github_app_id: Optional[str] = Field(default=None, alias="GITHUB_APP_ID")
+    github_app_private_key: Optional[str] = Field(default=None, alias="GITHUB_APP_PRIVATE_KEY")
+    github_app_installation_id: Optional[str] = Field(default=None, alias="GITHUB_APP_INSTALLATION_ID")
+
+    # Database Configuration (SQLite default for zero-config local/test, PostgreSQL in production)
+    database_url: str = Field(
+        default="sqlite:///./changepilot.db",
+        alias="DATABASE_URL",
+        description="Database connection URL"
+    )
+
     # Vertex AI / Google GenAI Configuration
     # Uses ADC (Application Default Credentials) by default
     google_genai_use_vertexai: bool = Field(default=True, alias="GOOGLE_GENAI_USE_VERTEXAI")

@@ -27,6 +27,10 @@ class PatchApplicationResult(BaseModel):
     errors: List[str] = Field(default_factory=list)
 
 
+# Backward-compatible alias
+ApplyResult = PatchApplicationResult
+
+
 class PatchApplier:
     """Safely mutates the isolated repository workspace according to a validated PatchPlan."""
 

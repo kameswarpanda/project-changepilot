@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { WorkflowStateService } from '../../services/workflow-state.service';
 import { ConnectedRepo } from '../../models';
 import { Observable, combineLatest } from 'rxjs';
@@ -8,12 +9,19 @@ import { map } from 'rxjs/operators';
 @Component({
   selector: 'app-repositories',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './repositories.component.html',
   styleUrls: ['./repositories.component.css']
 })
 export class RepositoriesComponent {
   filteredRepos$: Observable<ConnectedRepo[]>;
+
+  // Connect Modal State
+  showConnectModal = false;
+  connectProvider = 'github';
+  connectRepoName = 'company/payment-service';
+  connectBaseBranch = 'develop';
+  connectIsPrivate = false;
 
   constructor(public state: WorkflowStateService) {
     this.filteredRepos$ = combineLatest([
@@ -32,6 +40,25 @@ export class RepositoriesComponent {
     );
   }
 
+  openConnectModal(): void {
+    this.showConnectModal = true;
+  }
+
+  closeConnectModal(): void {
+    this.showConnectModal = false;
+  }
+
+  submitConnect(): void {
+    if (!this.connectRepoName.trim()) return;
+    this.state.connectNewRepository(
+      this.connectRepoName,
+      this.connectProvider,
+      this.connectBaseBranch,
+      this.connectIsPrivate
+    );
+    this.showConnectModal = false;
+  }
+
   inspect(repo: ConnectedRepo): void {
     this.state.repoLocationSubject.next(repo.path);
     this.state.inspectRepository(repo.path);
@@ -39,6 +66,9 @@ export class RepositoriesComponent {
 
   select(repo: ConnectedRepo): void {
     this.state.repoLocationSubject.next(repo.path);
-    this.state.setNav('dashboard');
+    if (repo.branches && repo.branches.length) {
+      this.state.baseBranchSubject.next(repo.branches[0]);
+    }
+    this.state.setNav('requests');
   }
 }

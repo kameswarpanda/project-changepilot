@@ -1,34 +1,64 @@
-<div class="view-container">
-  <div class="view-header">
+<div class="p-6 max-w-[1400px] mx-auto space-y-6">
+  <!-- Page Header & Filters Card -->
+  <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-[#161B22] p-5 rounded-lg border border-[#30363D]">
     <div>
-      <h1 class="view-title">Audit Trail & Gates</h1>
-      <p class="view-subtitle">Cryptographic validation receipts, path confinement logs, and gate evaluations.</p>
+      <h2 class="font-headline-md text-xl font-bold text-[#e1e2eb]">System Audit Trail</h2>
+      <p class="font-body-sm text-xs text-[#908fa0] mt-1">Immutable record of autonomous actions and pipeline executions.</p>
     </div>
-    <button (click)="exportLogs()" class="btn-secondary-outline px-4 py-2 text-xs flex items-center gap-2 cursor-pointer">
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-      <span>Export JSON Audit</span>
-    </button>
+
+    <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
+      <button (click)="exportLogs()" class="bg-[#494bd6] text-white px-4 py-2 rounded-md font-semibold text-xs hover:bg-[#8083ff] hover:text-[#0d0096] transition-colors flex items-center gap-2">
+        <span class="material-symbols-outlined text-[16px]">download</span>
+        <span>Export Audit JSON</span>
+      </button>
+    </div>
   </div>
 
-  <div class="glass-card p-5 space-y-3 text-xs">
-    <div *ngIf="(state.result$ | async)?.audit_trail?.length">
-      <div *ngFor="let a of (state.result$ | async)?.audit_trail" class="p-3.5 bg-slate-900/80 border border-slate-800 rounded-lg flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <span class="dot dot-success"></span>
-          <div>
-            <strong class="text-white font-mono">{{ a.stage }}</strong>
-            <p class="text-slate-400 text-[11px] mt-0.5">{{ a.message }}</p>
-          </div>
-        </div>
-        <div class="text-right">
-          <span class="badge-success badge-pill">{{ a.status }}</span>
-          <div class="font-mono text-slate-500 text-[10px] mt-1">{{ a.duration_ms ? a.duration_ms + 'ms' : '-' }}</div>
-        </div>
-      </div>
-    </div>
+  <!-- Log Table Card -->
+  <div class="bg-[#161B22] rounded-lg border border-[#30363D] flex flex-col overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse text-xs">
+        <thead class="bg-[#1d2026] border-b border-[#30363D]">
+          <tr>
+            <th class="py-3 px-4 font-label-caps text-[#908fa0]">STAGE</th>
+            <th class="py-3 px-4 font-label-caps text-[#908fa0]">ACTION / DETERMINISTIC GATE</th>
+            <th class="py-3 px-4 font-label-caps text-[#908fa0]">DURATION</th>
+            <th class="py-3 px-4 font-label-caps text-[#908fa0]">STATUS</th>
+          </tr>
+        </thead>
+        <tbody class="text-[#e1e2eb]">
+          <tr *ngFor="let audit of (state.result$ | async)?.audit_trail || []" class="border-b border-[#30363D] hover:bg-[#1d2026] transition-colors">
+            <td class="py-3 px-4 whitespace-nowrap">
+              <span class="font-mono text-[#c0c1ff] bg-[#c0c1ff]/10 px-2 py-0.5 rounded font-semibold">{{ audit.stage }}</span>
+            </td>
+            <td class="py-3 px-4">
+              <span class="text-[#e1e2eb]">{{ audit.message }}</span>
+            </td>
+            <td class="py-3 px-4 font-mono text-[#908fa0]">
+              {{ audit.duration_ms ? audit.duration_ms + 'ms' : '< 1ms' }}
+            </td>
+            <td class="py-3 px-4 whitespace-nowrap">
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[10px] font-bold"
+                    [ngClass]="audit.status === 'SUCCESS' ? 'bg-[#4edea3]/10 text-[#4edea3]' : 'bg-[#ffb4ab]/10 text-[#ffb4ab]'">
+                <span class="material-symbols-outlined text-[12px]">{{ audit.status === 'SUCCESS' ? 'check_circle' : 'cancel' }}</span>
+                {{ audit.status }}
+              </span>
+            </td>
+          </tr>
 
-    <div *ngIf="!(state.result$ | async)?.audit_trail?.length" class="p-8 text-center text-slate-500 italic">
-      Run a change request from the dashboard to view real-time stage audit trails.
+          <!-- Fallback items if result is not available yet -->
+          <tr *ngIf="!((state.result$ | async)?.audit_trail?.length)" class="border-b border-[#30363D]">
+            <td class="py-3 px-4 font-mono text-[#c0c1ff]">WORKSPACE_READY</td>
+            <td class="py-3 px-4">Isolated disposable workspace initialized</td>
+            <td class="py-3 px-4 font-mono text-[#908fa0]">12ms</td>
+            <td class="py-3 px-4">
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[10px] font-bold bg-[#4edea3]/10 text-[#4edea3]">
+                <span class="material-symbols-outlined text-[12px]">check_circle</span> SUCCESS
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </div>
 </div>

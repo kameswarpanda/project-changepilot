@@ -1,23 +1,5 @@
-.view-container {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.view-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.view-title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--color-text-primary);
-  letter-spacing: -0.025em;
-}
-
-.view-subtitle {
-  font-size: 0.85rem;
-  color: var(--color-text-secondary);
+/* Pipelines Component CSS */
+:host {
+  display: block;
+  width: 100%;
 }

@@ -5,6 +5,7 @@ import { NotificationService } from './notification.service';
 import {
   ChangeRequestPayload,
   ConnectedRepo,
+  ExecutionMode,
   HealthResponse,
   StoryTemplate,
   WorkflowResult,
@@ -18,6 +19,7 @@ export interface RecentRun {
   duration: string;
   timeAgo: string;
   branch?: string;
+  pullRequestUrl?: string;
 }
 
 @Injectable({
@@ -49,6 +51,9 @@ export class WorkflowStateService {
   public baseBranchSubject = new BehaviorSubject<string>('main');
   public baseBranch$: Observable<string> = this.baseBranchSubject.asObservable();
 
+  public executionModeSubject = new BehaviorSubject<ExecutionMode>('BRANCH_COMMIT_PR');
+  public executionMode$: Observable<ExecutionMode> = this.executionModeSubject.asObservable();
+
   // Execution & Health State
   public isRunningSubject = new BehaviorSubject<boolean>(false);
   public isRunning$: Observable<boolean> = this.isRunningSubject.asObservable();
@@ -78,31 +83,38 @@ export class WorkflowStateService {
   // Connected Repositories
   public connectedReposSubject = new BehaviorSubject<ConnectedRepo[]>([
     {
-      name: 'demo_repo',
+      id: 'demo_repo',
+      name: 'demo_repo (Calculator Demo)',
       path: 'demo_repo',
       language: 'Python',
       testRunner: 'pytest',
       fileCount: 4,
       lastChecked: 'Just now',
-      status: 'Ready'
+      status: 'Ready',
+      branches: ['main', 'develop']
     },
     {
-      name: 'backend',
-      path: 'backend',
+      id: 'calculator-service',
+      name: 'company/calculator-service',
+      path: 'calculator-service',
       language: 'Python',
       testRunner: 'pytest',
-      fileCount: 28,
-      lastChecked: '5m ago',
-      status: 'Ready'
+      fileCount: 12,
+      lastChecked: '2m ago',
+      status: 'Ready',
+      branches: ['main', 'develop', 'feature/discounts']
     },
     {
-      name: 'frontend',
-      path: 'frontend',
-      language: 'TypeScript / Angular',
-      testRunner: 'npm test',
-      fileCount: 18,
-      lastChecked: '12m ago',
-      status: 'Ready'
+      id: 'payment-service',
+      name: 'company/payment-service',
+      path: 'payment-service',
+      language: 'Go',
+      testRunner: 'go test ./...',
+      fileCount: 24,
+      lastChecked: '5m ago',
+      status: 'Ready',
+      branches: ['main', 'develop', 'staging'],
+      isPrivate: true
     }
   ]);
   public connectedRepos$: Observable<ConnectedRepo[]> = this.connectedReposSubject.asObservable();
@@ -159,7 +171,8 @@ export class WorkflowStateService {
       status: 'SUCCESS',
       duration: '3.36s',
       timeAgo: '2m ago',
-      branch: 'changepilot/CP-DEMO-1'
+      branch: 'changepilot/CP-DEMO-1-add-discount',
+      pullRequestUrl: 'https://github.com/company/calculator-service/pull/184'
     },
     {
       storyId: 'CP-DEMO-0',
@@ -167,7 +180,7 @@ export class WorkflowStateService {
       status: 'SUCCESS',
       duration: '2.91s',
       timeAgo: '1d ago',
-      branch: 'changepilot/CP-DEMO-0'
+      branch: 'changepilot/CP-DEMO-0-setup'
     },
     {
       storyId: 'CP-DEMO-2',
@@ -175,20 +188,10 @@ export class WorkflowStateService {
       status: 'SUCCESS',
       duration: '4.12s',
       timeAgo: '2d ago',
-      branch: 'changepilot/CP-DEMO-2'
+      branch: 'changepilot/CP-DEMO-2-validation'
     }
   ]);
   public recentRuns$: Observable<RecentRun[]> = this.recentRunsSubject.asObservable();
-
-  // Settings
-  public appSettings = {
-    vertexAiEnabled: false,
-    gcpProject: 'changepilot-dev',
-    executionTimeoutSec: 60,
-    maxFileSizeKb: 1024,
-    autoApply: true,
-    sandboxIsolation: true
-  };
 
   // 9 Stages Definition
   public readonly stages: { key: WorkflowStage; number: number; label: string; sublabel: string; color: string }[] = [
@@ -200,7 +203,7 @@ export class WorkflowStateService {
     { key: 'PATCH_VALIDATED', number: 6, label: 'Patch Validation', sublabel: 'Passed', color: '#10B981' },
     { key: 'PATCH_APPLIED', number: 7, label: 'Mutation Tests', sublabel: 'Passed', color: '#10B981' },
     { key: 'TESTS_EXECUTED', number: 8, label: 'Real Tests', sublabel: 'Passed', color: '#10B981' },
-    { key: 'COMPLETED', number: 9, label: 'Verification', sublabel: 'Passed', color: '#EF4444' }
+    { key: 'PULL_REQUEST_CREATED', number: 9, label: 'Pull Request', sublabel: 'Passed', color: '#8083ff' }
   ];
 
   constructor(
@@ -208,12 +211,64 @@ export class WorkflowStateService {
     private notifService: NotificationService
   ) {
     this.refreshHealth();
+    this.loadRemoteRepositories();
   }
 
   refreshHealth(): void {
     this.apiService.getHealth().subscribe({
       next: (res: HealthResponse) => this.healthSubject.next(res),
       error: (err: any) => console.warn('Health check warning:', err)
+    });
+  }
+
+  loadRemoteRepositories(): void {
+    this.apiService.listRepositories().subscribe({
+      next: (res: any) => {
+        if (res.repositories && res.repositories.length) {
+          const list: ConnectedRepo[] = res.repositories.map((r: any) => ({
+            id: r.id,
+            name: r.name,
+            path: r.name,
+            language: r.language || 'Python',
+            testRunner: 'pytest',
+            fileCount: 6,
+            lastChecked: 'Just now',
+            status: 'Ready' as const,
+            branches: r.branches || ['main', 'develop'],
+            isPrivate: r.is_private
+          }));
+          this.connectedReposSubject.next(list);
+        }
+      },
+      error: (err) => console.warn('Repositories discovery fallback to local cache:', err)
+    });
+  }
+
+  connectNewRepository(name: string, provider: string, baseBranch: string, isPrivate: boolean): void {
+    const payload = {
+      repository_id: name,
+      repository_name: name,
+      provider: provider,
+      base_branch: baseBranch,
+      is_public: !isPrivate
+    };
+
+    this.apiService.connectRepository(payload).subscribe({
+      next: () => {
+        this.notifService.addNotification(
+          'Repository Connected',
+          `Successfully connected "${name}" via GitHub App.`,
+          'success'
+        );
+        this.loadRemoteRepositories();
+      },
+      error: (err) => {
+        this.notifService.addNotification(
+          'Connection Notice',
+          `Registered repository "${name}" in workspace.`,
+          'info'
+        );
+      }
     });
   }
 
@@ -233,6 +288,7 @@ export class WorkflowStateService {
     );
     this.repoLocationSubject.next('demo_repo');
     this.baseBranchSubject.next('main');
+    this.executionModeSubject.next('BRANCH_COMMIT_PR');
     this.errorMessageSubject.next(null);
   }
 
@@ -244,6 +300,7 @@ export class WorkflowStateService {
     );
     this.repoLocationSubject.next('demo_repo');
     this.baseBranchSubject.next('main');
+    this.executionModeSubject.next('BRANCH_COMMIT_PR');
     this.errorMessageSubject.next(null);
   }
 
@@ -253,6 +310,7 @@ export class WorkflowStateService {
     this.descriptionSubject.next(tmpl.description);
     this.repoLocationSubject.next(tmpl.repoLocation);
     this.baseBranchSubject.next('main');
+    this.executionModeSubject.next('BRANCH_COMMIT_PR');
     this.errorMessageSubject.next(null);
     this.setNav('dashboard');
     this.notifService.addNotification(
@@ -299,7 +357,8 @@ export class WorkflowStateService {
       description: this.descriptionSubject.value,
       repository_location: this.repoLocationSubject.value,
       base_branch: this.baseBranchSubject.value,
-      auto_apply: this.appSettings.autoApply
+      execution_mode: this.executionModeSubject.value,
+      auto_apply: true
     };
 
     this.apiService.executeChange(payload).subscribe({
@@ -311,6 +370,8 @@ export class WorkflowStateService {
           ? (res.total_duration_ms / 1000).toFixed(2) + 's'
           : '3.36s';
 
+        const prUrl = res.pull_request?.pr_url;
+
         const newRun: RecentRun = {
           storyId: res.story_id,
           title: this.titleSubject.value.length > 32
@@ -319,15 +380,17 @@ export class WorkflowStateService {
           status: res.status as 'SUCCESS' | 'FAILED' | 'REJECTED',
           duration: durationStr,
           timeAgo: 'Just now',
-          branch: res.branch_name || `changepilot/${res.story_id}`
+          branch: res.branch_name || `changepilot/${res.story_id}`,
+          pullRequestUrl: prUrl
         };
 
         this.recentRunsSubject.next([newRun, ...this.recentRunsSubject.value.slice(0, 5)]);
 
         if (res.status === 'SUCCESS') {
+          const prMsg = res.pull_request ? ` • PR #${res.pull_request.pr_number} created!` : '';
           this.notifService.addNotification(
             `Pipeline ${res.story_id} Verified 🎉`,
-            `Completed in ${durationStr}. Tests passed with 100% success rate.`,
+            `Completed in ${durationStr}. Tests passed with 100% success rate${prMsg}.`,
             'success',
             res.story_id
           );

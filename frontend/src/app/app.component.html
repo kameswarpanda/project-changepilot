@@ -1,20 +1,22 @@
-<div class="app-layout">
-  <!-- 1. Sidebar Component -->
+<div class="flex h-screen overflow-hidden bg-[#0B0E14] text-[#e1e2eb]">
+  <!-- 1. Left Sidebar Component -->
   <app-sidebar></app-sidebar>
 
   <!-- 2. Main Content Wrapper -->
-  <div class="main-wrapper">
+  <div class="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
     <!-- Topbar Component -->
     <app-topbar></app-topbar>
 
     <!-- Dynamic View Containers -->
-    <main class="dashboard-body">
+    <main class="flex-1 overflow-y-auto bg-[#0B0E14] relative">
       <app-dashboard *ngIf="(state.activeNav$ | async) === 'dashboard'"></app-dashboard>
       <app-change-requests *ngIf="(state.activeNav$ | async) === 'requests'"></app-change-requests>
       <app-pipelines *ngIf="(state.activeNav$ | async) === 'pipelines'"></app-pipelines>
+      <app-change-result *ngIf="(state.activeNav$ | async) === 'results'"></app-change-result>
       <app-repositories *ngIf="(state.activeNav$ | async) === 'repositories'"></app-repositories>
       <app-templates *ngIf="(state.activeNav$ | async) === 'templates'"></app-templates>
       <app-audit-logs *ngIf="(state.activeNav$ | async) === 'audit'"></app-audit-logs>
+      <app-reports *ngIf="(state.activeNav$ | async) === 'reports'"></app-reports>
       <app-settings *ngIf="(state.activeNav$ | async) === 'settings'"></app-settings>
     </main>
   </div>
@@ -22,7 +24,7 @@
   <!-- 3. Mobile Navigation -->
   <app-mobile-nav></app-mobile-nav>
 
-  <!-- 4. Modals -->
+  <!-- 4. Modals (if triggered) -->
   <app-report-modal></app-report-modal>
   <app-new-request-modal></app-new-request-modal>
 </div>
