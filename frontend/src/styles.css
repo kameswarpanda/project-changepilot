@@ -1,21 +1,40 @@
-/* ChangePilot Design System & Global Styles */
+/* ==============================================================================
+   ChangePilot Design Tokens & Global Styles (Exact Reference Match)
+   ============================================================================== */
+
 :root {
-  --bg-main: #090d16;
-  --bg-surface: #111827;
-  --bg-card: #161f30;
-  --bg-card-hover: #1e293b;
-  --border-subtle: #1e293b;
-  --border-focus: #3b82f6;
-  --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
-  --text-muted: #64748b;
-  --accent-primary: #6366f1;
-  --accent-primary-hover: #4f46e5;
-  --accent-emerald: #10b981;
-  --accent-amber: #f59e0b;
-  --accent-rose: #f43f5e;
-  --accent-cyan: #06b6d4;
-  --code-bg: #0b0f19;
+  /* Color Palette Tokens from Design Spec */
+  --color-primary: #7C4DFF;
+  --color-primary-hover: #6c3bee;
+  --color-primary-glow: rgba(124, 77, 255, 0.4);
+
+  --color-secondary: #00D4FF;
+  --color-secondary-glow: rgba(0, 212, 255, 0.4);
+
+  --color-success: #10B981;
+  --color-success-glow: rgba(16, 185, 129, 0.4);
+
+  --color-warning: #F59E0B;
+  --color-warning-glow: rgba(245, 158, 11, 0.4);
+
+  --color-danger: #EF4444;
+  --color-danger-glow: rgba(239, 68, 68, 0.4);
+
+  --color-info: #6366F1;
+  --color-info-glow: rgba(99, 102, 241, 0.4);
+
+  --color-dark-bg: #0B0F19;
+  --color-card-bg: #121827;
+  --color-card-surface: #172033;
+  --color-border: #1F2937;
+  --color-border-hover: #374151;
+
+  --color-text-primary: #F9FAFB;
+  --color-text-secondary: #9CA3AF;
+  --color-text-muted: #6B7280;
+
+  --font-family-base: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-family-mono: 'Fira Code', 'JetBrains Mono', monospace;
 }
 
 * {
@@ -24,44 +43,97 @@
   padding: 0;
 }
 
-body {
-  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-  background-color: var(--bg-main);
-  color: var(--text-primary);
-  min-height: 100vh;
-  line-height: 1.5;
+html, body {
+  height: 100%;
+  background-color: var(--color-dark-bg);
+  color: var(--color-text-primary);
+  font-family: var(--font-family-base);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
-}
-
-code, pre, .font-mono {
-  font-family: 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
 /* Custom Scrollbars */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--bg-main);
+  background: var(--color-dark-bg);
 }
 ::-webkit-scrollbar-thumb {
-  background: #334155;
-  border-radius: 4px;
+  background: #1F2937;
+  border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: #374151;
 }
 
-/* Glassmorphism & Glow Effects */
-.glow-primary {
-  box-shadow: 0 0 25px -5px rgba(99, 102, 241, 0.35);
+/* Glassmorphism & Soft Glow Shadows */
+.glass-card {
+  background: rgba(18, 24, 39, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.glow-emerald {
-  box-shadow: 0 0 25px -5px rgba(16, 185, 129, 0.35);
+.glass-card:hover {
+  border-color: rgba(124, 77, 255, 0.3);
+  box-shadow: 0 15px 35px -10px rgba(0, 0, 0, 0.6), 0 0 20px -5px var(--color-primary-glow);
 }
 
-.glow-rose {
-  box-shadow: 0 0 25px -5px rgba(244, 63, 94, 0.35);
+/* Gradient Primary Action Button */
+.btn-primary-gradient {
+  background: linear-gradient(135deg, #7C4DFF 0%, #00D4FF 100%);
+  color: #FFFFFF;
+  font-weight: 600;
+  border: none;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px -2px rgba(124, 77, 255, 0.5);
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.btn-primary-gradient:hover {
+  opacity: 0.95;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 25px 0px rgba(0, 212, 255, 0.6);
+}
+
+.btn-primary-gradient:active {
+  transform: translateY(0);
+}
+
+/* Status Badges */
+.badge-success {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--color-success);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.badge-primary {
+  background: rgba(124, 77, 255, 0.15);
+  color: #A78BFA;
+  border: 1px solid rgba(124, 77, 255, 0.3);
+}
+
+.badge-info {
+  background: rgba(0, 212, 255, 0.15);
+  color: var(--color-secondary);
+  border: 1px solid rgba(0, 212, 255, 0.3);
+}
+
+.badge-warning {
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--color-warning);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.badge-danger {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--color-danger);
+  border: 1px solid rgba(239, 68, 68, 0.3);
 }
