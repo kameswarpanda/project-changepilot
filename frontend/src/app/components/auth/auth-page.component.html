@@ -35,7 +35,7 @@
           </div>
         </div>
 
-        <!-- Animated Sliding Mode Switcher Tabs -->
+        <!-- Animated Sliding Mode Switcher Tabs (Sign In / Create Account) -->
         <div class="relative flex bg-[#10131a] light:bg-[#f6f8fa] p-1 rounded-xl border border-[#30363D] light:border-[#d0d7de] mb-6 overflow-hidden">
           <button (click)="switchMode('signin')" 
                   [ngClass]="authMode === 'signin' ? 'bg-[#494bd6] text-white font-semibold shadow-md' : 'text-[#908fa0] light:text-[#57606a] hover:text-[#e1e2eb] light:hover:text-[#1f2328]'" 
@@ -46,11 +46,6 @@
                   [ngClass]="authMode === 'signup' ? 'bg-[#494bd6] text-white font-semibold shadow-md' : 'text-[#908fa0] light:text-[#57606a] hover:text-[#e1e2eb] light:hover:text-[#1f2328]'" 
                   class="flex-1 py-2 rounded-lg text-xs transition-all text-center z-10 font-medium">
             Create Account
-          </button>
-          <button (click)="switchMode('forgot')" 
-                  [ngClass]="authMode === 'forgot' ? 'bg-[#494bd6] text-white font-semibold shadow-md' : 'text-[#908fa0] light:text-[#57606a] hover:text-[#e1e2eb] light:hover:text-[#1f2328]'" 
-                  class="flex-1 py-2 rounded-lg text-xs transition-all text-center z-10 font-medium">
-            Reset Password
           </button>
         </div>
 
@@ -185,6 +180,18 @@
 
         <!-- 3. FORGOT PASSWORD (OTP FLOW) -->
         <div *ngIf="authMode === 'forgot'" class="space-y-4 text-xs">
+          <!-- Reset Password Header with Back Button -->
+          <div class="flex items-center justify-between pb-2 border-b border-[#30363D]/50 light:border-[#d0d7de]/50 mb-2">
+            <div class="flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-[#8083ff] light:text-[#494bd6] text-[18px]">lock_reset</span>
+              <h2 class="font-headline-sm text-sm font-bold text-[#e1e2eb] light:text-[#1f2328]">Reset Password</h2>
+            </div>
+            <button type="button" (click)="switchMode('signin')" class="text-xs text-[#8083ff] light:text-[#494bd6] hover:underline flex items-center gap-1 font-medium">
+              <span class="material-symbols-outlined text-[14px]">arrow_back</span>
+              <span>Back to Sign In</span>
+            </button>
+          </div>
+
           <!-- Step 1: Enter Email & Request OTP -->
           <form *ngIf="forgotStep === 'request'" (ngSubmit)="handleSendResetOtp()" autocomplete="off" class="space-y-3.5">
             <div>
@@ -293,6 +300,12 @@
               <span>{{ isLoading ? 'Updating Password...' : 'Set New Password' }}</span>
             </button>
           </form>
+
+          <div class="text-center pt-2 border-t border-[#30363D]/40 light:border-[#d0d7de]/40">
+            <button type="button" (click)="switchMode('signin')" class="text-xs text-[#8083ff] light:text-[#494bd6] hover:underline font-medium">
+              Remember your password? Sign in
+            </button>
+          </div>
         </div>
       </div>
 
