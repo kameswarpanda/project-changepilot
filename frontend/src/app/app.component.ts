@@ -14,6 +14,7 @@ import { SettingsComponent } from './components/settings/settings.component';
 import { ReportModalComponent } from './components/modals/report-modal/report-modal.component';
 import { NewRequestModalComponent } from './components/modals/new-request-modal/new-request-modal.component';
 import { AuthPageComponent } from './components/auth/auth-page.component';
+import { ToastContainerComponent } from './components/layout/toast-container/toast-container.component';
 import { WorkflowStateService } from './services/workflow-state.service';
 import { AuthService } from './services/auth.service';
 
@@ -23,6 +24,7 @@ import { AuthService } from './services/auth.service';
   imports: [
     CommonModule,
     AuthPageComponent,
+    ToastContainerComponent,
     SidebarComponent,
     TopbarComponent,
     MobileNavComponent,

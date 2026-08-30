@@ -1,0 +1,60 @@
+<div class="fixed top-5 right-5 z-[9999] flex flex-col gap-3 max-w-md w-full pointer-events-none px-4 sm:px-0">
+  <div *ngFor="let toast of (notifService.activeToasts$ | async)" 
+       class="pointer-events-auto rounded-xl shadow-2xl border transition-all transform duration-300 animate-slide-in p-4 backdrop-blur-md"
+       [ngClass]="{
+         'bg-[#1E1215] border-[#EF4444]/40 text-[#FFE2E5] dark:bg-[#1E1215] light:bg-[#FEF2F2] light:border-[#EF4444]/30 light:text-[#991B1B]': toast.type === 'error',
+         'bg-[#1F1A0E] border-[#F59E0B]/40 text-[#FEF3C7] dark:bg-[#1F1A0E] light:bg-[#FFFBEB] light:border-[#F59E0B]/30 light:text-[#92400E]': toast.type === 'warning',
+         'bg-[#0C1F17] border-[#10B981]/40 text-[#D1FAE5] dark:bg-[#0C1F17] light:bg-[#ECFDF5] light:border-[#10B981]/30 light:text-[#065F46]': toast.type === 'success',
+         'bg-[#121624] border-[#6366F1]/40 text-[#E0E7FF] dark:bg-[#121624] light:bg-[#EEF2FF] light:border-[#6366F1]/30 light:text-[#3730A3]': toast.type === 'info'
+       }">
+    
+    <!-- Top Row: Icon, Title, Actions -->
+    <div class="flex items-start justify-between gap-3">
+      <div class="flex items-start gap-2.5">
+        <!-- Status Icon -->
+        <span *ngIf="toast.type === 'error'" class="material-symbols-outlined text-[20px] text-[#EF4444] shrink-0 mt-0.5">error</span>
+        <span *ngIf="toast.type === 'warning'" class="material-symbols-outlined text-[20px] text-[#F59E0B] shrink-0 mt-0.5">warning</span>
+        <span *ngIf="toast.type === 'success'" class="material-symbols-outlined text-[20px] text-[#10B981] shrink-0 mt-0.5">check_circle</span>
+        <span *ngIf="toast.type === 'info'" class="material-symbols-outlined text-[20px] text-[#6366F1] shrink-0 mt-0.5">info</span>
+
+        <div>
+          <div class="flex items-center gap-2">
+            <h4 class="font-semibold text-xs leading-tight tracking-wide">{{ toast.title }}</h4>
+            <span *ngIf="toast.storyId" class="px-1.5 py-0.2 rounded text-[10px] font-mono font-bold uppercase bg-black/20 light:bg-black/5">
+              {{ toast.storyId }}
+            </span>
+          </div>
+          <p class="text-xs opacity-90 mt-1 leading-relaxed">{{ toast.message }}</p>
+        </div>
+      </div>
+
+      <!-- Action Buttons (Copy & Dismiss) -->
+      <div class="flex items-center gap-1 shrink-0">
+        <button *ngIf="toast.type === 'error' || toast.detail" 
+                (click)="copyError(toast)" 
+                [title]="copiedToastId === toast.id ? 'Copied!' : 'Copy error details'"
+                class="p-1 rounded hover:bg-black/10 transition-colors text-xs opacity-75 hover:opacity-100 flex items-center gap-1">
+          <span class="material-symbols-outlined text-[16px]">{{ copiedToastId === toast.id ? 'done' : 'content_copy' }}</span>
+        </button>
+
+        <button (click)="notifService.dismissToast(toast.id)" 
+                title="Dismiss"
+                class="p-1 rounded hover:bg-black/10 transition-colors text-xs opacity-75 hover:opacity-100">
+          <span class="material-symbols-outlined text-[18px]">close</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Optional Detail Drawer (for developers) -->
+    <div *ngIf="toast.detail" class="mt-2 pt-2 border-t border-current/15 text-[11px]">
+      <button (click)="toggleDetail(toast.id)" class="underline opacity-80 hover:opacity-100 flex items-center gap-1 font-mono text-[10px]">
+        <span>{{ expandedDetails[toast.id] ? 'Hide Developer Diagnostic' : 'Show Developer Diagnostic' }}</span>
+        <span class="material-symbols-outlined text-[12px]">{{ expandedDetails[toast.id] ? 'expand_less' : 'expand_more' }}</span>
+      </button>
+
+      <div *ngIf="expandedDetails[toast.id]" class="mt-2 p-2.5 rounded bg-black/30 light:bg-black/10 font-mono text-[10px] overflow-x-auto max-h-36 overflow-y-auto whitespace-pre-wrap leading-tight select-text">
+        {{ toast.detail }}
+      </div>
+    </div>
+  </div>
+</div>

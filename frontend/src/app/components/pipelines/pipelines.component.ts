@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { WorkflowStateService } from '../../services/workflow-state.service';
-import { WorkflowStage } from '../../models';
+import { WorkflowResult } from '../../models';
 
 @Component({
   selector: 'app-pipelines',
@@ -21,18 +21,41 @@ export class PipelinesComponent implements OnInit {
     this.state.executeWorkflow();
   }
 
-  getStageStatus(stageKey: WorkflowStage, result: any, isRunning: boolean): 'completed' | 'current' | 'failed' | 'pending' {
-    if (!result) {
-      return isRunning ? 'current' : 'completed';
+  getStageStatus(
+    stageId: string,
+    index: number,
+    result: WorkflowResult | null,
+    isRunning: boolean,
+    activeStageIndex: number
+  ): 'success' | 'failed' | 'running' | 'pending' {
+    if (isRunning) {
+      if (index < activeStageIndex) return 'success';
+      if (index === activeStageIndex) return 'running';
+      return 'pending';
     }
 
-    const rec = result.audit_trail?.find((a: any) => a.stage === stageKey);
-    if (!rec) return 'pending';
+    if (!result) {
+      return 'pending';
+    }
 
-    if (rec.status === 'SUCCESS') return 'completed';
-    if (rec.status === 'FAILED' || rec.status === 'REJECTED') return 'failed';
-    if (rec.status === 'IN_PROGRESS') return 'current';
+    if (result.success) {
+      return 'success';
+    }
+
+    // Workflow failed
+    const failedStage = result.error_stage || result.current_stage || '';
+    const failedIdx = this.state.stages.findIndex(s => s.id === failedStage);
+    const resolvedFailedIdx = failedIdx !== -1 ? failedIdx : activeStageIndex;
+
+    if (index < resolvedFailedIdx) return 'success';
+    if (index === resolvedFailedIdx) return 'failed';
     return 'pending';
+  }
+
+  getStageMessage(stageId: string, result: WorkflowResult | null): string | null {
+    if (!result || !result.audit_trail) return null;
+    const rec = result.audit_trail.find(a => a.stage === stageId);
+    return rec?.message || null;
   }
 
   openReport(tab: 'diff' | 'plan' | 'logs' | 'audit'): void {

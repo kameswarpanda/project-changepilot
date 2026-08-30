@@ -1,14 +1,28 @@
-<div class="min-h-screen w-full flex items-center justify-center bg-[#0B0E14] px-4 py-10 relative overflow-hidden">
+<div class="min-h-screen w-full flex items-center justify-center bg-[#0B0E14] light:bg-[#f6f8fa] px-4 py-10 relative overflow-hidden transition-colors duration-200 auth-wrapper">
   <!-- Subtle Ambient Glow Background -->
   <div class="absolute top-[-15%] left-[-10%] w-[600px] h-[600px] rounded-full bg-[#494bd6]/15 blur-[140px] pointer-events-none"></div>
   <div class="absolute bottom-[-15%] right-[-10%] w-[600px] h-[600px] rounded-full bg-[#8083ff]/15 blur-[140px] pointer-events-none"></div>
 
-  <div class="w-full max-w-4xl bg-[#161B22] border border-[#30363D] rounded-2xl shadow-2xl overflow-hidden relative z-10 grid grid-cols-1 md:grid-cols-12">
+  <!-- Top-Right Floating Theme Toggle -->
+  <div class="absolute top-5 right-5 z-50">
+    <button (click)="themeService.toggleTheme()" 
+            [title]="(themeService.isDarkMode$ | async) ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
+            class="p-2.5 rounded-xl bg-[#161B22] light:bg-white border border-[#30363D] light:border-[#d0d7de] text-[#e1e2eb] light:text-[#1f2328] hover:bg-[#272a31] light:hover:bg-[#f3f4f6] transition-all flex items-center gap-2 shadow-lg">
+      <span class="material-symbols-outlined text-[18px]">
+        {{ (themeService.isDarkMode$ | async) ? 'light_mode' : 'dark_mode' }}
+      </span>
+      <span class="text-xs font-semibold hidden sm:inline">
+        {{ (themeService.isDarkMode$ | async) ? 'Light Mode' : 'Dark Mode' }}
+      </span>
+    </button>
+  </div>
+
+  <div class="w-full max-w-4xl bg-[#161B22] light:bg-white border border-[#30363D] light:border-[#d0d7de] rounded-2xl shadow-2xl overflow-hidden relative z-10 grid grid-cols-1 md:grid-cols-12 transition-colors duration-200 auth-card">
     
     <!-- ===================================================================== -->
     <!-- LEFT COLUMN: Email & Password Form (Sign In & Sign Up)                -->
     <!-- ===================================================================== -->
-    <div class="md:col-span-6 p-8 lg:p-10 border-b md:border-b-0 md:border-r border-[#30363D] flex flex-col justify-between space-y-6">
+    <div class="md:col-span-6 p-8 lg:p-10 border-b md:border-b-0 md:border-r border-[#30363D] light:border-[#d0d7de] flex flex-col justify-between space-y-6">
       <div>
         <!-- Brand Header (Left) -->
         <div class="flex items-center gap-3 mb-6">
@@ -16,53 +30,59 @@
             <span class="material-symbols-outlined fill-icon text-[24px]">terminal</span>
           </div>
           <div>
-            <h1 class="font-headline-md text-xl font-bold text-[#e1e2eb] leading-tight">ChangePilot</h1>
-            <p class="font-body-sm text-[11px] text-[#908fa0]">Autonomous Software Change</p>
+            <h1 class="font-headline-md text-xl font-bold text-[#e1e2eb] light:text-[#1f2328] leading-tight">ChangePilot</h1>
+            <p class="font-body-sm text-[11px] text-[#908fa0] light:text-[#57606a]">Autonomous Software Change</p>
           </div>
         </div>
 
         <!-- Mode Toggle Tabs -->
-        <div class="flex bg-[#10131a] p-1 rounded-lg border border-[#30363D] mb-6">
+        <div class="flex bg-[#10131a] light:bg-[#f6f8fa] p-1 rounded-lg border border-[#30363D] light:border-[#d0d7de] mb-6">
           <button (click)="switchMode('signin')" 
-                  [ngClass]="authMode === 'signin' ? 'bg-[#494bd6] text-white font-semibold shadow-sm' : 'text-[#908fa0] hover:text-[#e1e2eb]'" 
+                  [ngClass]="authMode === 'signin' ? 'bg-[#494bd6] text-white font-semibold shadow-sm' : 'text-[#908fa0] light:text-[#57606a] hover:text-[#e1e2eb] light:hover:text-[#1f2328]'" 
                   class="flex-1 py-1.5 rounded-md text-xs transition-all">
             Sign In
           </button>
           <button (click)="switchMode('signup')" 
-                  [ngClass]="authMode === 'signup' ? 'bg-[#494bd6] text-white font-semibold shadow-sm' : 'text-[#908fa0] hover:text-[#e1e2eb]'" 
+                  [ngClass]="authMode === 'signup' ? 'bg-[#494bd6] text-white font-semibold shadow-sm' : 'text-[#908fa0] light:text-[#57606a] hover:text-[#e1e2eb] light:hover:text-[#1f2328]'" 
                   class="flex-1 py-1.5 rounded-md text-xs transition-all">
             Create Account
           </button>
         </div>
 
         <!-- Error Message Banner -->
-        <div *ngIf="errorMessage" class="bg-[#ffb4ab]/10 border border-[#ffb4ab]/30 rounded-lg p-3 text-xs text-[#ffb4ab] flex items-center gap-2 mb-4">
+        <div *ngIf="errorMessage" class="bg-[#ffb4ab]/10 border border-[#ffb4ab]/30 light:bg-[#fee2e2] light:border-[#fca5a5] rounded-lg p-3 text-xs text-[#ffb4ab] light:text-[#b91c1c] flex items-center gap-2 mb-4">
           <span class="material-symbols-outlined text-[16px] shrink-0">error</span>
           <span>{{ errorMessage }}</span>
+        </div>
+
+        <!-- Success Message Banner -->
+        <div *ngIf="successMessage" class="bg-[#4edea3]/10 border border-[#4edea3]/30 light:bg-[#dcfce7] light:border-[#86efac] rounded-lg p-3 text-xs text-[#4edea3] light:text-[#15803d] flex items-center gap-2 mb-4">
+          <span class="material-symbols-outlined text-[16px] shrink-0">check_circle</span>
+          <span>{{ successMessage }}</span>
         </div>
 
         <!-- Sign In Form -->
         <form *ngIf="authMode === 'signin'" (ngSubmit)="handlePasswordSignIn()" class="space-y-4 text-xs">
           <div>
-            <label class="font-title-sm text-xs text-[#908fa0] mb-1.5 block">Work Email</label>
+            <label class="font-title-sm text-xs text-[#908fa0] light:text-[#57606a] mb-1.5 block">Work Email</label>
             <input type="email" 
                    [(ngModel)]="signInEmail" 
                    name="signInEmail"
                    placeholder="name@company.com" 
                    required
-                   class="w-full bg-[#10131a] border border-[#30363D] rounded-md px-3 py-2 text-[#e1e2eb] text-xs focus:outline-none focus:border-[#8083ff]">
+                   class="w-full bg-[#10131a] light:bg-white border border-[#30363D] light:border-[#d0d7de] rounded-md px-3 py-2 text-[#e1e2eb] light:text-[#1f2328] text-xs focus:outline-none focus:border-[#8083ff] light:focus:border-[#494bd6]">
           </div>
 
           <div>
             <div class="flex justify-between items-center mb-1.5">
-              <label class="font-title-sm text-xs text-[#908fa0]">Password</label>
+              <label class="font-title-sm text-xs text-[#908fa0] light:text-[#57606a]">Password</label>
             </div>
             <input type="password" 
                    [(ngModel)]="signInPassword" 
                    name="signInPassword"
                    placeholder="••••••••••••" 
                    required
-                   class="w-full bg-[#10131a] border border-[#30363D] rounded-md px-3 py-2 text-[#e1e2eb] text-xs focus:outline-none focus:border-[#8083ff]">
+                   class="w-full bg-[#10131a] light:bg-white border border-[#30363D] light:border-[#d0d7de] rounded-md px-3 py-2 text-[#e1e2eb] light:text-[#1f2328] text-xs focus:outline-none focus:border-[#8083ff] light:focus:border-[#494bd6]">
           </div>
 
           <button type="submit" 
@@ -77,43 +97,43 @@
         <!-- Sign Up Form -->
         <form *ngIf="authMode === 'signup'" (ngSubmit)="handleSignUp()" class="space-y-3.5 text-xs">
           <div>
-            <label class="font-title-sm text-xs text-[#908fa0] mb-1 block">Full Name</label>
+            <label class="font-title-sm text-xs text-[#908fa0] light:text-[#57606a] mb-1 block">Full Name</label>
             <input type="text" 
                    [(ngModel)]="signUpName" 
                    name="signUpName"
                    placeholder="Kameswar Panda" 
                    required
-                   class="w-full bg-[#10131a] border border-[#30363D] rounded-md px-3 py-2 text-[#e1e2eb] text-xs focus:outline-none focus:border-[#8083ff]">
+                   class="w-full bg-[#10131a] light:bg-white border border-[#30363D] light:border-[#d0d7de] rounded-md px-3 py-2 text-[#e1e2eb] light:text-[#1f2328] text-xs focus:outline-none focus:border-[#8083ff] light:focus:border-[#494bd6]">
           </div>
 
           <div>
-            <label class="font-title-sm text-xs text-[#908fa0] mb-1 block">Work Email</label>
+            <label class="font-title-sm text-xs text-[#908fa0] light:text-[#57606a] mb-1 block">Work Email</label>
             <input type="email" 
                    [(ngModel)]="signUpEmail" 
                    name="signUpEmail"
                    placeholder="kameswar@company.com" 
                    required
-                   class="w-full bg-[#10131a] border border-[#30363D] rounded-md px-3 py-2 text-[#e1e2eb] text-xs focus:outline-none focus:border-[#8083ff]">
+                   class="w-full bg-[#10131a] light:bg-white border border-[#30363D] light:border-[#d0d7de] rounded-md px-3 py-2 text-[#e1e2eb] light:text-[#1f2328] text-xs focus:outline-none focus:border-[#8083ff] light:focus:border-[#494bd6]">
           </div>
 
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="font-title-sm text-xs text-[#908fa0] mb-1 block">Password</label>
+              <label class="font-title-sm text-xs text-[#908fa0] light:text-[#57606a] mb-1 block">Password</label>
               <input type="password" 
                      [(ngModel)]="signUpPassword" 
                      name="signUpPassword"
                      placeholder="Min 6 chars" 
                      required
-                     class="w-full bg-[#10131a] border border-[#30363D] rounded-md px-3 py-2 text-[#e1e2eb] text-xs focus:outline-none focus:border-[#8083ff]">
+                     class="w-full bg-[#10131a] light:bg-white border border-[#30363D] light:border-[#d0d7de] rounded-md px-3 py-2 text-[#e1e2eb] light:text-[#1f2328] text-xs focus:outline-none focus:border-[#8083ff] light:focus:border-[#494bd6]">
             </div>
             <div>
-              <label class="font-title-sm text-xs text-[#908fa0] mb-1 block">Confirm</label>
+              <label class="font-title-sm text-xs text-[#908fa0] light:text-[#57606a] mb-1 block">Confirm</label>
               <input type="password" 
                      [(ngModel)]="signUpConfirmPassword" 
                      name="signUpConfirmPassword"
                      placeholder="Repeat password" 
                      required
-                     class="w-full bg-[#10131a] border border-[#30363D] rounded-md px-3 py-2 text-[#e1e2eb] text-xs focus:outline-none focus:border-[#8083ff]">
+                     class="w-full bg-[#10131a] light:bg-white border border-[#30363D] light:border-[#d0d7de] rounded-md px-3 py-2 text-[#e1e2eb] light:text-[#1f2328] text-xs focus:outline-none focus:border-[#8083ff] light:focus:border-[#494bd6]">
             </div>
           </div>
 
@@ -127,7 +147,7 @@
         </form>
       </div>
 
-      <div class="text-[11px] text-[#908fa0] text-center pt-2">
+      <div class="text-[11px] text-[#908fa0] light:text-[#57606a] text-center pt-2">
         Protected by ChangePilot Boundary & Sandbox Security.
       </div>
     </div>
@@ -135,12 +155,12 @@
     <!-- ===================================================================== -->
     <!-- RIGHT COLUMN: Social, Cloud Identity & Quick Fast-Pass Access         -->
     <!-- ===================================================================== -->
-    <div class="md:col-span-6 p-8 lg:p-10 bg-[#10131a] flex flex-col justify-between space-y-6">
+    <div class="md:col-span-6 p-8 lg:p-10 bg-[#10131a] light:bg-[#f6f8fa] flex flex-col justify-between space-y-6">
       <div class="space-y-6">
         <div>
-          <span class="font-label-caps text-[10px] text-[#c0c1ff] uppercase tracking-wider block mb-1">Single Sign-On</span>
-          <h2 class="font-title-sm text-lg font-bold text-[#e1e2eb]">Connect Enterprise Identity</h2>
-          <p class="font-body-sm text-xs text-[#908fa0] mt-1">
+          <span class="font-label-caps text-[10px] text-[#c0c1ff] light:text-[#494bd6] uppercase tracking-wider block mb-1">Single Sign-On</span>
+          <h2 class="font-title-sm text-lg font-bold text-[#e1e2eb] light:text-[#1f2328]">Connect Enterprise Identity</h2>
+          <p class="font-body-sm text-xs text-[#908fa0] light:text-[#57606a] mt-1">
             Sign in with your Google Cloud or Developer identity to manage codebases and automated change pipelines.
           </p>
         </div>
@@ -150,7 +170,7 @@
           <!-- 1. Unified Single "Continue with Google" Button -->
           <button (click)="handleGoogleSignIn()" 
                   [disabled]="isLoading"
-                  class="w-full py-2.5 px-4 rounded-lg bg-[#161B22] border border-[#30363D] hover:bg-[#272a31] hover:border-[#8083ff] text-[#e1e2eb] text-xs font-semibold flex items-center justify-center gap-3 transition-all shadow-sm">
+                  class="w-full py-2.5 px-4 rounded-lg bg-[#161B22] light:bg-white border border-[#30363D] light:border-[#d0d7de] hover:bg-[#272a31] light:hover:bg-[#f3f4f6] hover:border-[#8083ff] text-[#e1e2eb] light:text-[#1f2328] text-xs font-semibold flex items-center justify-center gap-3 transition-all shadow-sm">
             <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
               <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -163,14 +183,14 @@
           <!-- 2. Continue with GitHub (Disabled + Coming Soon Badge) -->
           <div class="relative">
             <button disabled 
-                    class="w-full py-2.5 px-4 rounded-lg bg-[#161B22]/50 border border-[#30363D]/40 text-[#908fa0]/60 text-xs font-semibold flex items-center justify-between cursor-not-allowed transition-all opacity-60">
+                    class="w-full py-2.5 px-4 rounded-lg bg-[#161B22]/50 light:bg-[#f6f8fa] border border-[#30363D]/40 light:border-[#d0d7de]/50 text-[#908fa0]/60 light:text-[#57606a]/60 text-xs font-semibold flex items-center justify-between cursor-not-allowed transition-all opacity-60">
               <div class="flex items-center gap-3">
                 <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
                   <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
                 </svg>
                 <span>Continue with GitHub</span>
               </div>
-              <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-[#ffb783]/10 text-[#ffb783] border border-[#ffb783]/20">
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-[#ffb783]/10 text-[#ffb783] light:bg-[#fff7ed] light:text-[#c2410c] border border-[#ffb783]/20 light:border-[#fdba74]">
                 Coming Soon
               </span>
             </button>
@@ -178,12 +198,12 @@
         </div>
 
         <!-- Platform Security Badges -->
-        <div class="p-3 bg-[#161B22] rounded-lg border border-[#30363D] space-y-2 text-[11px] text-[#908fa0]">
-          <div class="flex items-center gap-2 text-[#e1e2eb] font-semibold text-xs">
+        <div class="p-3 bg-[#161B22] light:bg-white rounded-lg border border-[#30363D] light:border-[#d0d7de] space-y-2 text-[11px] text-[#908fa0] light:text-[#57606a]">
+          <div class="flex items-center gap-2 text-[#e1e2eb] light:text-[#1f2328] font-semibold text-xs">
             <span class="material-symbols-outlined text-[#4edea3] text-[16px]">verified_user</span>
             <span>Enterprise Safety Architecture</span>
           </div>
-          <div class="grid grid-cols-2 gap-2 text-[10px] text-[#908fa0]">
+          <div class="grid grid-cols-2 gap-2 text-[10px] text-[#908fa0] light:text-[#57606a]">
             <div>• Isolated Sandbox Workspaces</div>
             <div>• 9 Deterministic Safety Gates</div>
             <div>• Vertex AI Gemini Intelligence</div>
@@ -193,18 +213,18 @@
       </div>
 
       <!-- Quick Fast-Pass / Hackathon Evaluator Login -->
-      <div class="pt-4 border-t border-[#30363D] space-y-2">
-        <div class="text-[10px] font-label-caps text-[#908fa0] uppercase tracking-wider">
+      <div class="pt-4 border-t border-[#30363D] light:border-[#d0d7de] space-y-2">
+        <div class="text-[10px] font-label-caps text-[#908fa0] light:text-[#57606a] uppercase tracking-wider">
           Quick Demo / Evaluation Access
         </div>
         <div class="grid grid-cols-2 gap-2">
           <button (click)="handleDemoLogin('kameswar')" 
-                  class="py-2 px-3 rounded bg-[#161B22] hover:bg-[#272a31] border border-[#30363D] text-[11px] text-[#c0c1ff] font-semibold transition-colors flex items-center justify-center gap-1.5 shadow-sm">
+                  class="py-2 px-3 rounded bg-[#161B22] light:bg-white hover:bg-[#272a31] light:hover:bg-[#f3f4f6] border border-[#30363D] light:border-[#d0d7de] text-[11px] text-[#c0c1ff] light:text-[#494bd6] font-semibold transition-colors flex items-center justify-center gap-1.5 shadow-sm">
             <span class="material-symbols-outlined text-[14px]">admin_panel_settings</span>
             <span>Kameswar (Admin)</span>
           </button>
           <button (click)="handleDemoLogin('alex.mercer')" 
-                  class="py-2 px-3 rounded bg-[#161B22] hover:bg-[#272a31] border border-[#30363D] text-[11px] text-[#4edea3] font-semibold transition-colors flex items-center justify-center gap-1.5 shadow-sm">
+                  class="py-2 px-3 rounded bg-[#161B22] light:bg-white hover:bg-[#272a31] light:hover:bg-[#f3f4f6] border border-[#30363D] light:border-[#d0d7de] text-[11px] text-[#4edea3] light:text-[#15803d] font-semibold transition-colors flex items-center justify-center gap-1.5 shadow-sm">
             <span class="material-symbols-outlined text-[14px]">code</span>
             <span>Alex Mercer (Dev)</span>
           </button>

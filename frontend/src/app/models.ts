@@ -161,6 +161,7 @@ export interface AppNotification {
   timestamp: string;
   read: boolean;
   storyId?: string;
+  detail?: string;
 }
 
 export interface StoryTemplate {

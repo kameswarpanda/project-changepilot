@@ -2,6 +2,7 @@ import { Component, OnInit, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
+import { ThemeService } from '../../services/theme.service';
 
 declare const google: any;
 
@@ -34,6 +35,7 @@ export class AuthPageComponent implements OnInit {
 
   constructor(
     public authService: AuthService,
+    public themeService: ThemeService,
     private ngZone: NgZone
   ) {}
 

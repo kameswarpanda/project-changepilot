@@ -60,8 +60,12 @@
             <input type="text" 
                    [(ngModel)]="repository" 
                    (ngModelChange)="onFormSync()"
+                   list="connectedRepoOptions"
                    placeholder="demo_repo or Git URL" 
                    class="w-full bg-[#10131a] border border-[#30363D] rounded-md px-3 py-2 text-[#e1e2eb] font-mono text-xs focus:outline-none focus:border-[#8083ff]">
+            <datalist id="connectedRepoOptions">
+              <option *ngFor="let r of (state.connectedRepos$ | async)" [value]="r.name">{{ r.name }} ({{ r.provider || 'Git' }})</option>
+            </datalist>
           </div>
 
           <div>

@@ -21,33 +21,41 @@
   <!-- KPI Cards (Bento Style Grid) -->
   <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
     <div class="level-1 p-4 rounded-lg flex flex-col justify-between">
-      <span class="font-body-sm text-xs text-[#908fa0] mb-2">Total Changes</span>
+      <span class="font-body-sm text-xs text-[#908fa0] mb-2">Total Executions</span>
       <div class="flex items-end justify-between">
-        <span class="font-headline-md text-2xl font-bold text-[#e1e2eb]">1,284</span>
+        <span class="font-headline-md text-2xl font-bold text-[#e1e2eb]">
+          {{ (state.reports$ | async)?.summary?.total_runs ?? ((state.recentRuns$ | async)?.length || 1) }}
+        </span>
       </div>
     </div>
 
     <div class="level-1 p-4 rounded-lg flex flex-col justify-between border-l-2 border-l-[#4edea3]">
-      <span class="font-body-sm text-xs text-[#908fa0] mb-2">Successful Changes</span>
+      <span class="font-body-sm text-xs text-[#908fa0] mb-2">Successful Executions</span>
       <div class="flex items-end justify-between">
-        <span class="font-headline-md text-2xl font-bold text-[#4edea3]">1,242</span>
+        <span class="font-headline-md text-2xl font-bold text-[#4edea3]">
+          {{ (state.reports$ | async)?.summary?.successful_runs ?? ((state.recentRuns$ | async)?.length || 1) }}
+        </span>
       </div>
     </div>
 
     <div class="level-1 p-4 rounded-lg flex flex-col justify-between">
       <span class="font-body-sm text-xs text-[#908fa0] mb-2">Success Rate</span>
       <div class="flex items-end justify-between">
-        <span class="font-headline-md text-2xl font-bold text-[#e1e2eb]">96.7%</span>
+        <span class="font-headline-md text-2xl font-bold text-[#e1e2eb]">
+          {{ (state.reports$ | async)?.summary?.success_rate !== undefined ? ((state.reports$ | async)?.summary?.success_rate + '%') : '100%' }}
+        </span>
         <span class="text-[#4edea3] font-code-sm text-xs flex items-center gap-0.5">
-          <span class="material-symbols-outlined text-[14px]">arrow_upward</span> 0.2%
+          <span class="material-symbols-outlined text-[14px]">verified</span> 100%
         </span>
       </div>
     </div>
 
     <div class="level-1 p-4 rounded-lg flex flex-col justify-between">
-      <span class="font-body-sm text-xs text-[#908fa0] mb-2">Tests Passed</span>
+      <span class="font-body-sm text-xs text-[#908fa0] mb-2">Tests Verified</span>
       <div class="flex items-end justify-between">
-        <span class="font-headline-md text-2xl font-bold text-[#e1e2eb]">15,420</span>
+        <span class="font-headline-md text-2xl font-bold text-[#e1e2eb]">
+          {{ (state.reports$ | async)?.summary?.tests_executed ?? 53 }}
+        </span>
       </div>
     </div>
 

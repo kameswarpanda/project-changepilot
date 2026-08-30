@@ -1,3 +1,6 @@
+<!-- Global Toast & Notification Popups Container (Visible across all screens) -->
+<app-toast-container></app-toast-container>
+
 <!-- 1. Unauthenticated Login / Sign-Up Gate -->
 <app-auth-page *ngIf="!(authService.isAuthenticated$ | async)"></app-auth-page>
 

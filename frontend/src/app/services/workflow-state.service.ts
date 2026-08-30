@@ -37,6 +37,7 @@ export interface ChangeRequestItem {
 }
 
 export interface PipelineStageItem {
+  id: WorkflowStage;
   key: WorkflowStage;
   stage: WorkflowStage;
   number: number;
@@ -53,10 +54,15 @@ export class WorkflowStateService {
   public activeNavSubject = new BehaviorSubject<string>('dashboard');
   public activeNav$: Observable<string> = this.activeNavSubject.asObservable();
 
+  // Selected / Active View Detail
+  public selectedStoryIdSubject = new BehaviorSubject<string | null>(null);
+  public selectedStoryId$: Observable<string | null> = this.selectedStoryIdSubject.asObservable();
+
+  // Search & Global Filters
   public searchQuerySubject = new BehaviorSubject<string>('');
   public searchQuery$: Observable<string> = this.searchQuerySubject.asObservable();
 
-  // Active Story Configuration
+  // Current Working Change Request State
   public storyIdSubject = new BehaviorSubject<string>('');
   public storyId$: Observable<string> = this.storyIdSubject.asObservable();
 
@@ -78,6 +84,11 @@ export class WorkflowStateService {
   // Execution & Health State
   public isRunningSubject = new BehaviorSubject<boolean>(false);
   public isRunning$: Observable<boolean> = this.isRunningSubject.asObservable();
+
+  public activeStageIndexSubject = new BehaviorSubject<number>(0);
+  public activeStageIndex$: Observable<number> = this.activeStageIndexSubject.asObservable();
+
+  private stageTimer: any = null;
 
   public isInspectingSubject = new BehaviorSubject<boolean>(false);
   public isInspecting$: Observable<boolean> = this.isInspectingSubject.asObservable();
@@ -122,15 +133,15 @@ export class WorkflowStateService {
 
   // 9 Deterministic Safety Gate Stages
   public stages: PipelineStageItem[] = [
-    { key: 'INITIALIZED', stage: 'INITIALIZED', number: 1, label: 'Intake & Boundaries', description: 'Parameter verification', color: '#8083ff' },
-    { key: 'WORKSPACE_READY', stage: 'WORKSPACE_READY', number: 2, label: 'Sandbox Isolation', description: 'Disposable clone setup', color: '#8083ff' },
-    { key: 'REPO_ANALYZED', stage: 'REPO_ANALYZED', number: 3, label: 'Repository Topology', description: 'AST & test runner inspection', color: '#8083ff' },
-    { key: 'PLAN_GENERATED', stage: 'PLAN_GENERATED', number: 4, label: 'Deterministic Plan', description: 'Impact analysis & safety check', color: '#8083ff' },
-    { key: 'PLAN_VALIDATED', stage: 'PLAN_VALIDATED', number: 5, label: 'Safety Gate Pass', description: 'Non-negotiable policy checks', color: '#4edea3' },
-    { key: 'PATCH_GENERATED', stage: 'PATCH_GENERATED', number: 6, label: 'Patch Synthesis', description: 'Exact unified diff creation', color: '#4edea3' },
-    { key: 'PATCH_APPLIED', stage: 'PATCH_APPLIED', number: 7, label: 'Isolated Apply', description: 'Sandboxed modification', color: '#4edea3' },
-    { key: 'TESTS_EXECUTED', stage: 'TESTS_EXECUTED', number: 8, label: 'Automated Tests', description: 'Test runner execution', color: '#4edea3' },
-    { key: 'COMPLETED', stage: 'COMPLETED', number: 9, label: 'Branch & PR Sync', description: 'GitHub App pull request', color: '#4edea3' }
+    { id: 'INITIALIZED', key: 'INITIALIZED', stage: 'INITIALIZED', number: 1, label: 'Intake & Boundaries', description: 'Parameter verification', color: '#8083ff' },
+    { id: 'WORKSPACE_READY', key: 'WORKSPACE_READY', stage: 'WORKSPACE_READY', number: 2, label: 'Sandbox Isolation', description: 'Disposable clone setup', color: '#8083ff' },
+    { id: 'REPO_ANALYZED', key: 'REPO_ANALYZED', stage: 'REPO_ANALYZED', number: 3, label: 'Repository Topology', description: 'AST & test runner inspection', color: '#8083ff' },
+    { id: 'PLAN_GENERATED', key: 'PLAN_GENERATED', stage: 'PLAN_GENERATED', number: 4, label: 'Deterministic Plan', description: 'Impact analysis & safety check', color: '#8083ff' },
+    { id: 'PLAN_VALIDATED', key: 'PLAN_VALIDATED', stage: 'PLAN_VALIDATED', number: 5, label: 'Safety Gate Pass', description: 'Non-negotiable policy checks', color: '#4edea3' },
+    { id: 'PATCH_GENERATED', key: 'PATCH_GENERATED', stage: 'PATCH_GENERATED', number: 6, label: 'Patch Synthesis', description: 'Exact unified diff creation', color: '#4edea3' },
+    { id: 'PATCH_APPLIED', key: 'PATCH_APPLIED', stage: 'PATCH_APPLIED', number: 7, label: 'Isolated Apply', description: 'Sandboxed modification', color: '#4edea3' },
+    { id: 'TESTS_EXECUTED', key: 'TESTS_EXECUTED', stage: 'TESTS_EXECUTED', number: 8, label: 'Automated Tests', description: 'Test runner execution', color: '#4edea3' },
+    { id: 'COMPLETED', key: 'COMPLETED', stage: 'COMPLETED', number: 9, label: 'Branch & PR Sync', description: 'GitHub App pull request', color: '#4edea3' }
   ];
 
   public storyTemplates: StoryTemplate[] = [
@@ -333,9 +344,23 @@ export class WorkflowStateService {
       return;
     }
 
+    if (this.stageTimer) {
+      clearInterval(this.stageTimer);
+      this.stageTimer = null;
+    }
+
     this.isRunningSubject.next(true);
+    this.activeStageIndexSubject.next(0);
     this.errorMessageSubject.next(null);
     this.resultSubject.next(null);
+
+    // Increment stage stepper progressively while running
+    this.stageTimer = setInterval(() => {
+      const cur = this.activeStageIndexSubject.value;
+      if (cur < 7) {
+        this.activeStageIndexSubject.next(cur + 1);
+      }
+    }, 1800);
 
     const payload: ChangeRequestPayload = {
       request_id: 'req-' + Math.random().toString(36).substring(2, 9),
@@ -349,31 +374,46 @@ export class WorkflowStateService {
 
     this.api.executeChange(payload).subscribe({
       next: (res) => {
+        if (this.stageTimer) {
+          clearInterval(this.stageTimer);
+          this.stageTimer = null;
+        }
         this.isRunningSubject.next(false);
         this.resultSubject.next(res);
 
         if (res.success) {
+          this.activeStageIndexSubject.next(8);
           this.notif.addNotification(
-            'Change Succeeded',
-            `${storyId} verified and completed safely across 9 gates.`,
+            'Pipeline Succeeded',
+            `${storyId} verified and completed safely across all 9 gates.`,
             'success',
             storyId
           );
         } else {
+          const failedStageId = res.error_stage || res.current_stage || 'UNKNOWN';
+          const failedIdx = this.stages.findIndex(s => s.id === failedStageId);
+          this.activeStageIndexSubject.next(failedIdx !== -1 ? failedIdx : 3);
+          const errorMsg = res.error_message || `Safety gate check failed at ${failedStageId}.`;
+          this.errorMessageSubject.next(errorMsg);
           this.notif.addNotification(
-            'Safety Gate Violation',
-            `${storyId} halted safely: ${res.current_stage}`,
+            `Safety Gate Halted: ${failedStageId}`,
+            errorMsg,
             'error',
-            storyId
+            storyId,
+            res.error_message || JSON.stringify(res.audit_trail || {}, null, 2)
           );
         }
         this.refreshAllData();
       },
       error: (err) => {
+        if (this.stageTimer) {
+          clearInterval(this.stageTimer);
+          this.stageTimer = null;
+        }
         this.isRunningSubject.next(false);
-        const detail = err.error?.detail || 'Workflow execution encountered an unexpected error.';
+        const detail = err.error?.detail || err.message || 'Workflow execution encountered an unexpected server error.';
         this.errorMessageSubject.next(detail);
-        this.notif.addNotification('Execution Error', detail, 'error');
+        this.notif.addNotification('Pipeline Execution Error', detail, 'error', storyId, typeof err.error === 'object' ? JSON.stringify(err.error, null, 2) : String(err));
       }
     });
   }

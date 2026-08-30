@@ -1,6 +1,59 @@
-/* Auth Page styling */
 :host {
   display: block;
   width: 100vw;
   height: 100vh;
+}
+
+/* Light Theme explicit overrides */
+:host-context(html.light) .auth-wrapper,
+:host-context(body.light-theme) .auth-wrapper {
+  background-color: #f6f8fa !important;
+  color: #1f2328 !important;
+}
+
+:host-context(html.light) .auth-card,
+:host-context(body.light-theme) .auth-card {
+  background-color: #ffffff !important;
+  border-color: #d0d7de !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04) !important;
+}
+
+:host-context(html.light) input,
+:host-context(body.light-theme) input {
+  background-color: #ffffff !important;
+  border-color: #d0d7de !important;
+  color: #1f2328 !important;
+}
+
+:host-context(html.light) input:focus,
+:host-context(body.light-theme) input:focus {
+  border-color: #494bd6 !important;
+  outline: none !important;
+}
+
+:host-context(html.light) .bg-\[\#10131a\],
+:host-context(body.light-theme) .bg-\[\#10131a\] {
+  background-color: #f6f8fa !important;
+  border-color: #d0d7de !important;
+}
+
+:host-context(html.light) .bg-\[\#161B22\],
+:host-context(body.light-theme) .bg-\[\#161B22\] {
+  background-color: #ffffff !important;
+  border-color: #d0d7de !important;
+}
+
+:host-context(html.light) .text-\[\#e1e2eb\],
+:host-context(body.light-theme) .text-\[\#e1e2eb\] {
+  color: #1f2328 !important;
+}
+
+:host-context(html.light) .text-\[\#908fa0\],
+:host-context(body.light-theme) .text-\[\#908fa0\] {
+  color: #57606a !important;
+}
+
+:host-context(html.light) .border-\[\#30363D\],
+:host-context(body.light-theme) .border-\[\#30363D\] {
+  border-color: #d0d7de !important;
 }
