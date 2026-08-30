@@ -68,31 +68,45 @@ class VertexClient:
 
         from google.genai import types
 
-        model_name = settings.gemini_model or "gemini-3.7-flash"
-        logger.info(f"Invoking Vertex AI model: {model_name}")
+        configured_model = settings.gemini_model or "gemini-2.5-flash"
+        candidate_models = [configured_model]
+        for fallback in ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"]:
+            if fallback not in candidate_models:
+                candidate_models.append(fallback)
 
-        try:
-            config = types.GenerateContentConfig(
-                system_instruction=system_instruction,
-                temperature=temperature,
-                response_mime_type="application/json",
-                response_schema=response_schema,
-            )
+        last_error = None
+        for model_name in candidate_models:
+            logger.info(f"Invoking Vertex AI model: {model_name}")
+            try:
+                config = types.GenerateContentConfig(
+                    system_instruction=system_instruction,
+                    temperature=temperature,
+                    response_mime_type="application/json",
+                    response_schema=response_schema,
+                )
 
-            response = self._client.models.generate_content(
-                model=model_name,
-                contents=prompt,
-                config=config,
-            )
+                response = self._client.models.generate_content(
+                    model=model_name,
+                    contents=prompt,
+                    config=config,
+                )
 
-            response_text = response.text
-            if not response_text:
-                raise ValueError("Model returned an empty response.")
+                response_text = response.text
+                if not response_text:
+                    raise ValueError("Model returned an empty response.")
 
-            # Parse JSON and validate into Pydantic model
-            parsed_data = json.loads(response_text)
-            return response_schema.model_validate(parsed_data)
+                # Parse JSON and validate into Pydantic model
+                parsed_data = json.loads(response_text)
+                return response_schema.model_validate(parsed_data)
 
-        except Exception as e:
-            logger.error(f"Vertex AI structured generation failed: {e}")
-            raise RuntimeError(f"Vertex AI model error: {str(e)}") from e
+            except Exception as e:
+                last_error = e
+                err_str = str(e)
+                if "404" in err_str or "NOT_FOUND" in err_str or "not found" in err_str.lower():
+                    logger.warning(f"Model '{model_name}' not available on Vertex AI project. Trying next candidate...")
+                    continue
+                else:
+                    logger.error(f"Vertex AI structured generation failed: {e}")
+                    raise RuntimeError(f"Vertex AI model error: {str(e)}") from e
+
+        raise RuntimeError(f"Vertex AI model error across all candidate models: {last_error}") from last_error

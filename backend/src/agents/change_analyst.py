@@ -80,19 +80,18 @@ class ChangeAnalystAgent:
         return prompt
 
     def _synthesize_deterministic_plan(self, request: ChangeRequest, context: RepositoryContext) -> ChangePlan:
-        """Deterministic plan generator for reliable offline testing and calculator demo."""
-        # Find primary source and test files
-        target_src = next((f.path for f in context.source_files if f.path.endswith(".py") or f.path.endswith(".ts") or f.path.endswith(".js")), None)
-        target_test = next((f.path for f in context.test_files if f.path.endswith(".py") or f.path.endswith(".ts") or f.path.endswith(".js")), None)
-
-        if not target_src and context.all_files:
-            target_src = context.all_files[0]
-
+        """Deterministic plan generator for reliable offline testing and multi-language repositories."""
         impacted: list[ImpactedFile] = []
         planned: list[PlannedChange] = []
 
-        # Check for enterprise / advanced billing scenario
-        is_advanced_billing = any(kw in (request.title + " " + request.description).lower() for kw in ["enterprise", "coupon", "tax", "currency", "invoice", "billing_types"])
+        all_file_paths = [f.replace("\\", "/") for f in context.all_files]
+        has_calculator = any("calculator.py" in p for p in all_file_paths)
+
+        # Check for enterprise / advanced billing scenario strictly for calculator Python repo
+        is_advanced_billing = has_calculator and any(
+            kw in (request.title + " " + request.description).lower()
+            for kw in ["enterprise", "coupon", "tax", "currency", "invoice", "billing_types"]
+        )
 
         if is_advanced_billing:
             return ChangePlan(
@@ -127,10 +126,37 @@ class ChangeAnalystAgent:
                 ]
             )
 
+        # Multi-language discovery (Java, TypeScript, Python, etc.)
+        target_src = None
+        target_test = None
+
+        # Priority 1: Check source files matching language
+        for f in context.source_files:
+            fp = f.path.replace("\\", "/")
+            if any(fp.endswith(ext) for ext in [".java", ".py", ".ts", ".js", ".go", ".rs"]):
+                # Prefer service or main application files
+                if any(kw in fp.lower() for kw in ["service", "controller", "calculator", "app", "main"]):
+                    target_src = fp
+                    break
+        if not target_src and context.source_files:
+            target_src = context.source_files[0].path.replace("\\", "/")
+        elif not target_src and context.all_files:
+            target_src = context.all_files[0].replace("\\", "/")
+
+        # Priority 2: Check test files
+        for f in context.test_files:
+            fp = f.path.replace("\\", "/")
+            if any(fp.endswith(ext) for ext in [".java", ".py", ".ts", ".js", ".go", ".rs"]):
+                if any(kw in fp.lower() for kw in ["service", "repository", "calculator", "test", "spec"]):
+                    target_test = fp
+                    break
+        if not target_test and context.test_files:
+            target_test = context.test_files[0].path.replace("\\", "/")
+
         if target_src:
             impacted.append(ImpactedFile(
                 path=target_src,
-                reason=f"Primary implementation file requiring logic update for: {request.title}",
+                reason=f"Primary implementation module requiring update for: {request.title}",
                 confidence=0.95
             ))
             planned.append(PlannedChange(
@@ -151,8 +177,14 @@ class ChangeAnalystAgent:
                 description=f"Add unit tests verifying requirements of {request.story_id}"
             ))
         elif target_src:
-            test_name = f"test_{Path(target_src).name}"
-            test_path = str(Path(target_src).parent / test_name).replace("\\", "/")
+            src_p = Path(target_src)
+            test_name = f"test_{src_p.name}" if not src_p.name.endswith(".java") else f"{src_p.stem}Test.java"
+            test_path = str(src_p.parent / test_name).replace("\\", "/")
+            impacted.append(ImpactedFile(
+                path=test_path,
+                reason=f"Create test suite to verify {request.story_id}",
+                confidence=0.90
+            ))
             planned.append(PlannedChange(
                 file_path=test_path,
                 change_type=ChangeType.CREATE,
