@@ -55,9 +55,15 @@ yarn-error.log*
 *.sqlite3
 changepilot.db
 
-# Workspace Isolation & Temporary Directories
+# ChangePilot Temporary Files & Artifacts
 temp_workspaces/
 .workspaces/
+*.patch
+*.diff
+*.png
+*.jpg
+*.jpeg
+scratch/
 .system_generated/
 
 # Design Artifacts & Local Mockups

@@ -18,6 +18,11 @@
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04) !important;
 }
 
+:host-context(html.light) .auth-right-col,
+:host-context(body.light-theme) .auth-right-col {
+  background-color: #f6f8fa !important;
+}
+
 :host-context(html.light) input,
 :host-context(body.light-theme) input {
   background-color: #ffffff !important;
@@ -29,6 +34,56 @@
 :host-context(body.light-theme) input:focus {
   border-color: #494bd6 !important;
   outline: none !important;
+}
+
+:host-context(html.light) .sso-google-btn,
+:host-context(body.light-theme) .sso-google-btn {
+  background-color: #ffffff !important;
+  border-color: #d0d7de !important;
+  color: #1f2328 !important;
+}
+
+:host-context(html.light) .sso-google-btn:hover,
+:host-context(body.light-theme) .sso-google-btn:hover {
+  background-color: #f3f4f6 !important;
+  border-color: #494bd6 !important;
+}
+
+:host-context(html.light) .sso-github-btn,
+:host-context(body.light-theme) .sso-github-btn {
+  background-color: #ffffff !important;
+  border-color: #d0d7de !important;
+  color: #57606a !important;
+  opacity: 0.85 !important;
+}
+
+:host-context(html.light) .sso-github-btn svg,
+:host-context(body.light-theme) .sso-github-btn svg {
+  fill: #1f2328 !important;
+}
+
+:host-context(html.light) .sso-github-btn span,
+:host-context(body.light-theme) .sso-github-btn span {
+  color: #1f2328 !important;
+}
+
+:host-context(html.light) .coming-soon-badge,
+:host-context(body.light-theme) .coming-soon-badge {
+  background-color: #fff7ed !important;
+  color: #c2410c !important;
+  border-color: #fdba74 !important;
+}
+
+:host-context(html.light) .platform-badges,
+:host-context(body.light-theme) .platform-badges {
+  background-color: #ffffff !important;
+  border-color: #d0d7de !important;
+  color: #57606a !important;
+}
+
+:host-context(html.light) .platform-badges .text-\[\#e1e2eb\],
+:host-context(body.light-theme) .platform-badges .text-\[\#e1e2eb\] {
+  color: #1f2328 !important;
 }
 
 :host-context(html.light) .bg-\[\#10131a\],
