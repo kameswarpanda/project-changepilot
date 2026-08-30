@@ -1,220 +1,242 @@
 <div class="p-6 max-w-[1600px] mx-auto space-y-6">
   <!-- Page Header -->
-  <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+  <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-2 border-b border-[#30363D] light:border-[#d0d7de]">
     <div>
-      <h2 class="font-display-lg text-[28px] font-bold text-[#e1e2eb]">Dashboard</h2>
-      <p class="font-body-md text-sm text-[#908fa0] mt-1">Monitor and manage autonomous software changes across your repositories.</p>
+      <div class="flex items-center gap-2">
+        <span class="material-symbols-outlined text-[#8083ff] light:text-[#494bd6] text-[26px]">dashboard</span>
+        <h2 class="font-display-lg text-2xl font-bold text-[#e1e2eb] light:text-[#1f2328]">Autonomous Operations Dashboard</h2>
+      </div>
+      <p class="font-body-md text-xs text-[#908fa0] light:text-[#57606a] mt-1">
+        Monitor pipeline health, gate verifications, and active repositories in real-time.
+      </p>
     </div>
     <div class="flex items-center gap-3">
-      <button (click)="runPipeline()" [disabled]="(state.isRunning$ | async)" class="px-4 py-2 rounded-md bg-[#8083ff] text-[#0d0096] font-semibold text-sm hover:bg-[#c0c1ff] transition-colors flex items-center gap-2 shadow-sm disabled:opacity-60">
-        <span *ngIf="!(state.isRunning$ | async)" class="material-symbols-outlined text-[18px]">play_arrow</span>
-        <span *ngIf="(state.isRunning$ | async)" class="material-symbols-outlined text-[18px] animate-spin">autorenew</span>
-        <span>{{ (state.isRunning$ | async) ? 'Running Pipeline...' : '⚡ Run Active Pipeline' }}</span>
+      <button (click)="runPipeline()" [disabled]="(state.isRunning$ | async)" class="px-4 py-2 rounded-lg bg-[#494bd6] hover:bg-[#8083ff] hover:text-[#0d0096] text-white font-semibold text-xs transition-colors flex items-center gap-2 shadow-sm disabled:opacity-60">
+        <span *ngIf="!(state.isRunning$ | async)" class="material-symbols-outlined text-[16px]">play_arrow</span>
+        <span *ngIf="(state.isRunning$ | async)" class="material-symbols-outlined text-[16px] animate-spin">autorenew</span>
+        <span>{{ (state.isRunning$ | async) ? 'Running Pipeline...' : 'Run Pipeline' }}</span>
       </button>
-      <button (click)="state.setNav('requests')" class="px-4 py-2 rounded-md bg-[#161B22] border border-[#30363D] text-[#e1e2eb] font-semibold text-sm hover:bg-[#272a31] transition-colors flex items-center gap-2">
-        <span class="material-symbols-outlined text-[18px]">add</span>
-        <span>New Change Request</span>
+      <button (click)="state.setNav('requests')" class="px-4 py-2 rounded-lg bg-[#161B22] light:bg-white border border-[#30363D] light:border-[#d0d7de] text-[#e1e2eb] light:text-[#1f2328] font-semibold text-xs hover:bg-[#272a31] light:hover:bg-[#f6f8fa] transition-colors flex items-center gap-2 shadow-sm">
+        <span class="material-symbols-outlined text-[16px]">add_circle</span>
+        <span>New Request</span>
       </button>
     </div>
   </div>
 
-  <!-- KPI Cards (Bento Style Grid) -->
-  <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
-    <div class="level-1 p-4 rounded-lg flex flex-col justify-between">
-      <span class="font-body-sm text-xs text-[#908fa0] mb-2">Total Executions</span>
-      <div class="flex items-end justify-between">
-        <span class="font-headline-md text-2xl font-bold text-[#e1e2eb]">
-          {{ (state.reports$ | async)?.summary?.total_runs ?? ((state.recentRuns$ | async)?.length || 1) }}
+  <!-- SECTION 1: Key Performance Indicators -->
+  <section class="space-y-3">
+    <div class="flex items-center gap-2 text-xs font-semibold text-[#c0c1ff] light:text-[#494bd6] uppercase tracking-wider">
+      <span class="material-symbols-outlined text-[16px]">analytics</span>
+      <span>Pipeline Performance Metrics</span>
+    </div>
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+      <div class="bg-[#161B22] light:bg-white border border-[#30363D] light:border-[#d0d7de] p-4 rounded-xl shadow-sm flex flex-col justify-between">
+        <span class="font-body-sm text-[11px] text-[#908fa0] light:text-[#57606a]">Total Executions</span>
+        <div class="flex items-baseline justify-between mt-2">
+          <span class="font-headline-md text-2xl font-bold text-[#e1e2eb] light:text-[#1f2328]">
+            {{ (state.reports$ | async)?.summary?.total_runs ?? ((state.recentRuns$ | async)?.length || 1) }}
+          </span>
+          <span class="material-symbols-outlined text-[#8083ff] light:text-[#494bd6] text-[18px]">account_tree</span>
+        </div>
+      </div>
+
+      <div class="bg-[#161B22] light:bg-white border border-[#30363D] light:border-[#d0d7de] p-4 rounded-xl shadow-sm flex flex-col justify-between border-l-4 border-l-[#10B981]">
+        <span class="font-body-sm text-[11px] text-[#908fa0] light:text-[#57606a]">Successful Passes</span>
+        <div class="flex items-baseline justify-between mt-2">
+          <span class="font-headline-md text-2xl font-bold text-[#10B981]">
+            {{ (state.reports$ | async)?.summary?.successful_runs ?? ((state.recentRuns$ | async)?.length || 1) }}
+          </span>
+          <span class="material-symbols-outlined text-[#10B981] text-[18px]">verified</span>
+        </div>
+      </div>
+
+      <div class="bg-[#161B22] light:bg-white border border-[#30363D] light:border-[#d0d7de] p-4 rounded-xl shadow-sm flex flex-col justify-between">
+        <span class="font-body-sm text-[11px] text-[#908fa0] light:text-[#57606a]">Gate Pass Rate</span>
+        <div class="flex items-baseline justify-between mt-2">
+          <span class="font-headline-md text-2xl font-bold text-[#e1e2eb] light:text-[#1f2328]">
+            {{ (state.reports$ | async)?.summary?.success_rate !== undefined ? ((state.reports$ | async)?.summary?.success_rate + '%') : '100%' }}
+          </span>
+          <span class="text-[#10B981] font-mono text-xs font-bold">100%</span>
+        </div>
+      </div>
+
+      <div class="bg-[#161B22] light:bg-white border border-[#30363D] light:border-[#d0d7de] p-4 rounded-xl shadow-sm flex flex-col justify-between">
+        <span class="font-body-sm text-[11px] text-[#908fa0] light:text-[#57606a]">Tests Verified</span>
+        <div class="flex items-baseline justify-between mt-2">
+          <span class="font-headline-md text-2xl font-bold text-[#e1e2eb] light:text-[#1f2328]">
+            {{ (state.reports$ | async)?.summary?.tests_executed ?? 54 }}
+          </span>
+          <span class="material-symbols-outlined text-[#38BDF8] text-[18px]">science</span>
+        </div>
+      </div>
+
+      <div class="bg-[#161B22] light:bg-white border border-[#30363D] light:border-[#d0d7de] p-4 rounded-xl shadow-sm flex flex-col justify-between">
+        <span class="font-body-sm text-[11px] text-[#908fa0] light:text-[#57606a]">Average Execution</span>
+        <div class="flex items-baseline justify-between mt-2">
+          <span class="font-headline-md text-xl font-bold text-[#e1e2eb] light:text-[#1f2328] font-mono">
+            {{ getFormattedDuration() }}
+          </span>
+          <span class="material-symbols-outlined text-[#8083ff] light:text-[#494bd6] text-[18px]">timer</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 2: Active Pipeline Real-Time Monitor -->
+  <section class="bg-[#161B22] light:bg-white border border-[#30363D] light:border-[#d0d7de] rounded-xl p-5 shadow-sm space-y-4">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-3 border-b border-[#30363D] light:border-[#d0d7de]">
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-[#8083ff] animate-pulse"></span>
+          <h3 class="font-title-sm text-sm font-bold text-[#e1e2eb] light:text-[#1f2328]">
+            Active Pipeline: #{{ (state.storyIdSubject | async) || 'CP-DEMO-01' }}
+          </h3>
+          <span class="text-xs text-[#908fa0] light:text-[#57606a] font-mono">• {{ (state.repoLocationSubject | async) || 'demo_repo' }}</span>
+        </div>
+        <p class="font-body-sm text-xs text-[#908fa0] light:text-[#57606a] mt-1">{{ state.titleSubject | async }}</p>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <span *ngIf="(state.isRunning$ | async)" class="bg-[#8083ff]/15 text-[#8083ff] light:bg-[#494bd6]/10 light:text-[#494bd6] text-xs font-semibold px-2.5 py-1 rounded-full border border-[#8083ff]/30 flex items-center gap-1.5 animate-pulse">
+          <span class="material-symbols-outlined text-[14px] animate-spin">autorenew</span>
+          <span>RUNNING STAGES</span>
+        </span>
+        <span *ngIf="!(state.isRunning$ | async) && (state.result$ | async)?.success" class="bg-[#10B981]/15 text-[#10B981] text-xs font-semibold px-2.5 py-1 rounded-full border border-[#10B981]/30 flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-[14px]">check_circle</span>
+          <span>PASSED (9/9)</span>
+        </span>
+        <span *ngIf="!(state.isRunning$ | async) && !(state.result$ | async)" class="bg-[#272a31] light:bg-[#f6f8fa] text-[#908fa0] light:text-[#57606a] text-xs font-semibold px-2.5 py-1 rounded-full border border-[#30363D] light:border-[#d0d7de]">
+          READY
         </span>
       </div>
     </div>
 
-    <div class="level-1 p-4 rounded-lg flex flex-col justify-between border-l-2 border-l-[#4edea3]">
-      <span class="font-body-sm text-xs text-[#908fa0] mb-2">Successful Executions</span>
-      <div class="flex items-end justify-between">
-        <span class="font-headline-md text-2xl font-bold text-[#4edea3]">
-          {{ (state.reports$ | async)?.summary?.successful_runs ?? ((state.recentRuns$ | async)?.length || 1) }}
-        </span>
-      </div>
-    </div>
-
-    <div class="level-1 p-4 rounded-lg flex flex-col justify-between">
-      <span class="font-body-sm text-xs text-[#908fa0] mb-2">Success Rate</span>
-      <div class="flex items-end justify-between">
-        <span class="font-headline-md text-2xl font-bold text-[#e1e2eb]">
-          {{ (state.reports$ | async)?.summary?.success_rate !== undefined ? ((state.reports$ | async)?.summary?.success_rate + '%') : '100%' }}
-        </span>
-        <span class="text-[#4edea3] font-code-sm text-xs flex items-center gap-0.5">
-          <span class="material-symbols-outlined text-[14px]">verified</span> 100%
-        </span>
-      </div>
-    </div>
-
-    <div class="level-1 p-4 rounded-lg flex flex-col justify-between">
-      <span class="font-body-sm text-xs text-[#908fa0] mb-2">Tests Verified</span>
-      <div class="flex items-end justify-between">
-        <span class="font-headline-md text-2xl font-bold text-[#e1e2eb]">
-          {{ (state.reports$ | async)?.summary?.tests_executed ?? 53 }}
-        </span>
-      </div>
-    </div>
-
-    <div class="level-1 p-4 rounded-lg flex flex-col justify-between">
-      <span class="font-body-sm text-xs text-[#908fa0] mb-2">Avg Duration</span>
-      <div class="flex items-end justify-between">
-        <span class="font-headline-md text-2xl font-bold text-[#e1e2eb] font-mono">
-          {{ getFormattedDuration() }}
-        </span>
-      </div>
-    </div>
-  </div>
-
-  <!-- Main Area Grid -->
-  <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
-    <!-- Left 3 Columns: Active Pipeline & Recent Pipelines Table -->
-    <div class="lg:col-span-3 space-y-6">
-
-      <!-- Active Pipeline Visualization -->
-      <div class="level-1 rounded-lg p-5 border-l-2 border-l-[#c0c1ff]">
-        <div class="flex justify-between items-center mb-4">
-          <div>
-            <div class="flex items-center gap-2">
-              <h3 class="font-title-sm text-base font-semibold text-[#e1e2eb]">
-                Active Pipeline: #{{ state.storyIdSubject | async }}
-              </h3>
-              <span class="text-xs text-[#908fa0]">• {{ state.repoLocationSubject | async }}</span>
-            </div>
-            <p class="font-body-sm text-xs text-[#908fa0] mt-1">{{ state.titleSubject | async }}</p>
+    <!-- 9-Stage Node Flow -->
+    <div class="overflow-x-auto pb-2 pt-2">
+      <div class="flex items-center justify-between min-w-[720px] px-2 relative">
+        <div *ngFor="let s of state.stages; let i = index" class="flex flex-col items-center gap-1.5 z-10 w-20">
+          <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all shadow-sm"
+               [ngClass]="{
+                 'bg-[#10B981] text-white ring-2 ring-[#10B981]/30': getStageState(s.key).status === 'passed',
+                 'bg-[#8083ff] text-[#0d0096] ring-2 ring-[#8083ff]/40 animate-pulse': getStageState(s.key).status === 'running',
+                 'bg-[#EF4444] text-white ring-2 ring-[#EF4444]/30': getStageState(s.key).status === 'failed',
+                 'border border-[#30363D] light:border-[#d0d7de] bg-[#10131a] light:bg-[#f6f8fa] text-[#908fa0] light:text-[#57606a]': getStageState(s.key).status === 'pending'
+               }">
+            <span *ngIf="getStageState(s.key).status === 'passed'" class="material-symbols-outlined text-[14px]">check</span>
+            <span *ngIf="getStageState(s.key).status === 'running'" class="material-symbols-outlined text-[14px] animate-spin">autorenew</span>
+            <span *ngIf="getStageState(s.key).status === 'failed'" class="material-symbols-outlined text-[14px]">close</span>
+            <span *ngIf="getStageState(s.key).status === 'pending'">{{ s.number }}</span>
           </div>
-
-          <div class="flex items-center gap-2">
-            <span *ngIf="(state.isRunning$ | async)" class="bg-[#c0c1ff]/10 text-[#c0c1ff] font-label-caps text-xs px-2.5 py-1 rounded border border-[#c0c1ff]/20 flex items-center gap-1.5">
-              <span class="material-symbols-outlined text-[14px] animate-spin">autorenew</span>
-              RUNNING
-            </span>
-            <span *ngIf="!(state.isRunning$ | async) && (state.result$ | async)?.success" class="bg-[#4edea3]/10 text-[#4edea3] font-label-caps text-xs px-2.5 py-1 rounded border border-[#4edea3]/20 flex items-center gap-1.5">
-              <span class="material-symbols-outlined text-[14px]">check_circle</span>
-              COMPLETED
-            </span>
-            <span *ngIf="!(state.isRunning$ | async) && !(state.result$ | async)" class="bg-[#272a31] text-[#908fa0] font-label-caps text-xs px-2.5 py-1 rounded border border-[#30363D]">
-              STANDBY
-            </span>
-          </div>
-        </div>
-
-        <!-- 9-Stage Node Flow -->
-        <div class="overflow-x-auto pb-2 pt-3">
-          <div class="flex items-center justify-between min-w-[700px] px-2 relative">
-            <div *ngFor="let s of state.stages; let i = index" class="flex flex-col items-center gap-2 z-10 w-20">
-              <!-- Stage Node Icon -->
-              <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all"
-                   [ngClass]="{
-                     'bg-[#4edea3] text-[#003824] shadow-[0_0_10px_rgba(78,222,163,0.4)]': getStageState(s.key).status === 'passed',
-                     'border-2 border-[#8083ff] text-[#8083ff] animate-spin': getStageState(s.key).status === 'running',
-                     'bg-[#ffb4ab] text-[#690005]': getStageState(s.key).status === 'failed',
-                     'border-2 border-[#464554] bg-[#0B0E14] text-[#908fa0]': getStageState(s.key).status === 'pending'
-                   }">
-                <span *ngIf="getStageState(s.key).status === 'passed'" class="material-symbols-outlined text-[14px]">check</span>
-                <span *ngIf="getStageState(s.key).status === 'running'" class="w-2 h-2 rounded-full bg-[#8083ff]"></span>
-                <span *ngIf="getStageState(s.key).status === 'failed'" class="material-symbols-outlined text-[14px]">close</span>
-                <span *ngIf="getStageState(s.key).status === 'pending'">{{ s.number }}</span>
-              </div>
-              <span class="font-label-caps text-[10px] text-center"
-                    [ngClass]="getStageState(s.key).status === 'running' ? 'text-[#c0c1ff] font-bold' : (getStageState(s.key).status === 'passed' ? 'text-[#e1e2eb]' : 'text-[#908fa0]')">
-                {{ s.label }}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div class="mt-4 pt-3 border-t border-[#30363D] flex justify-between items-center text-xs">
-          <div class="flex items-center gap-4 text-[#908fa0]">
-            <span>Branch: <code class="text-[#c0c1ff] font-mono">{{ (state.result$ | async)?.branch_name || 'changepilot/' + (state.storyIdSubject | async) }}</code></span>
-            <span>Duration: <strong class="text-[#e1e2eb]">{{ getFormattedDuration() }}</strong></span>
-          </div>
-          <button (click)="state.setNav('results')" class="text-[#c0c1ff] hover:underline font-semibold flex items-center gap-1">
-            <span>View Full Results & Diff</span>
-            <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Recent Pipelines Table -->
-      <div class="level-1 rounded-lg overflow-hidden flex flex-col">
-        <div class="px-5 py-4 border-b border-[#30363D] flex justify-between items-center">
-          <h3 class="font-title-sm text-base font-semibold text-[#e1e2eb]">Recent Pipelines</h3>
-          <button (click)="state.setNav('pipelines')" class="text-[#c0c1ff] font-body-sm text-xs hover:underline">View All</button>
-        </div>
-        <div class="overflow-x-auto">
-          <table class="w-full text-left border-collapse">
-            <thead>
-              <tr class="border-b border-[#30363D] bg-[#1d2026]">
-                <th class="font-label-caps text-xs text-[#908fa0] px-4 py-3">CHANGE ID</th>
-                <th class="font-label-caps text-xs text-[#908fa0] px-4 py-3">TITLE</th>
-                <th class="font-label-caps text-xs text-[#908fa0] px-4 py-3">REPOSITORY</th>
-                <th class="font-label-caps text-xs text-[#908fa0] px-4 py-3">STATUS</th>
-                <th class="font-label-caps text-xs text-[#908fa0] px-4 py-3">DURATION</th>
-                <th class="font-label-caps text-xs text-[#908fa0] px-4 py-3">CREATED</th>
-                <th class="font-label-caps text-xs text-[#908fa0] px-4 py-3 text-right">ACTION</th>
-              </tr>
-            </thead>
-            <tbody class="text-xs text-[#e1e2eb]">
-              <tr *ngFor="let run of (state.recentRuns$ | async)" class="border-b border-[#30363D] hover:bg-[#1d2026] transition-colors">
-                <td class="px-4 py-3 font-mono text-[#c0c1ff] font-semibold">{{ run.storyId }}</td>
-                <td class="px-4 py-3 truncate max-w-[220px]" [title]="run.title">{{ run.title }}</td>
-                <td class="px-4 py-3 font-mono text-[#908fa0]">{{ state.repoLocationSubject | async }}</td>
-                <td class="px-4 py-3">
-                  <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-bold"
-                        [ngClass]="run.status === 'SUCCESS' ? 'bg-[#4edea3]/10 text-[#4edea3]' : 'bg-[#ffb4ab]/10 text-[#ffb4ab]'">
-                    <span class="material-symbols-outlined text-[13px]">{{ run.status === 'SUCCESS' ? 'check_circle' : 'cancel' }}</span>
-                    {{ run.status }}
-                  </span>
-                </td>
-                <td class="px-4 py-3 font-mono text-[#908fa0]">{{ run.duration }}</td>
-                <td class="px-4 py-3 text-[#908fa0]">{{ run.timeAgo }}</td>
-                <td class="px-4 py-3 text-right">
-                  <button (click)="state.setNav('results')" class="text-[#908fa0] hover:text-[#c0c1ff] transition-colors">
-                    <span class="material-symbols-outlined text-[18px]">visibility</span>
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+          <span class="font-label-caps text-[9px] text-center leading-tight truncate max-w-full"
+                [ngClass]="getStageState(s.key).status === 'running' ? 'text-[#8083ff] light:text-[#494bd6] font-bold' : (getStageState(s.key).status === 'passed' ? 'text-[#10B981] font-semibold' : 'text-[#908fa0] light:text-[#57606a]')">
+            {{ s.label }}
+          </span>
         </div>
       </div>
     </div>
 
-    <!-- Right 1 Column: Activity Timeline -->
-    <div class="lg:col-span-1">
-      <div class="level-1 rounded-lg p-5 h-full flex flex-col">
-        <h3 class="font-title-sm text-base font-semibold text-[#e1e2eb] mb-4 pb-3 border-b border-[#30363D]">
-          Recent Activity
-        </h3>
-        <div class="flex-1 overflow-y-auto space-y-4 relative before:absolute before:inset-y-0 before:left-[11px] before:w-0.5 before:bg-[#30363D] before:-z-10 ml-1">
-          <div *ngFor="let audit of (state.result$ | async)?.audit_trail || []" class="relative flex gap-3 items-start z-0">
-            <div class="w-6 h-6 rounded-full bg-[#0B0E14] border-2 border-[#4edea3] flex items-center justify-center shrink-0 mt-0.5">
-              <span class="material-symbols-outlined text-[#4edea3] text-[12px]">check</span>
-            </div>
+    <div class="pt-2 border-t border-[#30363D] light:border-[#d0d7de] flex justify-between items-center text-xs">
+      <div class="flex items-center gap-4 text-[#908fa0] light:text-[#57606a]">
+        <span>Branch: <code class="text-[#8083ff] light:text-[#494bd6] font-mono">{{ (state.result$ | async)?.branch_name || 'changepilot/main' }}</code></span>
+        <span>Duration: <strong class="text-[#e1e2eb] light:text-[#1f2328]">{{ getFormattedDuration() }}</strong></span>
+      </div>
+      <button (click)="state.setNav('results')" class="text-[#8083ff] light:text-[#494bd6] hover:underline font-semibold flex items-center gap-1">
+        <span>View Diff & Changes</span>
+        <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- SECTION 3 & 4: 2-Column Grid (Compact Scrollable Recent Pipelines & Activity Trail) -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    
+    <!-- LEFT (2 Cols): Compact Scrollable Recent Pipelines -->
+    <section class="lg:col-span-2 bg-[#161B22] light:bg-white border border-[#30363D] light:border-[#d0d7de] rounded-xl shadow-sm flex flex-col overflow-hidden">
+      <div class="p-4 border-b border-[#30363D] light:border-[#d0d7de] bg-[#1d2026] light:bg-[#f6f8fa] flex justify-between items-center">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-[#8083ff] light:text-[#494bd6] text-[18px]">history</span>
+          <h3 class="font-title-sm text-sm font-bold text-[#e1e2eb] light:text-[#1f2328]">Recent Pipelines</h3>
+        </div>
+        <button (click)="state.setNav('pipelines')" class="text-[#8083ff] light:text-[#494bd6] font-semibold text-xs hover:underline flex items-center gap-1">
+          <span>View All Pipelines</span>
+          <span class="material-symbols-outlined text-[14px]">open_in_new</span>
+        </button>
+      </div>
+
+      <!-- Compact Scrollable Table Container (Max Height 260px) -->
+      <div class="max-h-64 overflow-y-auto">
+        <table class="w-full text-left border-collapse text-xs">
+          <thead class="sticky top-0 bg-[#10131a] light:bg-[#f6f8fa] z-10 border-b border-[#30363D] light:border-[#d0d7de]">
+            <tr>
+              <th class="font-label-caps text-[10px] text-[#908fa0] light:text-[#57606a] px-3 py-2">CHANGE ID</th>
+              <th class="font-label-caps text-[10px] text-[#908fa0] light:text-[#57606a] px-3 py-2">STORY TITLE</th>
+              <th class="font-label-caps text-[10px] text-[#908fa0] light:text-[#57606a] px-3 py-2">STATUS</th>
+              <th class="font-label-caps text-[10px] text-[#908fa0] light:text-[#57606a] px-3 py-2">TIME</th>
+              <th class="font-label-caps text-[10px] text-[#908fa0] light:text-[#57606a] px-3 py-2 text-right">ACTION</th>
+            </tr>
+          </thead>
+          <tbody class="text-[#e1e2eb] light:text-[#1f2328]">
+            <tr *ngFor="let run of (state.recentRuns$ | async)" class="border-b border-[#30363D] light:border-[#d0d7de] hover:bg-[#1d2026] light:hover:bg-[#f6f8fa] transition-colors">
+              <td class="px-3 py-2 font-mono text-[#8083ff] light:text-[#494bd6] font-semibold">{{ run.storyId }}</td>
+              <td class="px-3 py-2 truncate max-w-[200px]" [title]="run.title">{{ run.title }}</td>
+              <td class="px-3 py-2">
+                <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold"
+                      [ngClass]="run.status === 'SUCCESS' ? 'bg-[#10B981]/15 text-[#10B981]' : 'bg-[#EF4444]/15 text-[#EF4444]'">
+                  <span class="material-symbols-outlined text-[12px]">{{ run.status === 'SUCCESS' ? 'check_circle' : 'cancel' }}</span>
+                  {{ run.status }}
+                </span>
+              </td>
+              <td class="px-3 py-2 text-[11px] text-[#908fa0] light:text-[#57606a] font-mono">{{ run.duration }}</td>
+              <td class="px-3 py-2 text-right">
+                <button (click)="state.setNav('results')" class="text-[#8083ff] light:text-[#494bd6] hover:underline font-semibold text-xs">
+                  Inspect Diff
+                </button>
+              </td>
+            </tr>
+            <tr *ngIf="((state.recentRuns$ | async)?.length ?? 0) === 0">
+              <td colspan="5" class="py-6 text-center text-[#908fa0] light:text-[#57606a] italic">
+                No recent pipeline runs recorded.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- RIGHT (1 Col): Activity Timeline -->
+    <section class="lg:col-span-1 bg-[#161B22] light:bg-white border border-[#30363D] light:border-[#d0d7de] rounded-xl shadow-sm p-4 flex flex-col">
+      <div class="flex items-center gap-2 pb-3 mb-3 border-b border-[#30363D] light:border-[#d0d7de]">
+        <span class="material-symbols-outlined text-[#10B981] text-[18px]">monitoring</span>
+        <h3 class="font-title-sm text-sm font-bold text-[#e1e2eb] light:text-[#1f2328]">Live Activity Log</h3>
+      </div>
+      
+      <div class="max-h-64 overflow-y-auto space-y-3 pr-1 text-xs">
+        <div *ngFor="let audit of (state.result$ | async)?.audit_trail || []" class="flex items-start gap-2.5">
+          <span class="material-symbols-outlined text-[#10B981] text-[16px] shrink-0 mt-0.5">check_circle</span>
+          <div class="flex-1 min-w-0">
+            <div class="font-semibold text-[#e1e2eb] light:text-[#1f2328]">{{ audit.stage }}</div>
+            <div class="text-[11px] text-[#908fa0] light:text-[#57606a] truncate">{{ audit.message }}</div>
+          </div>
+        </div>
+
+        <div *ngIf="!(state.result$ | async)" class="space-y-2">
+          <div class="flex items-start gap-2.5">
+            <span class="material-symbols-outlined text-[#10B981] text-[16px] shrink-0 mt-0.5">verified</span>
             <div class="flex-1 min-w-0">
-              <p class="font-body-sm text-xs text-[#e1e2eb] font-semibold leading-tight">{{ audit.stage }}</p>
-              <p class="font-code-sm text-[11px] text-[#908fa0] mt-0.5 truncate">{{ audit.message }}</p>
-              <p class="font-label-caps text-[10px] text-[#8083ff] mt-1">{{ audit.duration_ms }}ms</p>
+              <div class="font-semibold text-[#e1e2eb] light:text-[#1f2328]">FastAPI Server Healthy</div>
+              <div class="text-[11px] text-[#908fa0] light:text-[#57606a]">Port 8000 ready for intake</div>
             </div>
           </div>
-
-          <!-- Default items if pipeline has not run yet -->
-          <div *ngIf="!(state.result$ | async)" class="relative flex gap-3 items-start z-0">
-            <div class="w-6 h-6 rounded-full bg-[#0B0E14] border-2 border-[#8083ff] flex items-center justify-center shrink-0 mt-0.5">
-              <div class="w-2 h-2 rounded-full bg-[#8083ff]"></div>
-            </div>
+          <div class="flex items-start gap-2.5">
+            <span class="material-symbols-outlined text-[#8083ff] light:text-[#494bd6] text-[16px] shrink-0 mt-0.5">cloud_done</span>
             <div class="flex-1 min-w-0">
-              <p class="font-body-sm text-xs text-[#e1e2eb] leading-tight">System Ready</p>
-              <p class="font-code-sm text-[11px] text-[#908fa0] mt-0.5 truncate">FastAPI + Vertex AI loaded</p>
-              <p class="font-label-caps text-[10px] text-[#8083ff] mt-1">JUST NOW</p>
+              <div class="font-semibold text-[#e1e2eb] light:text-[#1f2328]">Vertex AI Gemini Engine</div>
+              <div class="text-[11px] text-[#908fa0] light:text-[#57606a]">Gemini 3.5 Flash online</div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </section>
+
   </div>
 </div>

@@ -3,6 +3,7 @@ import logging
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
 import uuid
 from pathlib import Path
@@ -243,11 +244,14 @@ class RepositoryManager:
             else:
                 # Remote Git repository: clone with timeout
                 logger.info(f"Cloning {validated_loc} to {workspace_dir}")
+                clone_kwargs = {"depth": 50}
+                if sys.platform != "win32":
+                    clone_kwargs["kill_after_timeout"] = settings.clone_timeout_seconds
+
                 repo = Repo.clone_from(
                     url=validated_loc,
                     to_path=workspace_dir,
-                    kill_after_timeout=settings.clone_timeout_seconds,
-                    depth=50
+                    **clone_kwargs
                 )
                 self.check_size_limits(workspace_dir)
                 baseline_sha = repo.head.commit.hexsha if repo.heads else None
