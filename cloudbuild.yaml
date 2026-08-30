@@ -1,0 +1,29 @@
+steps:
+  # 1. Build the multi-stage container image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'gcr.io//changepilot:', '-t', 'gcr.io//changepilot:latest', '.']
+
+  # 2. Push image to Container / Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io//changepilot:']
+
+  # 3. Deploy to Google Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'changepilot'
+      - '--image'
+      - 'gcr.io//changepilot:'
+      - '--region'
+      - 'us-central1'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
+      - '--set-env-vars'
+      - 'APP_ENV=production,GOOGLE_GENAI_USE_VERTEXAI=True,GOOGLE_CLOUD_LOCATION=us-central1'
+
+images:
+  - 'gcr.io//changepilot:'
+  - 'gcr.io//changepilot:latest'

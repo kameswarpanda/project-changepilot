@@ -60,23 +60,37 @@ async def global_exception_handler(request: Request, exc: Exception):
     )
 
 
-# Serve compiled Angular static frontend (for production and standalone local serving)
-STATIC_DIR = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist" / "changepilot" / "browser"
+# Serve compiled Angular static frontend (for production and standalone local container serving)
+CANDIDATE_STATIC_DIRS = [
+    Path(__file__).resolve().parent.parent.parent / "frontend" / "dist" / "changepilot" / "browser",
+    Path(__file__).resolve().parent.parent.parent / "frontend" / "dist" / "changepilot",
+    Path("/app/frontend/dist/changepilot/browser"),
+    Path("/app/frontend/dist/changepilot")
+]
+
+
+def get_static_dir() -> Optional[Path]:
+    """Finds the active compiled frontend directory."""
+    for d in CANDIDATE_STATIC_DIRS:
+        if d.exists() and (d / "index.html").exists():
+            return d
+    return None
 
 
 @app.get("/{full_path:path}", include_in_schema=False)
 async def serve_spa_or_static(full_path: str):
     """Serves static assets or falls back to Angular index.html for SPA routing."""
-    # Never intercept API or health endpoints
-    if full_path.startswith("api/") or full_path.startswith("health") or full_path.startswith("docs") or full_path.startswith("openapi.json"):
+    # Never intercept API, health, or swagger documentation endpoints
+    if full_path.startswith("api/") or full_path.startswith("health") or full_path.startswith("docs") or full_path.startswith("openapi.json") or full_path.startswith("redoc"):
         return JSONResponse(status_code=404, content={"detail": "Not found"})
 
-    if STATIC_DIR.exists():
-        target_file = STATIC_DIR / full_path
-        if target_file.is_file():
+    static_dir = get_static_dir()
+    if static_dir:
+        target_file = static_dir / full_path
+        if full_path and target_file.is_file():
             return FileResponse(str(target_file))
 
-        index_file = STATIC_DIR / "index.html"
+        index_file = static_dir / "index.html"
         if index_file.exists():
             return FileResponse(str(index_file))
 
