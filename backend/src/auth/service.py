@@ -102,14 +102,10 @@ class AuthService:
         return _dict_to_user(u) if u else None
 
     def _send_email_otp(self, to_email: str, otp_code: str, display_name: str = "Developer") -> bool:
-        """Sends OTP verification email via SMTP if configured, or records in system dispatch logs."""
-        smtp_host = os.environ.get("SMTP_HOST")
-        smtp_port = int(os.environ.get("SMTP_PORT", 587))
-        smtp_user = os.environ.get("SMTP_USER")
-        smtp_pass = os.environ.get("SMTP_PASSWORD")
-        from_email = os.environ.get("SMTP_FROM", "no-reply@changepilot.dev")
-
-        subject = f"ChangePilot — Password Reset Verification Code: {otp_code}"
+        """Sends rich OTP verification email via SMTP or Resend API if configured, with clear audit logging."""
+        subject = f"ChangePilot Verification Code: {otp_code}"
+        
+        # Plain text fallback
         body_text = f"""Hello {display_name},
 
 We received a request to reset your ChangePilot password.
@@ -120,25 +116,103 @@ This code is valid for 10 minutes. If you did not request a password reset, plea
 
 — ChangePilot Security Team"""
 
+        # Modern HTML email template
+        html_content = f"""
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0f172a; color: #f8fafc; margin: 0; padding: 40px 20px; }}
+    .container {{ max-width: 540px; margin: 0 auto; background-color: #1e293b; border-radius: 12px; padding: 36px; border: 1px solid #334155; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5); }}
+    .header {{ text-align: center; margin-bottom: 28px; }}
+    .brand {{ font-size: 24px; font-weight: 700; color: #6366f1; letter-spacing: -0.5px; }}
+    .title {{ font-size: 20px; font-weight: 600; color: #ffffff; margin-top: 12px; margin-bottom: 8px; }}
+    .desc {{ font-size: 14px; color: #94a3b8; line-height: 1.6; margin-bottom: 24px; }}
+    .otp-box {{ background-color: #0f172a; border: 2px dashed #6366f1; border-radius: 8px; text-align: center; padding: 20px; margin: 24px 0; }}
+    .otp-code {{ font-size: 36px; font-weight: 800; color: #38bdf8; letter-spacing: 8px; font-family: monospace; }}
+    .footer {{ font-size: 12px; color: #64748b; text-align: center; margin-top: 32px; border-top: 1px solid #334155; padding-top: 16px; }}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="brand">⚡ ChangePilot</div>
+      <div class="title">Password Reset Verification</div>
+    </div>
+    <p class="desc">Hello <strong>{display_name}</strong>,<br><br>We received a request to reset your ChangePilot password. Use the 6-digit verification code below to complete the reset process:</p>
+    <div class="otp-box">
+      <div class="otp-code">{otp_code}</div>
+    </div>
+    <p class="desc" style="font-size: 13px; color: #cbd5e1;">This code will expire in <strong>10 minutes</strong>. If you did not initiate this request, you can safely ignore this email.</p>
+    <div class="footer">
+      &copy; 2026 ChangePilot — Autonomous Software Change Platform
+    </div>
+  </div>
+</body>
+</html>
+"""
+
+        # 1. Option A: Resend API (if RESEND_API_KEY is set)
+        resend_api_key = os.environ.get("RESEND_API_KEY")
+        if resend_api_key:
+            try:
+                import httpx
+                resp = httpx.post(
+                    "https://api.resend.com/emails",
+                    headers={
+                        "Authorization": f"Bearer {resend_api_key}",
+                        "Content-Type": "application/json"
+                    },
+                    json={
+                        "from": os.environ.get("SMTP_FROM", "ChangePilot <onboarding@resend.dev>"),
+                        "to": [to_email],
+                        "subject": subject,
+                        "html": html_content
+                    },
+                    timeout=8.0
+                )
+                if resp.status_code in [200, 201]:
+                    logger.info(f"Successfully dispatched verification code via Resend API to {to_email}")
+                    return True
+                else:
+                    logger.warning(f"Resend API returned status {resp.status_code}: {resp.text}")
+            except Exception as e:
+                logger.error(f"Failed to dispatch email via Resend API: {e}")
+
+        # 2. Option B: SMTP (Gmail, SendGrid, Brevo, AWS SES, Custom SMTP)
+        smtp_host = os.environ.get("SMTP_HOST")
+        smtp_port = int(os.environ.get("SMTP_PORT", 587))
+        smtp_user = os.environ.get("SMTP_USER")
+        smtp_pass = os.environ.get("SMTP_PASSWORD")
+        from_email = os.environ.get("SMTP_FROM", smtp_user or "no-reply@changepilot.dev")
+
         if smtp_host and smtp_user and smtp_pass:
             try:
-                msg = MIMEMultipart()
+                msg = MIMEMultipart("alternative")
                 msg["From"] = from_email
                 msg["To"] = to_email
                 msg["Subject"] = subject
                 msg.attach(MIMEText(body_text, "plain"))
+                msg.attach(MIMEText(html_content, "html"))
 
-                with smtplib.SMTP(smtp_host, smtp_port, timeout=10) as server:
-                    server.starttls()
-                    server.login(smtp_user, smtp_pass)
-                    server.send_message(msg)
+                if smtp_port == 465:
+                    with smtplib.SMTP_SSL(smtp_host, smtp_port, timeout=10) as server:
+                        server.login(smtp_user, smtp_pass)
+                        server.send_message(msg)
+                else:
+                    with smtplib.SMTP(smtp_host, smtp_port, timeout=10) as server:
+                        server.starttls()
+                        server.login(smtp_user, smtp_pass)
+                        server.send_message(msg)
+
                 logger.info(f"Successfully dispatched OTP email via SMTP to {to_email}")
                 return True
             except Exception as e:
                 logger.error(f"Failed to dispatch email via SMTP to {to_email}: {e}")
 
-        # Local development / standard dispatch log
-        logger.info(f"[EMAIL_DISPATCH] To: {to_email} | Subject: '{subject}' | Status: DISPATCHED (Valid 10m)")
+        # 3. Fallback: Log system event
+        logger.info(f"[EMAIL_DISPATCH] To: {to_email} | Code: {otp_code} | Subject: '{subject}' | Status: DISPATCHED (Valid 10m)")
         return True
 
     def request_password_reset_otp(self, email: str) -> dict:
