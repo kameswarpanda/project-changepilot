@@ -36,6 +36,8 @@ class DatabaseRepository:
 
     def _migrate_schema(self):
         """Auto-migrates SQLite columns if existing local db is missing newly added columns."""
+        if not settings.database_url.startswith("sqlite"):
+            return
         try:
             with engine.connect() as conn:
                 res = conn.execute(text("PRAGMA table_info(users)"))
