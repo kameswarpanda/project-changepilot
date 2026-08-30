@@ -1,9 +1,12 @@
 """API routes for ChangePilot including Auth, System Config, Repositories, Reports, Audit Logs, and Change Pipelines."""
 import logging
+import os
+import re
 import subprocess
 import uuid
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+import httpx
 from fastapi import APIRouter, Depends, Header, HTTPException, status
 from pydantic import BaseModel, Field
 
