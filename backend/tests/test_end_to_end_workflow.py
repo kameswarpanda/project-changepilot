@@ -92,6 +92,21 @@ def test_failure_scenario_patch_consistency_rejection(tmp_path):
     """Verify orchestrator rejects patch that touches unapproved files."""
     (tmp_path / "app.py").write_text("def run(): pass", encoding="utf-8")
 
+    class MockAnalyst(ChangeAnalystAgent):
+        def analyze(self, req, ctx):
+            return ChangePlan(
+                story_id=req.story_id,
+                summary="Plan to update app.py with validation",
+                impacted_files=[{"path": "app.py", "reason": "Target file", "confidence": 1.0}],
+                planned_changes=[
+                    PlannedChange(
+                        file_path="app.py",
+                        change_type=ChangeType.MODIFY,
+                        description="Modify app.py"
+                    )
+                ]
+            )
+
     class BadCodeGenerator(CodeGeneratorAgent):
         def generate_patch(self, req, plan, ctx):
             return PatchPlan(
@@ -106,7 +121,10 @@ def test_failure_scenario_patch_consistency_rejection(tmp_path):
                 ]
             )
 
-    orchestrator = WorkflowOrchestrator(code_generator=BadCodeGenerator())
+    orchestrator = WorkflowOrchestrator(
+        change_analyst=MockAnalyst(),
+        code_generator=BadCodeGenerator()
+    )
     request = ChangeRequest(
         story_id="CP-FAIL-3",
         title="Inconsistent patch test",
