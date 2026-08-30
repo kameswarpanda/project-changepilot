@@ -153,24 +153,26 @@ This code is valid for 10 minutes. If you did not request a password reset, plea
 </html>
 """
 
-        # 1. Option A: Resend API (if RESEND_API_KEY is set)
-        resend_api_key = os.environ.get("RESEND_API_KEY")
-        if resend_api_key:
+        # 1. Primary: Resend API (if RESEND_API_KEY is configured)
+        resend_api_key = settings.resend_api_key or os.environ.get("RESEND_API_KEY")
+        if resend_api_key and resend_api_key.strip():
             try:
                 import httpx
+                from_email = settings.email_from or os.environ.get("SMTP_FROM", "ChangePilot <onboarding@resend.dev>")
                 resp = httpx.post(
                     "https://api.resend.com/emails",
                     headers={
-                        "Authorization": f"Bearer {resend_api_key}",
+                        "Authorization": f"Bearer {resend_api_key.strip()}",
                         "Content-Type": "application/json"
                     },
                     json={
-                        "from": os.environ.get("SMTP_FROM", "ChangePilot <onboarding@resend.dev>"),
+                        "from": from_email,
                         "to": [to_email],
                         "subject": subject,
-                        "html": html_content
+                        "html": html_content,
+                        "text": body_text
                     },
-                    timeout=8.0
+                    timeout=10.0
                 )
                 if resp.status_code in [200, 201]:
                     logger.info(f"Successfully dispatched verification code via Resend API to {to_email}")

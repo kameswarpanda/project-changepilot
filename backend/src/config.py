@@ -42,6 +42,14 @@ class Settings(BaseSettings):
     azure_devops_token: Optional[str] = Field(default=None, alias="AZURE_DEVOPS_TOKEN")
     jira_api_token: Optional[str] = Field(default=None, alias="JIRA_API_TOKEN")
 
+    # Email Service Configuration (Resend API or SMTP)
+    resend_api_key: Optional[str] = Field(default=None, alias="RESEND_API_KEY", description="Resend Email API Key")
+    email_from: str = Field(default="ChangePilot <onboarding@resend.dev>", alias="SMTP_FROM", description="Default sender email")
+    smtp_host: Optional[str] = Field(default=None, alias="SMTP_HOST")
+    smtp_port: int = Field(default=587, alias="SMTP_PORT")
+    smtp_user: Optional[str] = Field(default=None, alias="SMTP_USER")
+    smtp_password: Optional[str] = Field(default=None, alias="SMTP_PASSWORD")
+
     # Database Configuration (SQLite default for zero-config local/test, PostgreSQL in production)
     database_url: str = Field(
         default="sqlite:///./changepilot.db",
