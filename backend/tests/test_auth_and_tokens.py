@@ -79,23 +79,25 @@ async def test_auth_service_demo_login():
 @pytest.mark.asyncio
 async def test_auth_service_register_and_login_flow():
     """Verifies user registration with email/password and subsequent login."""
+    import uuid
     auth_svc = AuthService()
+    unique_email = f"lead_{uuid.uuid4().hex[:6]}@enterprise.com"
     
     # 1. Register new user
     reg_req = RegisterRequest(
-        email="developer.lead@enterprise.com",
+        email=unique_email,
         password="SecurePassword2026!",
         display_name="Lead Engineer"
     )
     reg_session = auth_svc.register_user(reg_req)
     assert reg_session.access_token is not None
-    assert reg_session.user.email == "developer.lead@enterprise.com"
+    assert reg_session.user.email == unique_email
     assert reg_session.user.display_name == "Lead Engineer"
 
     # 2. Login with correct password
     login_req = LoginRequest(
         provider=AuthProvider.PASSWORD,
-        email="developer.lead@enterprise.com",
+        email=unique_email,
         password="SecurePassword2026!"
     )
     login_session = await auth_svc.authenticate(login_req)
@@ -105,7 +107,7 @@ async def test_auth_service_register_and_login_flow():
     # 3. Login with wrong password throws ValueError
     wrong_pw_req = LoginRequest(
         provider=AuthProvider.PASSWORD,
-        email="developer.lead@enterprise.com",
+        email=unique_email,
         password="WrongPassword123"
     )
     with pytest.raises(ValueError):

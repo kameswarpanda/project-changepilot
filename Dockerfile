@@ -18,7 +18,7 @@ FROM python:3.12-slim AS runtime
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     APP_ENV=production \
-    PORT=8000 \
+    PORT=8080 \
     HOST=0.0.0.0
 
 WORKDIR /app
@@ -48,9 +48,6 @@ RUN useradd -m -u 10001 -s /bin/bash appuser && \
 
 USER appuser
 
-EXPOSE 8000
+EXPOSE 8080
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8000/health || exit 1
-
-CMD ["sh", "-c", "python -m uvicorn backend.src.api.server:app --host 0.0.0.0 --port ${PORT:-8000}"]
+CMD ["sh", "-c", "python -m uvicorn backend.src.api.server:app --host 0.0.0.0 --port ${PORT:-8080}"]

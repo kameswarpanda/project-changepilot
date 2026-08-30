@@ -8,7 +8,9 @@ import { User, AuthSessionResponse } from '../models';
   providedIn: 'root'
 })
 export class AuthService {
-  private apiUrl = 'http://localhost:8000/api/auth';
+  private apiUrl = (typeof window !== 'undefined' && window.location.hostname === 'localhost' && window.location.port === '4200')
+    ? 'http://localhost:8000/api/auth'
+    : (typeof window !== 'undefined' ? `${window.location.origin}/api/auth` : 'http://localhost:8000/api/auth');
   
   private initialToken = localStorage.getItem('cp_token');
   private tokenSubject = new BehaviorSubject<string | null>(this.initialToken);

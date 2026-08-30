@@ -7,7 +7,9 @@ import { ChangeRequestPayload, HealthResponse, WorkflowResult } from '../models'
   providedIn: 'root'
 })
 export class ApiService {
-  private baseUrl = 'http://localhost:8000';
+  private baseUrl = (typeof window !== 'undefined' && window.location.hostname === 'localhost' && window.location.port === '4200')
+    ? 'http://localhost:8000'
+    : (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:8000');
 
   constructor(private http: HttpClient) {}
 

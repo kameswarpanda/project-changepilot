@@ -1,6 +1,7 @@
 """FastAPI application entrypoint for ChangePilot."""
 import logging
 from pathlib import Path
+from typing import Optional
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
