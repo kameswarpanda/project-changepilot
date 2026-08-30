@@ -51,14 +51,40 @@ class SecurityValidator:
             )
 
         # Check against disallowed sensitive patterns
-        lower_path = clean_rel.lower()
-        for forbidden in (settings.disallowed_path_patterns + cls.SENSITIVE_PATTERNS):
-            f_lower = forbidden.lower()
-            if any(f_lower in part or part.startswith(f_lower) or part.endswith(f_lower) for part in parts):
+        for part in parts:
+            p_lower = part.lower()
+            # Explicit protection for internal git repo folder
+            if p_lower == ".git":
                 return ValidationResult(
                     validator_name="SecurityValidator.validate_path_confinement",
                     passed=False,
-                    errors=[f"Operation on protected/sensitive path pattern '{forbidden}' is forbidden."]
+                    errors=["Operation on protected/sensitive path pattern '.git' is forbidden."]
+                )
+            # Protection for environment files (.env, .env.production, etc.)
+            if p_lower == ".env" or p_lower.startswith(".env."):
+                return ValidationResult(
+                    validator_name="SecurityValidator.validate_path_confinement",
+                    passed=False,
+                    errors=["Operation on protected/sensitive path pattern '.env' is forbidden."]
+                )
+            # Protection for secret keys, credentials, and private keys
+            if any(p_lower.endswith(ext) for ext in [".key", ".pem", ".pkcs12", ".pfx"]):
+                return ValidationResult(
+                    validator_name="SecurityValidator.validate_path_confinement",
+                    passed=False,
+                    errors=[f"Operation on protected/sensitive path pattern '{part}' is forbidden."]
+                )
+            if p_lower in ["id_rsa", "id_ed25519", "id_ecdsa", "id_dsa", "credentials.json", "service_account.json"]:
+                return ValidationResult(
+                    validator_name="SecurityValidator.validate_path_confinement",
+                    passed=False,
+                    errors=[f"Operation on protected/sensitive path pattern '{part}' is forbidden."]
+                )
+            if p_lower in [".aws", ".gcp", ".ssh", "secrets"]:
+                return ValidationResult(
+                    validator_name="SecurityValidator.validate_path_confinement",
+                    passed=False,
+                    errors=[f"Operation on protected/sensitive path pattern '{part}' is forbidden."]
                 )
 
         # Resolve path and verify confinement to workspace root
