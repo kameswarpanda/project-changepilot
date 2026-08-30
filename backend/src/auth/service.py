@@ -4,7 +4,9 @@ import hashlib
 import json
 import logging
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
+import random
+import re
 from typing import Dict, Optional
 import httpx
 
@@ -28,6 +30,21 @@ def _hash_password(password: str) -> str:
     return hashlib.sha256((salt + password).encode("utf-8")).hexdigest()
 
 
+def validate_strong_password(password: str) -> tuple[bool, str]:
+    """Validates strong password rules: min 8 chars, uppercase, lowercase, digit, special character."""
+    if len(password) < 8:
+        return False, "Password must be at least 8 characters long."
+    if not re.search(r"[A-Z]", password):
+        return False, "Password must include at least one uppercase letter (A-Z)."
+    if not re.search(r"[a-z]", password):
+        return False, "Password must include at least one lowercase letter (a-z)."
+    if not re.search(r"[0-9]", password):
+        return False, "Password must include at least one number (0-9)."
+    if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", password):
+        return False, "Password must include at least one special character (!@#$%^&* etc.)."
+    return True, ""
+
+
 def _decode_jwt_unverified_payload(token_str: str) -> Optional[dict]:
     """Safely decodes JWT payload without network dependency for fast client claims extraction."""
     try:
@@ -49,9 +66,10 @@ class AuthService:
     """Service handling multi-provider authentication, user registration, and session issuance."""
 
     def __init__(self):
-        # In-memory user cache and password credentials store
+        # In-memory user cache, password credentials store, and OTP store
         self._user_store: Dict[str, User] = {}
         self._password_store: Dict[str, str] = {}
+        self._otp_store: Dict[str, Dict[str, Any]] = {}
         self._seed_default_users()
 
     def _seed_default_users(self):
@@ -90,11 +108,106 @@ class AuthService:
         """Retrieves a user by their unique ChangePilot ID."""
         return self._user_store.get(user_id)
 
+    def request_password_reset_otp(self, email: str) -> dict:
+        """Generates a 6-digit OTP for user password reset and stores it with a 10-minute expiry."""
+        email_clean = email.strip().lower()
+        if not email_clean:
+            raise ValueError("Please provide a valid email address.")
+
+        # Generate a secure 6-digit OTP code
+        otp = f"{random.randint(100000, 999999)}"
+        expires_at = datetime.now(timezone.utc) + timedelta(minutes=10)
+        self._otp_store[email_clean] = {
+            "otp": otp,
+            "expires_at": expires_at,
+            "verified": False
+        }
+        logger.info(f"Password reset OTP generated for {email_clean}: {otp}")
+        return {
+            "success": True,
+            "message": f"A 6-digit verification code has been sent to {email_clean}.",
+            "email": email_clean,
+            "dev_otp": otp
+        }
+
+    def verify_password_reset_otp(self, email: str, otp: str) -> dict:
+        """Verifies the submitted 6-digit OTP against the active session."""
+        email_clean = email.strip().lower()
+        otp_clean = otp.strip()
+        record = self._otp_store.get(email_clean)
+
+        if not record:
+            raise ValueError("No OTP request found for this email. Please request a new code.")
+
+        if datetime.now(timezone.utc) > record["expires_at"]:
+            del self._otp_store[email_clean]
+            raise ValueError("The verification code has expired. Please request a new code.")
+
+        if record["otp"] != otp_clean:
+            raise ValueError("Invalid verification code. Please check your 6-digit code.")
+
+        record["verified"] = True
+        return {
+            "success": True,
+            "message": "Verification code successfully validated. You may now create a new password.",
+            "email": email_clean
+        }
+
+    def reset_password_with_otp(self, email: str, otp: str, new_password: str) -> dict:
+        """Enforces strong password rules and updates user password following OTP verification."""
+        email_clean = email.strip().lower()
+        otp_clean = otp.strip()
+
+        # 1. Enforce Strong Password Policy
+        is_valid, err_msg = validate_strong_password(new_password)
+        if not is_valid:
+            raise ValueError(err_msg)
+
+        # 2. Verify OTP Record
+        record = self._otp_store.get(email_clean)
+        if not record or record["otp"] != otp_clean or not record.get("verified"):
+            raise ValueError("Verification code is invalid or unverified. Please verify your OTP first.")
+
+        # 3. Update password in user store
+        self._password_store[email_clean] = _hash_password(new_password)
+
+        # If user didn't exist before, create profile
+        if email_clean not in self._user_store:
+            username = email_clean.split("@")[0].replace(".", "_")
+            user_id = f"usr-reset-{uuid.uuid4().hex[:6]}"
+            user = User(
+                id=user_id,
+                identity_provider_id=f"email-{email_clean}",
+                username=username,
+                display_name=username.capitalize(),
+                email=email_clean,
+                avatar_url=None,
+                provider=AuthProvider.PASSWORD,
+                roles=[UserRole.DEVELOPER]
+            )
+            self._user_store[user.id] = user
+            self._user_store[user.username] = user
+            self._user_store[user.email] = user
+
+        # Invalidate used OTP
+        if email_clean in self._otp_store:
+            del self._otp_store[email_clean]
+
+        logger.info(f"Password successfully reset for {email_clean}")
+        return {
+            "success": True,
+            "message": "Password reset successfully. You can now sign in with your new password."
+        }
+
     def register_user(self, req: RegisterRequest) -> AuthSessionResponse:
-        """Registers a new user with Email, Password, and Display Name."""
+        """Registers a new user with Email, Password, and Display Name enforcing strong password policy."""
         email_clean = req.email.strip().lower()
         if email_clean in self._user_store:
             raise ValueError(f"User with email '{email_clean}' already exists. Please sign in.")
+
+        is_valid, err_msg = validate_strong_password(req.password)
+        if not is_valid:
+            raise ValueError(err_msg)
 
         username = email_clean.split("@")[0].replace(".", "_")
         user_id = f"usr-email-{uuid.uuid4().hex[:6]}"

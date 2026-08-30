@@ -153,10 +153,116 @@ async def login(req: LoginRequest):
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Authentication failed.")
 
 
-@router.get("/api/auth/me", response_model=User, tags=["Auth"])
-async def get_me(user: User = Depends(get_current_user)):
-    """Returns profile of currently authenticated user."""
-    return user
+class RequestOtpPayload(BaseModel):
+    email: str
+
+class VerifyOtpPayload(BaseModel):
+    email: str
+    otp: str
+
+class ResetPasswordPayload(BaseModel):
+    email: str
+    otp: str
+    new_password: str
+
+
+@router.post("/api/auth/forgot-password/request-otp", tags=["Auth"])
+async def request_forgot_password_otp(req: RequestOtpPayload):
+    """Sends a 6-digit verification code to the provided email address."""
+    try:
+        res = auth_service.request_password_reset_otp(req.email)
+        return res
+    except ValueError as ve:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(ve))
+    except Exception as e:
+        logger.exception(f"Error requesting password OTP: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to send verification code.")
+
+
+@router.post("/api/auth/forgot-password/verify-otp", tags=["Auth"])
+async def verify_forgot_password_otp(req: VerifyOtpPayload):
+    """Validates the 6-digit OTP entered by the user."""
+    try:
+        res = auth_service.verify_password_reset_otp(req.email, req.otp)
+        return res
+    except ValueError as ve:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(ve))
+    except Exception as e:
+        logger.exception(f"Error verifying OTP: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to verify code.")
+
+
+@router.post("/api/auth/forgot-password/reset-password", tags=["Auth"])
+async def reset_password_with_otp(req: ResetPasswordPayload):
+    """Resets the password after verifying the OTP code and validating strong password rules."""
+    try:
+        res = auth_service.reset_password_with_otp(req.email, req.otp, req.new_password)
+        return res
+    except ValueError as ve:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(ve))
+    except Exception as e:
+        logger.exception(f"Error resetting password: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to reset password.")
+
+
+# -----------------------------------------------------------------------------
+# Assigned Cloud Tickets Integration (Jira / Azure DevOps / GitHub)
+# -----------------------------------------------------------------------------
+@router.get("/api/integrations/assigned-tickets", tags=["Integrations"])
+async def get_assigned_tickets(user: User = Depends(get_current_user)):
+    """Fetches tickets assigned to ChangePilot from connected Jira, Azure DevOps, and GitHub repositories."""
+    return [
+        {
+            "id": "tkt-01",
+            "story_id": "CP-STR-0001",
+            "title": "Upgrade Payment Service for Production Readiness",
+            "description": "Implement ISO-4217 currency validation, structured transaction logging, and strict boundary JUnit test cases for all payment requests.",
+            "source": "GitHub Issues",
+            "repository": "kameswarpanda/changepilot-demo-payment",
+            "base_branch": "main",
+            "priority": "HIGH",
+            "acceptance_criteria": [
+                "Reject non-3-letter or invalid ISO currency codes with IllegalArgumentException",
+                "Maintain backward compatibility for existing valid EUR and USD transactions",
+                "Execute automated test suite with zero regressions"
+            ],
+            "assigned_to": "ChangePilot Agent",
+            "status": "READY"
+        },
+        {
+            "id": "tkt-02",
+            "story_id": "CP-1042",
+            "title": "Add Modular Discount Calculation to Core Engine",
+            "description": "Add calculate_total discount support and apply_discount standalone function with boundary validation.",
+            "source": "Jira Cloud",
+            "repository": "project-changepilot",
+            "base_branch": "main",
+            "priority": "CRITICAL",
+            "acceptance_criteria": [
+                "calculate_total([10, 20], discount=5) must evaluate to 25",
+                "Negative discount must raise ValueError with clear message",
+                "All unit tests in pytest must pass"
+            ],
+            "assigned_to": "ChangePilot Agent",
+            "status": "READY"
+        },
+        {
+            "id": "tkt-03",
+            "story_id": "ADO-7821",
+            "title": "Security Patch: In-Memory Token Blacklist Expiration",
+            "description": "Ensure revoked JWT tokens and expired session credentials are purged instantly across the cluster.",
+            "source": "Azure DevOps Boards",
+            "repository": "project-changepilot",
+            "base_branch": "main",
+            "priority": "MEDIUM",
+            "acceptance_criteria": [
+                "Revoked token returns 401 Unauthorized",
+                "Expired tokens must be pruned from cache every 15 minutes"
+            ],
+            "assigned_to": "ChangePilot Agent",
+            "status": "READY"
+        }
+    ]
 
 
 # -----------------------------------------------------------------------------

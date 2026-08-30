@@ -89,6 +89,10 @@ export class ApiService {
     return this.http.get<any[]>(`${this.baseUrl}/api/notifications`, { headers: this.getHeaders() });
   }
 
+  getAssignedTickets(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/api/integrations/assigned-tickets`, { headers: this.getHeaders() });
+  }
+
   analyzeRepository(repositoryLocation: string): Observable<any> {
     return this.http.post<any>(
       `${this.baseUrl}/api/repository/analyze`,

@@ -14,17 +14,24 @@ declare const google: any;
   styleUrls: ['./auth-page.component.css']
 })
 export class AuthPageComponent implements OnInit {
-  authMode: 'signin' | 'signup' = 'signin';
+  authMode: 'signin' | 'signup' | 'forgot' = 'signin';
 
-  // Sign In form
-  signInEmail = 'kameswar@changepilot.dev';
-  signInPassword = 'changepilot2026';
+  // Sign In form (initial empty fields to avoid autofill pre-population)
+  signInEmail = '';
+  signInPassword = '';
 
   // Sign Up form
   signUpName = '';
   signUpEmail = '';
   signUpPassword = '';
   signUpConfirmPassword = '';
+
+  // Forgot Password 3-Step Flow
+  forgotStep: 'request' | 'verify' | 'reset' = 'request';
+  forgotEmail = '';
+  forgotOtp = '';
+  forgotNewPassword = '';
+  forgotConfirmPassword = '';
 
   // Google OAuth Client ID
   googleClientId = '189200132893-bigtbq45b7hupbhqpg44u517g42svhrm.apps.googleusercontent.com';
@@ -41,6 +48,31 @@ export class AuthPageComponent implements OnInit {
 
   ngOnInit(): void {
     this.initGoogleIdentity();
+  }
+
+  // Password validation helpers
+  isMinLength(pwd: string): boolean {
+    return pwd.length >= 8;
+  }
+
+  hasUpper(pwd: string): boolean {
+    return /[A-Z]/.test(pwd);
+  }
+
+  hasLower(pwd: string): boolean {
+    return /[a-z]/.test(pwd);
+  }
+
+  hasNumber(pwd: string): boolean {
+    return /[0-9]/.test(pwd);
+  }
+
+  hasSpecial(pwd: string): boolean {
+    return /[!@#$%^&*(),.?":{}|<>]/.test(pwd);
+  }
+
+  isPasswordStrong(pwd: string): boolean {
+    return this.isMinLength(pwd) && this.hasUpper(pwd) && this.hasLower(pwd) && this.hasNumber(pwd) && this.hasSpecial(pwd);
   }
 
   private initGoogleIdentity(): void {
@@ -75,10 +107,16 @@ export class AuthPageComponent implements OnInit {
     });
   }
 
-  switchMode(mode: 'signin' | 'signup'): void {
+  switchMode(mode: 'signin' | 'signup' | 'forgot'): void {
     this.authMode = mode;
     this.errorMessage = null;
     this.successMessage = null;
+    if (mode === 'forgot') {
+      this.forgotStep = 'request';
+      this.forgotOtp = '';
+      this.forgotNewPassword = '';
+      this.forgotConfirmPassword = '';
+    }
   }
 
   handleGoogleSignIn(): void {
@@ -153,8 +191,8 @@ export class AuthPageComponent implements OnInit {
       return;
     }
 
-    if (this.signUpPassword.length < 6) {
-      this.errorMessage = 'Password must be at least 6 characters.';
+    if (!this.isPasswordStrong(this.signUpPassword)) {
+      this.errorMessage = 'Please ensure your password meets all complexity requirements below.';
       return;
     }
 
@@ -177,6 +215,96 @@ export class AuthPageComponent implements OnInit {
       error: (err) => {
         this.isLoading = false;
         this.errorMessage = err.error?.detail || 'Registration failed. Email may already be in use.';
+      }
+    });
+  }
+
+  // --- Forgot Password Handlers ---
+  handleSendResetOtp(): void {
+    if (!this.forgotEmail.trim()) {
+      this.errorMessage = 'Please enter your work email to receive a verification code.';
+      return;
+    }
+
+    this.isLoading = true;
+    this.errorMessage = null;
+    this.successMessage = null;
+
+    this.authService.requestPasswordResetOtp(this.forgotEmail.trim()).subscribe({
+      next: (res) => {
+        this.isLoading = false;
+        this.forgotStep = 'verify';
+        this.successMessage = res.message || 'Verification code sent! Please check your email.';
+        if (res.dev_otp) {
+          this.forgotOtp = res.dev_otp; // Autofill OTP in dev for frictionless test
+        }
+      },
+      error: (err) => {
+        this.isLoading = false;
+        this.errorMessage = err.error?.detail || 'Failed to send verification code. Please verify your email.';
+      }
+    });
+  }
+
+  handleVerifyResetOtp(): void {
+    if (!this.forgotOtp.trim() || this.forgotOtp.trim().length !== 6) {
+      this.errorMessage = 'Please enter the valid 6-digit verification code.';
+      return;
+    }
+
+    this.isLoading = true;
+    this.errorMessage = null;
+    this.successMessage = null;
+
+    this.authService.verifyPasswordResetOtp(this.forgotEmail.trim(), this.forgotOtp.trim()).subscribe({
+      next: (res) => {
+        this.isLoading = false;
+        this.forgotStep = 'reset';
+        this.successMessage = res.message || 'Code verified! Now choose a new password.';
+      },
+      error: (err) => {
+        this.isLoading = false;
+        this.errorMessage = err.error?.detail || 'Invalid verification code. Please check and retry.';
+      }
+    });
+  }
+
+  handleResetPassword(): void {
+    if (!this.forgotNewPassword) {
+      this.errorMessage = 'Please enter your new password.';
+      return;
+    }
+
+    if (!this.isPasswordStrong(this.forgotNewPassword)) {
+      this.errorMessage = 'New password does not meet security criteria.';
+      return;
+    }
+
+    if (this.forgotNewPassword !== this.forgotConfirmPassword) {
+      this.errorMessage = 'Passwords do not match.';
+      return;
+    }
+
+    this.isLoading = true;
+    this.errorMessage = null;
+    this.successMessage = null;
+
+    this.authService.resetPasswordWithOtp(
+      this.forgotEmail.trim(),
+      this.forgotOtp.trim(),
+      this.forgotNewPassword
+    ).subscribe({
+      next: (res) => {
+        this.isLoading = false;
+        this.successMessage = res.message || 'Password successfully reset!';
+        setTimeout(() => {
+          this.signInEmail = this.forgotEmail;
+          this.switchMode('signin');
+        }, 1500);
+      },
+      error: (err) => {
+        this.isLoading = false;
+        this.errorMessage = err.error?.detail || 'Password reset failed. Please retry.';
       }
     });
   }

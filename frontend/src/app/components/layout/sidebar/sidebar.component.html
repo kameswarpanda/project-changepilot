@@ -1,71 +1,107 @@
-<aside class="sidebar hidden md:flex flex-col w-[260px] h-screen sticky left-0 top-0 bg-[#161B22] border-r border-[#30363D] py-6 z-40 shrink-0">
-  <!-- Brand Header -->
-  <div class="px-6 mb-6 flex items-center gap-3">
-    <div class="w-9 h-9 rounded-lg bg-[#8083ff] flex items-center justify-center text-[#0d0096] shrink-0 shadow-sm">
+<aside class="sidebar hidden md:flex flex-col h-screen sticky left-0 top-0 bg-[#161B22] light:bg-white border-r border-[#30363D] light:border-[#d0d7de] py-5 z-40 shrink-0 sidebar-transition"
+       [ngClass]="(state.isSidebarCollapsed$ | async) ? 'w-[68px] px-2' : 'w-[250px] px-4'">
+  
+  <!-- Brand & Collapse Toggle Header -->
+  <div class="mb-6 flex items-center justify-between gap-2" [ngClass]="(state.isSidebarCollapsed$ | async) ? 'px-1 justify-center' : 'px-2'">
+    <div class="flex items-center gap-3 min-w-0" *ngIf="!(state.isSidebarCollapsed$ | async)">
+      <div class="w-9 h-9 rounded-lg bg-[#8083ff] flex items-center justify-center text-[#0d0096] shrink-0 shadow-sm">
+        <span class="material-symbols-outlined fill-icon text-[20px]">terminal</span>
+      </div>
+      <div class="min-w-0">
+        <h1 class="font-headline-md text-[17px] font-bold text-[#e1e2eb] light:text-[#1f2328] leading-tight truncate">ChangePilot</h1>
+        <p class="font-body-sm text-[10px] text-[#908fa0] light:text-[#57606a] leading-tight truncate">Autonomous Dev</p>
+      </div>
+    </div>
+
+    <!-- Collapsed Brand Icon -->
+    <div *ngIf="(state.isSidebarCollapsed$ | async)" 
+         (click)="state.toggleSidebar()"
+         title="Expand Sidebar (Click to expand)"
+         class="w-9 h-9 rounded-lg bg-[#8083ff] flex items-center justify-center text-[#0d0096] cursor-pointer shadow-sm mb-2 hover:opacity-90">
       <span class="material-symbols-outlined fill-icon text-[20px]">terminal</span>
     </div>
-    <div>
-      <h1 class="font-headline-md text-[18px] font-bold text-[#e1e2eb] leading-tight">ChangePilot</h1>
-      <p class="font-body-sm text-[11px] text-[#908fa0] leading-tight">Autonomous Infrastructure</p>
-    </div>
+
+    <!-- Toggle Hamburger Button (when expanded) -->
+    <button *ngIf="!(state.isSidebarCollapsed$ | async)" 
+            (click)="state.toggleSidebar()" 
+            title="Collapse Sidebar"
+            class="w-8 h-8 rounded-lg hover:bg-[#272a31] light:hover:bg-[#f3f4f6] text-[#908fa0] light:text-[#57606a] hover:text-[#e1e2eb] light:hover:text-[#1f2328] flex items-center justify-center transition-colors">
+      <span class="material-symbols-outlined text-[20px]">menu_open</span>
+    </button>
   </div>
 
   <!-- Navigation Menu -->
-  <nav class="flex-1 overflow-y-auto px-3 space-y-1">
+  <nav class="flex-1 overflow-y-auto space-y-1.5" [ngClass]="(state.isSidebarCollapsed$ | async) ? 'px-0' : 'px-1'">
     <a (click)="navigate('dashboard')" 
+       [title]="(state.isSidebarCollapsed$ | async) ? 'Dashboard' : ''"
        [class.active]="(state.activeNav$ | async) === 'dashboard'" 
-       class="nav-link">
-      <span class="material-symbols-outlined text-[20px]" [class.fill-icon]="(state.activeNav$ | async) === 'dashboard'">dashboard</span>
-      <span>Dashboard</span>
+       [ngClass]="(state.isSidebarCollapsed$ | async) ? 'justify-center px-0' : 'px-3'"
+       class="nav-link flex items-center gap-3 py-2.5 rounded-lg text-xs font-semibold cursor-pointer transition-all">
+      <span class="material-symbols-outlined text-[20px] shrink-0" [class.fill-icon]="(state.activeNav$ | async) === 'dashboard'">dashboard</span>
+      <span *ngIf="!(state.isSidebarCollapsed$ | async)" class="truncate">Dashboard</span>
     </a>
 
     <a (click)="navigate('requests')" 
+       [title]="(state.isSidebarCollapsed$ | async) ? 'Change Requests' : ''"
        [class.active]="(state.activeNav$ | async) === 'requests'" 
-       class="nav-link">
-      <span class="material-symbols-outlined text-[20px]" [class.fill-icon]="(state.activeNav$ | async) === 'requests'">account_tree</span>
-      <span>Change Requests</span>
+       [ngClass]="(state.isSidebarCollapsed$ | async) ? 'justify-center px-0' : 'px-3'"
+       class="nav-link flex items-center gap-3 py-2.5 rounded-lg text-xs font-semibold cursor-pointer transition-all">
+      <span class="material-symbols-outlined text-[20px] shrink-0" [class.fill-icon]="(state.activeNav$ | async) === 'requests'">account_tree</span>
+      <span *ngIf="!(state.isSidebarCollapsed$ | async)" class="truncate">Change Requests</span>
     </a>
 
     <a (click)="navigate('pipelines')" 
+       [title]="(state.isSidebarCollapsed$ | async) ? 'Pipelines' : ''"
        [class.active]="(state.activeNav$ | async) === 'pipelines'" 
-       class="nav-link">
-      <span class="material-symbols-outlined text-[20px]" [class.fill-icon]="(state.activeNav$ | async) === 'pipelines'">lan</span>
-      <span>Pipelines</span>
+       [ngClass]="(state.isSidebarCollapsed$ | async) ? 'justify-center px-0' : 'px-3'"
+       class="nav-link flex items-center gap-3 py-2.5 rounded-lg text-xs font-semibold cursor-pointer transition-all">
+      <span class="material-symbols-outlined text-[20px] shrink-0" [class.fill-icon]="(state.activeNav$ | async) === 'pipelines'">lan</span>
+      <span *ngIf="!(state.isSidebarCollapsed$ | async)" class="truncate">Pipelines</span>
     </a>
 
     <a (click)="navigate('results')" 
+       [title]="(state.isSidebarCollapsed$ | async) ? 'Change Results' : ''"
        [class.active]="(state.activeNav$ | async) === 'results'" 
-       class="nav-link">
-      <span class="material-symbols-outlined text-[20px]" [class.fill-icon]="(state.activeNav$ | async) === 'results'">task_alt</span>
-      <span>Change Results</span>
+       [ngClass]="(state.isSidebarCollapsed$ | async) ? 'justify-center px-0' : 'px-3'"
+       class="nav-link flex items-center gap-3 py-2.5 rounded-lg text-xs font-semibold cursor-pointer transition-all">
+      <span class="material-symbols-outlined text-[20px] shrink-0" [class.fill-icon]="(state.activeNav$ | async) === 'results'">task_alt</span>
+      <span *ngIf="!(state.isSidebarCollapsed$ | async)" class="truncate">Change Results</span>
     </a>
 
     <a (click)="navigate('repositories')" 
+       [title]="(state.isSidebarCollapsed$ | async) ? 'Repositories' : ''"
        [class.active]="(state.activeNav$ | async) === 'repositories'" 
-       class="nav-link">
-      <span class="material-symbols-outlined text-[20px]" [class.fill-icon]="(state.activeNav$ | async) === 'repositories'">database</span>
-      <span>Repositories</span>
+       [ngClass]="(state.isSidebarCollapsed$ | async) ? 'justify-center px-0' : 'px-3'"
+       class="nav-link flex items-center gap-3 py-2.5 rounded-lg text-xs font-semibold cursor-pointer transition-all">
+      <span class="material-symbols-outlined text-[20px] shrink-0" [class.fill-icon]="(state.activeNav$ | async) === 'repositories'">database</span>
+      <span *ngIf="!(state.isSidebarCollapsed$ | async)" class="truncate">Repositories</span>
     </a>
 
     <a (click)="navigate('audit')" 
+       [title]="(state.isSidebarCollapsed$ | async) ? 'Audit Logs' : ''"
        [class.active]="(state.activeNav$ | async) === 'audit'" 
-       class="nav-link">
-      <span class="material-symbols-outlined text-[20px]" [class.fill-icon]="(state.activeNav$ | async) === 'audit'">assignment</span>
-      <span>Audit Logs</span>
+       [ngClass]="(state.isSidebarCollapsed$ | async) ? 'justify-center px-0' : 'px-3'"
+       class="nav-link flex items-center gap-3 py-2.5 rounded-lg text-xs font-semibold cursor-pointer transition-all">
+      <span class="material-symbols-outlined text-[20px] shrink-0" [class.fill-icon]="(state.activeNav$ | async) === 'audit'">assignment</span>
+      <span *ngIf="!(state.isSidebarCollapsed$ | async)" class="truncate">Audit Logs</span>
     </a>
 
     <a (click)="navigate('reports')" 
+       [title]="(state.isSidebarCollapsed$ | async) ? 'Reports' : ''"
        [class.active]="(state.activeNav$ | async) === 'reports'" 
-       class="nav-link">
-      <span class="material-symbols-outlined text-[20px]" [class.fill-icon]="(state.activeNav$ | async) === 'reports'">analytics</span>
-      <span>Reports</span>
+       [ngClass]="(state.isSidebarCollapsed$ | async) ? 'justify-center px-0' : 'px-3'"
+       class="nav-link flex items-center gap-3 py-2.5 rounded-lg text-xs font-semibold cursor-pointer transition-all">
+      <span class="material-symbols-outlined text-[20px] shrink-0" [class.fill-icon]="(state.activeNav$ | async) === 'reports'">analytics</span>
+      <span *ngIf="!(state.isSidebarCollapsed$ | async)" class="truncate">Reports</span>
     </a>
   </nav>
 
   <!-- Authenticated User Profile Section -->
-  <div class="px-5 mt-auto pt-4 border-t border-[#30363D]">
-    <div class="flex items-center gap-3">
-      <div class="w-8 h-8 rounded-full bg-[#32353c] border border-[#464554] overflow-hidden flex items-center justify-center text-[#c0c1ff] font-bold text-xs">
+  <div class="mt-auto pt-4 border-t border-[#30363D] light:border-[#d0d7de]" 
+       [ngClass]="(state.isSidebarCollapsed$ | async) ? 'px-1 flex justify-center' : 'px-3'">
+    <div class="flex items-center gap-2.5 min-w-0" 
+         [title]="(state.isSidebarCollapsed$ | async) ? ((authService.currentUser$ | async)?.display_name || 'Developer') : ''">
+      <div class="w-8 h-8 rounded-full bg-[#272a31] light:bg-[#f3f4f6] border border-[#464554] light:border-[#d0d7de] overflow-hidden flex items-center justify-center text-[#c0c1ff] light:text-[#494bd6] font-bold text-xs shrink-0">
         <img *ngIf="(authService.currentUser$ | async)?.avatar_url" 
              [src]="(authService.currentUser$ | async)?.avatar_url" 
              alt="Avatar" 
@@ -74,9 +110,13 @@
           {{ getUserInitials(authService.currentUser$ | async) }}
         </span>
       </div>
-      <div class="flex flex-col min-w-0">
-        <span class="font-title-sm text-[13px] text-[#e1e2eb] font-semibold truncate">{{ (authService.currentUser$ | async)?.display_name || 'Developer' }}</span>
-        <span class="font-body-sm text-[11px] text-[#908fa0] capitalize">{{ (authService.currentUser$ | async)?.roles?.[0] || 'Developer' }} • {{ (authService.currentUser$ | async)?.provider || 'Google' }}</span>
+      <div *ngIf="!(state.isSidebarCollapsed$ | async)" class="flex flex-col min-w-0">
+        <span class="font-title-sm text-xs text-[#e1e2eb] light:text-[#1f2328] font-semibold truncate">
+          {{ (authService.currentUser$ | async)?.display_name || 'Developer' }}
+        </span>
+        <span class="font-body-sm text-[10px] text-[#908fa0] light:text-[#57606a] capitalize truncate">
+          {{ (authService.currentUser$ | async)?.roles?.[0] || 'Developer' }}
+        </span>
       </div>
     </div>
   </div>

@@ -89,6 +89,27 @@ export class AuthService {
     );
   }
 
+  requestPasswordResetOtp(email: string): Observable<{ success: boolean; message: string; email: string; dev_otp?: string }> {
+    return this.http.post<{ success: boolean; message: string; email: string; dev_otp?: string }>(
+      `${this.apiUrl}/forgot-password/request-otp`,
+      { email }
+    );
+  }
+
+  verifyPasswordResetOtp(email: string, otp: string): Observable<{ success: boolean; message: string; email: string }> {
+    return this.http.post<{ success: boolean; message: string; email: string }>(
+      `${this.apiUrl}/forgot-password/verify-otp`,
+      { email, otp }
+    );
+  }
+
+  resetPasswordWithOtp(email: string, otp: string, newPassword: string): Observable<{ success: boolean; message: string }> {
+    return this.http.post<{ success: boolean; message: string }>(
+      `${this.apiUrl}/forgot-password/reset-password`,
+      { email, otp, new_password: newPassword }
+    );
+  }
+
   loginDemo(username: string = 'kameswar'): Observable<AuthSessionResponse> {
     return this.http.post<AuthSessionResponse>(`${this.apiUrl}/login`, {
       provider: 'local',

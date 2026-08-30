@@ -182,3 +182,40 @@ html.light input, html.light textarea, html.light select {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-secondary);
 }
+
+/* ==============================================================================
+   Diagonal Feather / Wipe Theme Transition Animation
+   ============================================================================== */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-old(root) {
+  z-index: 1;
+}
+
+::view-transition-new(root) {
+  z-index: 9999;
+  animation: diagonalThemeWipe 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes diagonalThemeWipe {
+  0% {
+    clip-path: polygon(0 0, 0 0, 0 0, 0 0);
+  }
+  100% {
+    clip-path: polygon(0 0, 300% 0, 0 300%, 0 0);
+  }
+}
+
+/* Auth Sliding Tab Transition */
+.auth-mode-slider {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s ease;
+}
+
+/* Sidebar Responsive Transition */
+.sidebar-transition {
+  transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1), padding 0.25s ease;
+}

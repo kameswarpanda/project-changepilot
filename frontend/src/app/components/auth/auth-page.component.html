@@ -35,39 +35,45 @@
           </div>
         </div>
 
-        <!-- Mode Toggle Tabs -->
-        <div class="flex bg-[#10131a] light:bg-[#f6f8fa] p-1 rounded-lg border border-[#30363D] light:border-[#d0d7de] mb-6">
+        <!-- Animated Sliding Mode Switcher Tabs -->
+        <div class="relative flex bg-[#10131a] light:bg-[#f6f8fa] p-1 rounded-xl border border-[#30363D] light:border-[#d0d7de] mb-6 overflow-hidden">
           <button (click)="switchMode('signin')" 
-                  [ngClass]="authMode === 'signin' ? 'bg-[#494bd6] text-white font-semibold shadow-sm' : 'text-[#908fa0] light:text-[#57606a] hover:text-[#e1e2eb] light:hover:text-[#1f2328]'" 
-                  class="flex-1 py-1.5 rounded-md text-xs transition-all">
+                  [ngClass]="authMode === 'signin' ? 'bg-[#494bd6] text-white font-semibold shadow-md' : 'text-[#908fa0] light:text-[#57606a] hover:text-[#e1e2eb] light:hover:text-[#1f2328]'" 
+                  class="flex-1 py-2 rounded-lg text-xs transition-all text-center z-10 font-medium">
             Sign In
           </button>
           <button (click)="switchMode('signup')" 
-                  [ngClass]="authMode === 'signup' ? 'bg-[#494bd6] text-white font-semibold shadow-sm' : 'text-[#908fa0] light:text-[#57606a] hover:text-[#e1e2eb] light:hover:text-[#1f2328]'" 
-                  class="flex-1 py-1.5 rounded-md text-xs transition-all">
+                  [ngClass]="authMode === 'signup' ? 'bg-[#494bd6] text-white font-semibold shadow-md' : 'text-[#908fa0] light:text-[#57606a] hover:text-[#e1e2eb] light:hover:text-[#1f2328]'" 
+                  class="flex-1 py-2 rounded-lg text-xs transition-all text-center z-10 font-medium">
             Create Account
+          </button>
+          <button (click)="switchMode('forgot')" 
+                  [ngClass]="authMode === 'forgot' ? 'bg-[#494bd6] text-white font-semibold shadow-md' : 'text-[#908fa0] light:text-[#57606a] hover:text-[#e1e2eb] light:hover:text-[#1f2328]'" 
+                  class="flex-1 py-2 rounded-lg text-xs transition-all text-center z-10 font-medium">
+            Reset Password
           </button>
         </div>
 
         <!-- Error Message Banner -->
-        <div *ngIf="errorMessage" class="bg-[#ffb4ab]/10 border border-[#ffb4ab]/30 light:bg-[#fee2e2] light:border-[#fca5a5] rounded-lg p-3 text-xs text-[#ffb4ab] light:text-[#b91c1c] flex items-center gap-2 mb-4">
+        <div *ngIf="errorMessage" class="bg-[#ffb4ab]/10 border border-[#ffb4ab]/30 light:bg-[#fee2e2] light:border-[#fca5a5] rounded-lg p-3 text-xs text-[#ffb4ab] light:text-[#b91c1c] flex items-center gap-2 mb-4 animate-fadeIn">
           <span class="material-symbols-outlined text-[16px] shrink-0">error</span>
           <span>{{ errorMessage }}</span>
         </div>
 
         <!-- Success Message Banner -->
-        <div *ngIf="successMessage" class="bg-[#4edea3]/10 border border-[#4edea3]/30 light:bg-[#dcfce7] light:border-[#86efac] rounded-lg p-3 text-xs text-[#4edea3] light:text-[#15803d] flex items-center gap-2 mb-4">
+        <div *ngIf="successMessage" class="bg-[#4edea3]/10 border border-[#4edea3]/30 light:bg-[#dcfce7] light:border-[#86efac] rounded-lg p-3 text-xs text-[#4edea3] light:text-[#15803d] flex items-center gap-2 mb-4 animate-fadeIn">
           <span class="material-symbols-outlined text-[16px] shrink-0">check_circle</span>
           <span>{{ successMessage }}</span>
         </div>
 
-        <!-- Sign In Form -->
-        <form *ngIf="authMode === 'signin'" (ngSubmit)="handlePasswordSignIn()" class="space-y-4 text-xs">
+        <!-- 1. SIGN IN FORM -->
+        <form *ngIf="authMode === 'signin'" (ngSubmit)="handlePasswordSignIn()" autocomplete="off" class="space-y-4 text-xs">
           <div>
             <label class="font-title-sm text-xs text-[#908fa0] light:text-[#57606a] mb-1.5 block">Work Email</label>
             <input type="email" 
                    [(ngModel)]="signInEmail" 
                    name="signInEmail"
+                   autocomplete="off"
                    placeholder="name@company.com" 
                    required
                    class="w-full bg-[#10131a] light:bg-white border border-[#30363D] light:border-[#d0d7de] rounded-md px-3 py-2 text-[#e1e2eb] light:text-[#1f2328] text-xs focus:outline-none focus:border-[#8083ff] light:focus:border-[#494bd6]">
@@ -76,10 +82,14 @@
           <div>
             <div class="flex justify-between items-center mb-1.5">
               <label class="font-title-sm text-xs text-[#908fa0] light:text-[#57606a]">Password</label>
+              <button type="button" (click)="switchMode('forgot')" class="text-[11px] text-[#8083ff] light:text-[#494bd6] hover:underline font-semibold">
+                Forgot password?
+              </button>
             </div>
             <input type="password" 
                    [(ngModel)]="signInPassword" 
                    name="signInPassword"
+                   autocomplete="new-password"
                    placeholder="••••••••••••" 
                    required
                    class="w-full bg-[#10131a] light:bg-white border border-[#30363D] light:border-[#d0d7de] rounded-md px-3 py-2 text-[#e1e2eb] light:text-[#1f2328] text-xs focus:outline-none focus:border-[#8083ff] light:focus:border-[#494bd6]">
@@ -94,13 +104,14 @@
           </button>
         </form>
 
-        <!-- Sign Up Form -->
-        <form *ngIf="authMode === 'signup'" (ngSubmit)="handleSignUp()" class="space-y-3.5 text-xs">
+        <!-- 2. CREATE ACCOUNT (SIGN UP) FORM -->
+        <form *ngIf="authMode === 'signup'" (ngSubmit)="handleSignUp()" autocomplete="off" class="space-y-3.5 text-xs">
           <div>
             <label class="font-title-sm text-xs text-[#908fa0] light:text-[#57606a] mb-1 block">Full Name</label>
             <input type="text" 
                    [(ngModel)]="signUpName" 
                    name="signUpName"
+                   autocomplete="off"
                    placeholder="Kameswar Panda" 
                    required
                    class="w-full bg-[#10131a] light:bg-white border border-[#30363D] light:border-[#d0d7de] rounded-md px-3 py-2 text-[#e1e2eb] light:text-[#1f2328] text-xs focus:outline-none focus:border-[#8083ff] light:focus:border-[#494bd6]">
@@ -111,40 +122,178 @@
             <input type="email" 
                    [(ngModel)]="signUpEmail" 
                    name="signUpEmail"
+                   autocomplete="off"
                    placeholder="kameswar@company.com" 
                    required
                    class="w-full bg-[#10131a] light:bg-white border border-[#30363D] light:border-[#d0d7de] rounded-md px-3 py-2 text-[#e1e2eb] light:text-[#1f2328] text-xs focus:outline-none focus:border-[#8083ff] light:focus:border-[#494bd6]">
           </div>
 
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label class="font-title-sm text-xs text-[#908fa0] light:text-[#57606a] mb-1 block">Password</label>
               <input type="password" 
                      [(ngModel)]="signUpPassword" 
                      name="signUpPassword"
-                     placeholder="Min 6 chars" 
+                     autocomplete="new-password"
+                     placeholder="Strong password" 
                      required
                      class="w-full bg-[#10131a] light:bg-white border border-[#30363D] light:border-[#d0d7de] rounded-md px-3 py-2 text-[#e1e2eb] light:text-[#1f2328] text-xs focus:outline-none focus:border-[#8083ff] light:focus:border-[#494bd6]">
             </div>
             <div>
-              <label class="font-title-sm text-xs text-[#908fa0] light:text-[#57606a] mb-1 block">Confirm</label>
+              <label class="font-title-sm text-xs text-[#908fa0] light:text-[#57606a] mb-1 block">Confirm Password</label>
               <input type="password" 
                      [(ngModel)]="signUpConfirmPassword" 
                      name="signUpConfirmPassword"
+                     autocomplete="new-password"
                      placeholder="Repeat password" 
                      required
                      class="w-full bg-[#10131a] light:bg-white border border-[#30363D] light:border-[#d0d7de] rounded-md px-3 py-2 text-[#e1e2eb] light:text-[#1f2328] text-xs focus:outline-none focus:border-[#8083ff] light:focus:border-[#494bd6]">
             </div>
           </div>
 
+          <!-- Strong Password Requirement Indicators -->
+          <div class="bg-[#10131a] light:bg-[#f6f8fa] p-3 rounded-lg border border-[#30363D] light:border-[#d0d7de] space-y-1 text-[11px]">
+            <div class="font-semibold text-[#c0c1ff] light:text-[#494bd6] mb-1">Password Requirements:</div>
+            <div class="grid grid-cols-2 gap-1 text-[10px]">
+              <div class="flex items-center gap-1.5" [ngClass]="isMinLength(signUpPassword) ? 'text-[#10B981]' : 'text-[#908fa0] light:text-[#57606a]'">
+                <span class="material-symbols-outlined text-[14px]">{{ isMinLength(signUpPassword) ? 'check_circle' : 'radio_button_unchecked' }}</span>
+                <span>8+ Characters</span>
+              </div>
+              <div class="flex items-center gap-1.5" [ngClass]="hasUpper(signUpPassword) ? 'text-[#10B981]' : 'text-[#908fa0] light:text-[#57606a]'">
+                <span class="material-symbols-outlined text-[14px]">{{ hasUpper(signUpPassword) ? 'check_circle' : 'radio_button_unchecked' }}</span>
+                <span>Uppercase (A-Z)</span>
+              </div>
+              <div class="flex items-center gap-1.5" [ngClass]="hasLower(signUpPassword) ? 'text-[#10B981]' : 'text-[#908fa0] light:text-[#57606a]'">
+                <span class="material-symbols-outlined text-[14px]">{{ hasLower(signUpPassword) ? 'check_circle' : 'radio_button_unchecked' }}</span>
+                <span>Lowercase (a-z)</span>
+              </div>
+              <div class="flex items-center gap-1.5" [ngClass]="hasNumber(signUpPassword) && hasSpecial(signUpPassword) ? 'text-[#10B981]' : 'text-[#908fa0] light:text-[#57606a]'">
+                <span class="material-symbols-outlined text-[14px]">{{ hasNumber(signUpPassword) && hasSpecial(signUpPassword) ? 'check_circle' : 'radio_button_unchecked' }}</span>
+                <span>Number & Special Char</span>
+              </div>
+            </div>
+          </div>
+
           <button type="submit" 
-                  [disabled]="isLoading"
-                  class="w-full py-2.5 px-4 rounded-lg bg-[#494bd6] hover:bg-[#8083ff] hover:text-[#0d0096] text-white font-semibold text-xs transition-colors flex items-center justify-center gap-2 shadow-sm disabled:opacity-60 mt-1">
+                  [disabled]="isLoading || !isPasswordStrong(signUpPassword)"
+                  class="w-full py-2.5 px-4 rounded-lg bg-[#494bd6] hover:bg-[#8083ff] hover:text-[#0d0096] text-white font-semibold text-xs transition-colors flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 mt-1">
             <span *ngIf="!isLoading" class="material-symbols-outlined text-[16px]">person_add</span>
             <span *ngIf="isLoading" class="material-symbols-outlined text-[16px] animate-spin">autorenew</span>
             <span>{{ isLoading ? 'Creating Account...' : 'Create Account' }}</span>
           </button>
         </form>
+
+        <!-- 3. FORGOT PASSWORD (OTP FLOW) -->
+        <div *ngIf="authMode === 'forgot'" class="space-y-4 text-xs">
+          <!-- Step 1: Enter Email & Request OTP -->
+          <form *ngIf="forgotStep === 'request'" (ngSubmit)="handleSendResetOtp()" autocomplete="off" class="space-y-3.5">
+            <div>
+              <label class="font-title-sm text-xs text-[#908fa0] light:text-[#57606a] mb-1 block">Registered Work Email</label>
+              <input type="email" 
+                     [(ngModel)]="forgotEmail" 
+                     name="forgotEmail"
+                     autocomplete="off"
+                     placeholder="name@company.com" 
+                     required
+                     class="w-full bg-[#10131a] light:bg-white border border-[#30363D] light:border-[#d0d7de] rounded-md px-3 py-2 text-[#e1e2eb] light:text-[#1f2328] text-xs focus:outline-none focus:border-[#8083ff]">
+            </div>
+            <p class="text-[11px] text-[#908fa0] light:text-[#57606a]">
+              We will send a 6-digit one-time verification code to this address.
+            </p>
+            <button type="submit" 
+                    [disabled]="isLoading || !forgotEmail.trim()"
+                    class="w-full py-2.5 px-4 rounded-lg bg-[#494bd6] hover:bg-[#8083ff] hover:text-[#0d0096] text-white font-semibold text-xs transition-colors flex items-center justify-center gap-2 shadow-sm disabled:opacity-50">
+              <span *ngIf="!isLoading" class="material-symbols-outlined text-[16px]">mail</span>
+              <span *ngIf="isLoading" class="material-symbols-outlined text-[16px] animate-spin">autorenew</span>
+              <span>{{ isLoading ? 'Sending Code...' : 'Send Verification Code' }}</span>
+            </button>
+          </form>
+
+          <!-- Step 2: Verify 6-Digit OTP -->
+          <form *ngIf="forgotStep === 'verify'" (ngSubmit)="handleVerifyResetOtp()" autocomplete="off" class="space-y-3.5">
+            <div>
+              <div class="flex justify-between items-center mb-1">
+                <label class="font-title-sm text-xs text-[#908fa0] light:text-[#57606a]">Enter 6-Digit Code</label>
+                <span class="font-mono text-[10px] text-[#8083ff] light:text-[#494bd6]">{{ forgotEmail }}</span>
+              </div>
+              <input type="text" 
+                     [(ngModel)]="forgotOtp" 
+                     name="forgotOtp"
+                     maxlength="6"
+                     placeholder="123456" 
+                     required
+                     class="w-full bg-[#10131a] light:bg-white border border-[#30363D] light:border-[#d0d7de] rounded-md px-3 py-2 text-[#e1e2eb] light:text-[#1f2328] text-center font-mono text-base tracking-widest focus:outline-none focus:border-[#8083ff]">
+            </div>
+            <div class="flex gap-2">
+              <button type="button" (click)="forgotStep = 'request'" class="flex-1 py-2 px-3 rounded-lg border border-[#30363D] light:border-[#d0d7de] text-[#908fa0] light:text-[#57606a] hover:text-[#e1e2eb] font-semibold text-xs">
+                Back
+              </button>
+              <button type="submit" 
+                      [disabled]="isLoading || forgotOtp.length !== 6"
+                      class="flex-1 py-2 px-3 rounded-lg bg-[#494bd6] hover:bg-[#8083ff] hover:text-[#0d0096] text-white font-semibold text-xs flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-50">
+                <span *ngIf="!isLoading" class="material-symbols-outlined text-[16px]">verified</span>
+                <span *ngIf="isLoading" class="material-symbols-outlined text-[16px] animate-spin">autorenew</span>
+                <span>Verify Code</span>
+              </button>
+            </div>
+          </form>
+
+          <!-- Step 3: Choose New Password -->
+          <form *ngIf="forgotStep === 'reset'" (ngSubmit)="handleResetPassword()" autocomplete="off" class="space-y-3.5">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="font-title-sm text-xs text-[#908fa0] light:text-[#57606a] mb-1 block">New Password</label>
+                <input type="password" 
+                       [(ngModel)]="forgotNewPassword" 
+                       name="forgotNewPassword"
+                       autocomplete="new-password"
+                       placeholder="New password" 
+                       required
+                       class="w-full bg-[#10131a] light:bg-white border border-[#30363D] light:border-[#d0d7de] rounded-md px-3 py-2 text-[#e1e2eb] light:text-[#1f2328] text-xs focus:outline-none focus:border-[#8083ff]">
+              </div>
+              <div>
+                <label class="font-title-sm text-xs text-[#908fa0] light:text-[#57606a] mb-1 block">Confirm Password</label>
+                <input type="password" 
+                       [(ngModel)]="forgotConfirmPassword" 
+                       name="forgotConfirmPassword"
+                       autocomplete="new-password"
+                       placeholder="Repeat password" 
+                       required
+                       class="w-full bg-[#10131a] light:bg-white border border-[#30363D] light:border-[#d0d7de] rounded-md px-3 py-2 text-[#e1e2eb] light:text-[#1f2328] text-xs focus:outline-none focus:border-[#8083ff]">
+              </div>
+            </div>
+
+            <!-- Password Requirements Checklist -->
+            <div class="bg-[#10131a] light:bg-[#f6f8fa] p-2.5 rounded-lg border border-[#30363D] light:border-[#d0d7de] space-y-1 text-[11px]">
+              <div class="grid grid-cols-2 gap-1 text-[10px]">
+                <div class="flex items-center gap-1.5" [ngClass]="isMinLength(forgotNewPassword) ? 'text-[#10B981]' : 'text-[#908fa0] light:text-[#57606a]'">
+                  <span class="material-symbols-outlined text-[13px]">{{ isMinLength(forgotNewPassword) ? 'check_circle' : 'radio_button_unchecked' }}</span>
+                  <span>8+ Chars</span>
+                </div>
+                <div class="flex items-center gap-1.5" [ngClass]="hasUpper(forgotNewPassword) && hasLower(forgotNewPassword) ? 'text-[#10B981]' : 'text-[#908fa0] light:text-[#57606a]'">
+                  <span class="material-symbols-outlined text-[13px]">{{ hasUpper(forgotNewPassword) && hasLower(forgotNewPassword) ? 'check_circle' : 'radio_button_unchecked' }}</span>
+                  <span>Upper & Lower</span>
+                </div>
+                <div class="flex items-center gap-1.5" [ngClass]="hasNumber(forgotNewPassword) && hasSpecial(forgotNewPassword) ? 'text-[#10B981]' : 'text-[#908fa0] light:text-[#57606a]'">
+                  <span class="material-symbols-outlined text-[13px]">{{ hasNumber(forgotNewPassword) && hasSpecial(forgotNewPassword) ? 'check_circle' : 'radio_button_unchecked' }}</span>
+                  <span>Number & Symbol</span>
+                </div>
+                <div class="flex items-center gap-1.5" [ngClass]="forgotNewPassword && forgotNewPassword === forgotConfirmPassword ? 'text-[#10B981]' : 'text-[#908fa0] light:text-[#57606a]'">
+                  <span class="material-symbols-outlined text-[13px]">{{ forgotNewPassword && forgotNewPassword === forgotConfirmPassword ? 'check_circle' : 'radio_button_unchecked' }}</span>
+                  <span>Passwords Match</span>
+                </div>
+              </div>
+            </div>
+
+            <button type="submit" 
+                    [disabled]="isLoading || !isPasswordStrong(forgotNewPassword) || forgotNewPassword !== forgotConfirmPassword"
+                    class="w-full py-2.5 px-4 rounded-lg bg-[#494bd6] hover:bg-[#8083ff] hover:text-[#0d0096] text-white font-semibold text-xs transition-colors flex items-center justify-center gap-2 shadow-sm disabled:opacity-50">
+              <span *ngIf="!isLoading" class="material-symbols-outlined text-[16px]">lock_reset</span>
+              <span *ngIf="isLoading" class="material-symbols-outlined text-[16px] animate-spin">autorenew</span>
+              <span>{{ isLoading ? 'Updating Password...' : 'Set New Password' }}</span>
+            </button>
+          </form>
+        </div>
       </div>
 
       <div class="text-[11px] text-[#908fa0] light:text-[#57606a] text-center pt-2">

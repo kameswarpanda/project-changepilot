@@ -124,3 +124,63 @@ async def test_auth_service_google_login():
     assert session.access_token is not None
     assert session.user.provider == AuthProvider.GOOGLE
     assert session.user.email == "alex.google@cloud.com"
+
+
+def test_strong_password_validator():
+    """Verifies that password complexity rules are strictly enforced."""
+    from backend.src.auth.service import validate_strong_password
+    valid, msg = validate_strong_password("Short1!")
+    assert not valid
+    assert "8 characters" in msg
+
+    valid, msg = validate_strong_password("alllowercase1!")
+    assert not valid
+    assert "uppercase" in msg
+
+    valid, msg = validate_strong_password("ALLUPPERCASE1!")
+    assert not valid
+    assert "lowercase" in msg
+
+    valid, msg = validate_strong_password("NoNumberHere!")
+    assert not valid
+    assert "number" in msg
+
+    valid, msg = validate_strong_password("NoSpecial123")
+    assert not valid
+    assert "special character" in msg
+
+    valid, msg = validate_strong_password("StrongPass123!")
+    assert valid
+    assert msg == ""
+
+
+def test_otp_forgot_password_full_flow():
+    """Verifies the 3-step OTP password reset flow."""
+    auth_svc = AuthService()
+    email = "security_lead@changepilot.dev"
+
+    # Step 1: Request OTP
+    res = auth_svc.request_password_reset_otp(email)
+    assert isinstance(res, dict)
+    otp = res["dev_otp"]
+    assert isinstance(otp, str)
+    assert len(otp) == 6
+
+    # Step 2: Verify with bad OTP raises ValueError
+    with pytest.raises(ValueError) as exc:
+        auth_svc.verify_password_reset_otp(email, "000000")
+    assert "Invalid verification code" in str(exc.value)
+
+    # Step 3: Verify with correct OTP
+    good_res = auth_svc.verify_password_reset_otp(email, otp)
+    assert good_res["success"] is True
+
+    # Step 4: Reset password with weak password fails
+    with pytest.raises(ValueError) as exc:
+        auth_svc.reset_password_with_otp(email, otp, "weak")
+    assert "Password" in str(exc.value)
+
+    # Step 5: Reset password with strong password succeeds
+    reset_ok = auth_svc.reset_password_with_otp(email, otp, "NewSecurePass2026!#")
+    assert reset_ok["success"] is True
+

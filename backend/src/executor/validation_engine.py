@@ -237,7 +237,7 @@ TOTAL: {max(len(spec_files) * 3, 1)} SUCCESS (0 FAILED)
 
             # If executable is pytest and sys.executable is available, run via python -m pytest
             if tokens[0] == "pytest":
-                tokens = [sys.executable, "-m", "pytest"] + tokens[1:]
+                tokens = [sys.executable, "-m", "pytest", "-o", f"rootdir={working_directory}"] + tokens[1:]
             elif tokens[0] in ["python", "python3"]:
                 tokens = [sys.executable] + tokens[1:]
             else:

@@ -34,74 +34,77 @@
     <div class="overflow-x-auto">
       <table class="w-full text-left border-collapse text-xs">
         <thead>
-          <tr class="border-b border-[#30363D] bg-[#10131a]">
-            <th class="font-label-caps text-[#908fa0] py-3 px-4 w-[30%]">NAME & ACCESS</th>
-            <th class="font-label-caps text-[#908fa0] py-3 px-4">LOCATION / CLONE PATH</th>
-            <th class="font-label-caps text-[#908fa0] py-3 px-4">LANGUAGE / RUNNER</th>
-            <th class="font-label-caps text-[#908fa0] py-3 px-4">BRANCHES</th>
-            <th class="font-label-caps text-[#908fa0] py-3 px-4 text-center">STATUS</th>
-            <th class="font-label-caps text-[#908fa0] py-3 px-4 text-right">ACTION</th>
+          <tr class="border-b border-[#30363D] light:border-[#d0d7de] bg-[#10131a] light:bg-[#f6f8fa]">
+            <th class="font-label-caps text-[#908fa0] light:text-[#57606a] py-3 px-4 w-[30%]">NAME & ACCESS</th>
+            <th class="font-label-caps text-[#908fa0] light:text-[#57606a] py-3 px-4">LOCATION / CLONE PATH</th>
+            <th class="font-label-caps text-[#908fa0] light:text-[#57606a] py-3 px-4">LANGUAGE / RUNNER</th>
+            <th class="font-label-caps text-[#908fa0] light:text-[#57606a] py-3 px-4">BRANCHES</th>
+            <th class="font-label-caps text-[#908fa0] light:text-[#57606a] py-3 px-4 text-center">STATUS</th>
+            <th class="font-label-caps text-[#908fa0] light:text-[#57606a] py-3 px-4 text-right">ACTION</th>
           </tr>
         </thead>
-        <tbody class="text-[#e1e2eb]">
-          <tr *ngFor="let repo of (filteredRepos$ | async)" class="border-b border-[#30363D] hover:bg-[#1d2026] transition-colors">
+        <tbody class="text-[#e1e2eb] light:text-[#1f2328]">
+          <tr *ngFor="let repo of (filteredRepos$ | async)" class="border-b border-[#30363D] light:border-[#d0d7de] hover:bg-[#1d2026] light:hover:bg-[#f6f8fa] transition-colors">
             <td class="py-3 px-4">
               <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded bg-[#10131a] flex items-center justify-center border border-[#30363D] text-[#c0c1ff]">
+                <div class="w-8 h-8 rounded bg-[#10131a] light:bg-[#f3f4f6] flex items-center justify-center border border-[#30363D] light:border-[#d0d7de] text-[#c0c1ff] light:text-[#494bd6] cursor-pointer"
+                     (click)="select(repo)"
+                     title="Select repository">
                   <span class="material-symbols-outlined text-[18px]">folder_code</span>
                 </div>
                 <div>
-                  <div class="font-mono text-xs font-semibold text-[#c0c1ff]">{{ repo.name }}</div>
-                  <div class="text-[11px] text-[#908fa0]">{{ repo.isPrivate ? 'Private Repository' : 'Public Repository' }}</div>
+                  <div (click)="select(repo)" 
+                       class="font-mono text-xs font-semibold text-[#c0c1ff] light:text-[#494bd6] hover:underline cursor-pointer flex items-center gap-1.5"
+                       title="Click to select this repository for changes">
+                    <span>{{ repo.name }}</span>
+                    <span class="material-symbols-outlined text-[13px] opacity-0 hover:opacity-100">arrow_outward</span>
+                  </div>
+                  <div class="text-[11px] text-[#908fa0] light:text-[#57606a]">{{ repo.isPrivate ? 'Private Repository' : 'Public Repository' }}</div>
                 </div>
               </div>
             </td>
             <td class="py-3 px-4">
-              <div class="flex items-center gap-1.5 text-[#908fa0]">
-                <span class="material-symbols-outlined text-[16px]">verified</span>
+              <div class="flex items-center gap-1.5 text-[#908fa0] light:text-[#57606a]">
+                <span class="material-symbols-outlined text-[16px] text-[#10B981]">verified</span>
                 <span class="font-mono">{{ repo.path }}</span>
               </div>
             </td>
             <td class="py-3 px-4">
               <div class="flex flex-col">
                 <span class="font-semibold">{{ repo.language }}</span>
-                <span class="text-[11px] text-[#908fa0]">{{ repo.testRunner }}</span>
+                <span class="text-[11px] text-[#908fa0] light:text-[#57606a]">{{ repo.testRunner }}</span>
               </div>
             </td>
             <td class="py-3 px-4">
               <div class="flex flex-wrap gap-1">
-                <span *ngFor="let b of (repo.branches || ['main'])" class="bg-[#10131a] border border-[#30363D] rounded px-1.5 py-0.5 font-mono text-[10px] text-[#38BDF8]">
+                <span *ngFor="let b of (repo.branches || ['main'])" class="bg-[#10131a] light:bg-[#f3f4f6] border border-[#30363D] light:border-[#d0d7de] rounded px-1.5 py-0.5 font-mono text-[10px] text-[#38BDF8] light:text-[#0969da]">
                   {{ b }}
                 </span>
               </div>
             </td>
             <td class="py-3 px-4 text-center">
-              <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-[#4edea3]/10 text-[#4edea3]">
-                ACTIVE
+              <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold"
+                    [ngClass]="repo.status === 'INACTIVE' ? 'bg-[#908fa0]/15 text-[#908fa0] light:text-[#57606a]' : 'bg-[#10B981]/15 text-[#10B981]'">
+                {{ repo.status || 'ACTIVE' }}
               </span>
             </td>
-            <td class="py-3 px-4 text-right space-x-3 whitespace-nowrap">
+            <td class="py-3 px-4 text-right space-x-2 whitespace-nowrap">
               <button (click)="inspect(repo)" 
                       [disabled]="(state.isInspecting$ | async)" 
                       class="text-[#8083ff] light:text-[#494bd6] hover:underline font-semibold text-xs inline-flex items-center gap-1">
                 <span class="material-symbols-outlined text-[14px]">search_insights</span>
                 <span>Inspect</span>
               </button>
-              <button (click)="select(repo)" class="text-[#10B981] hover:underline font-semibold text-xs inline-flex items-center gap-1">
-                <span class="material-symbols-outlined text-[14px]">play_arrow</span>
-                <span>Select</span>
-              </button>
               <button (click)="deleteRepo(repo, $event)" 
-                      class="text-[#EF4444] hover:text-[#DC2626] hover:underline font-semibold text-xs inline-flex items-center gap-1" 
+                      class="p-1 rounded text-[#EF4444] hover:bg-[#EF4444]/10 transition-colors inline-flex items-center" 
                       title="Unlink and remove repository">
-                <span class="material-symbols-outlined text-[14px]">delete</span>
-                <span>Unlink</span>
+                <span class="material-symbols-outlined text-[16px]">delete</span>
               </button>
             </td>
           </tr>
 
           <tr *ngIf="((filteredRepos$ | async)?.length ?? 0) === 0">
-            <td colspan="6" class="py-8 text-center text-[#908fa0] italic">
+            <td colspan="6" class="py-8 text-center text-[#908fa0] light:text-[#57606a] italic">
               No repositories connected yet. Click "+ Connect Repository" above to import your first repo.
             </td>
           </tr>
@@ -112,24 +115,24 @@
 
   <!-- Connect Repository Modal Dialog -->
   <div *ngIf="showConnectModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-    <div class="bg-[#161B22] border border-[#30363D] rounded-xl w-full max-w-lg overflow-hidden shadow-2xl space-y-5 p-6">
-      <div class="flex justify-between items-center pb-3 border-b border-[#30363D]">
+    <div class="bg-[#161B22] light:bg-white border border-[#30363D] light:border-[#d0d7de] rounded-xl w-full max-w-lg overflow-hidden shadow-2xl space-y-5 p-6 text-[#e1e2eb] light:text-[#1f2328]">
+      <div class="flex justify-between items-center pb-3 border-b border-[#30363D] light:border-[#d0d7de]">
         <div class="flex items-center gap-2">
-          <span class="material-symbols-outlined text-[#8083ff]">add_link</span>
-          <h3 class="font-title-sm text-base font-bold text-[#e1e2eb]">Connect Repository</h3>
+          <span class="material-symbols-outlined text-[#8083ff] light:text-[#494bd6]">add_link</span>
+          <h3 class="font-title-sm text-base font-bold text-[#e1e2eb] light:text-[#1f2328]">Connect Repository</h3>
         </div>
-        <button (click)="closeConnectModal()" class="text-[#908fa0] hover:text-[#e1e2eb] text-lg font-bold">&times;</button>
+        <button (click)="closeConnectModal()" class="text-[#908fa0] light:text-[#57606a] hover:text-[#e1e2eb] light:hover:text-[#1f2328] text-lg font-bold">&times;</button>
       </div>
 
       <!-- Mode Switcher: Platform vs Public Git URL -->
-      <div class="flex bg-[#10131a] rounded-lg p-1 border border-[#30363D]">
+      <div class="flex bg-[#10131a] light:bg-[#f6f8fa] rounded-lg p-1 border border-[#30363D] light:border-[#d0d7de]">
         <button (click)="switchConnectMode('platform')" 
-                [ngClass]="connectMode === 'platform' ? 'bg-[#494bd6] text-white font-semibold shadow-sm' : 'text-[#908fa0] hover:text-[#e1e2eb]'" 
+                [ngClass]="connectMode === 'platform' ? 'bg-[#494bd6] text-white font-semibold shadow-sm' : 'text-[#908fa0] light:text-[#57606a] hover:text-[#e1e2eb] light:hover:text-[#1f2328]'" 
                 class="flex-1 py-1.5 rounded-md text-xs transition-all">
           Connected Platform (GitHub / Azure)
         </button>
         <button (click)="switchConnectMode('public_url')" 
-                [ngClass]="connectMode === 'public_url' ? 'bg-[#494bd6] text-white font-semibold shadow-sm' : 'text-[#908fa0] hover:text-[#e1e2eb]'" 
+                [ngClass]="connectMode === 'public_url' ? 'bg-[#494bd6] text-white font-semibold shadow-sm' : 'text-[#908fa0] light:text-[#57606a] hover:text-[#e1e2eb] light:hover:text-[#1f2328]'" 
                 class="flex-1 py-1.5 rounded-md text-xs transition-all">
           Public Git Clone URL
         </button>
@@ -138,19 +141,19 @@
       <!-- Option 1: Platform Account Discovery (GitHub / Azure DevOps) -->
       <div *ngIf="connectMode === 'platform'" class="space-y-4 text-xs">
         <div>
-          <label class="font-title-sm text-xs text-[#908fa0] mb-1.5 block">Select Platform</label>
+          <label class="font-title-sm text-xs text-[#908fa0] light:text-[#57606a] mb-1.5 block">Select Platform</label>
           <div class="grid grid-cols-2 gap-2">
             <button (click)="connectProvider = 'github'; fetchUserPlatformRepos()" 
-                    [ngClass]="connectProvider === 'github' ? 'border-[#8083ff] bg-[#272a31] text-white font-semibold' : 'border-[#30363D] bg-[#10131a] text-[#908fa0]'" 
-                    class="py-2 px-3 rounded-lg border text-left flex items-center justify-between transition-all">
+                    [ngClass]="connectProvider === 'github' ? 'border-[#8083ff] light:border-[#494bd6] bg-[#272a31] light:bg-[#eef2ff] text-white light:text-[#494bd6] font-semibold' : 'border-[#30363D] light:border-[#d0d7de] bg-[#10131a] light:bg-[#f6f8fa] text-[#908fa0] light:text-[#57606a]'" 
+                    class="py-2.5 px-3 rounded-lg border text-left flex items-center justify-between transition-all">
               <span>GitHub Account</span>
-              <span class="material-symbols-outlined text-[16px] text-[#4edea3]">check_circle</span>
+              <span class="material-symbols-outlined text-[16px] text-[#10B981]">check_circle</span>
             </button>
             <button (click)="connectProvider = 'azure_devops'; fetchUserPlatformRepos()" 
-                    [ngClass]="connectProvider === 'azure_devops' ? 'border-[#8083ff] bg-[#272a31] text-white font-semibold' : 'border-[#30363D] bg-[#10131a] text-[#908fa0]'" 
-                    class="py-2 px-3 rounded-lg border text-left flex items-center justify-between transition-all">
+                    [ngClass]="connectProvider === 'azure_devops' ? 'border-[#8083ff] light:border-[#494bd6] bg-[#272a31] light:bg-[#eef2ff] text-white light:text-[#494bd6] font-semibold' : 'border-[#30363D] light:border-[#d0d7de] bg-[#10131a] light:bg-[#f6f8fa] text-[#908fa0] light:text-[#57606a]'" 
+                    class="py-2.5 px-3 rounded-lg border text-left flex items-center justify-between transition-all">
               <span>Azure DevOps</span>
-              <span class="material-symbols-outlined text-[16px] text-[#908fa0]">cloud_sync</span>
+              <span class="material-symbols-outlined text-[16px] text-[#908fa0] light:text-[#57606a]">cloud_sync</span>
             </button>
           </div>
         </div>
@@ -158,45 +161,56 @@
         <!-- Accessible Repositories List from Platform -->
         <div>
           <div class="flex justify-between items-center mb-1.5">
-            <label class="font-title-sm text-xs text-[#908fa0]">Accessible Repositories (Live Discovery)</label>
-            <button (click)="fetchUserPlatformRepos()" class="text-[#c0c1ff] hover:underline text-[11px] flex items-center gap-1">
-              <span class="material-symbols-outlined text-[12px]">refresh</span>
-              <span>Refresh</span>
-            </button>
+            <label class="font-title-sm text-xs text-[#908fa0] light:text-[#57606a]">Accessible Repositories (Live Discovery)</label>
+            <div class="flex items-center gap-2">
+              <a href="https://github.com/settings/installations" target="_blank" class="text-[#8083ff] light:text-[#494bd6] hover:underline text-[11px] font-semibold flex items-center gap-1">
+                <span class="material-symbols-outlined text-[12px]">add</span>
+                <span>Add more repositories</span>
+              </a>
+              <span class="text-[#30363D] light:text-[#d0d7de]">|</span>
+              <button (click)="fetchUserPlatformRepos()" class="text-[#908fa0] light:text-[#57606a] hover:text-[#e1e2eb] text-[11px] flex items-center gap-1">
+                <span class="material-symbols-outlined text-[12px]">refresh</span>
+                <span>Refresh</span>
+              </button>
+            </div>
           </div>
 
-          <div *ngIf="isLoadingPlatformRepos" class="py-6 text-center text-[#908fa0]">
+          <div *ngIf="isLoadingPlatformRepos" class="py-6 text-center text-[#908fa0] light:text-[#57606a]">
             <span class="material-symbols-outlined animate-spin text-[20px]">autorenew</span>
             <div class="text-[11px] mt-1">Discovering accessible repositories...</div>
           </div>
 
-          <div *ngIf="!isLoadingPlatformRepos" class="max-h-48 overflow-y-auto space-y-1.5 border border-[#30363D] rounded-lg p-2 bg-[#10131a]">
+          <div *ngIf="!isLoadingPlatformRepos" class="max-h-48 overflow-y-auto space-y-1.5 border border-[#30363D] light:border-[#d0d7de] rounded-lg p-2 bg-[#10131a] light:bg-[#f6f8fa]">
             <div *ngFor="let r of userPlatformRepos" 
                  (click)="selectedPlatformRepo = r" 
-                 [ngClass]="selectedPlatformRepo?.name === r.name ? 'border-[#8083ff] bg-[#272a31]' : 'border-transparent hover:bg-[#161B22]'"
+                 [ngClass]="selectedPlatformRepo?.name === r.name ? 'border-[#8083ff] light:border-[#494bd6] bg-[#272a31] light:bg-[#eef2ff]' : 'border-transparent hover:bg-[#161B22] light:hover:bg-[#ffffff]'"
                  class="p-2 rounded border cursor-pointer flex items-center justify-between transition-colors">
               <div class="flex items-center gap-2">
-                <span class="material-symbols-outlined text-[#c0c1ff] text-[16px]">folder_git</span>
+                <span class="material-symbols-outlined text-[#c0c1ff] light:text-[#494bd6] text-[16px]">folder_git</span>
                 <div>
-                  <div class="font-mono text-xs font-semibold text-[#e1e2eb]">{{ r.full_name || r.name }}</div>
-                  <div class="text-[10px] text-[#908fa0]">{{ r.language || 'Python' }} • {{ r.is_private ? 'Private' : 'Public' }}</div>
+                  <div class="font-mono text-xs font-semibold text-[#e1e2eb] light:text-[#1f2328]">{{ r.full_name || r.name }}</div>
+                  <div class="text-[10px] text-[#908fa0] light:text-[#57606a]">{{ r.language || 'Java' }} • {{ r.is_private ? 'Private' : 'Public' }}</div>
                 </div>
               </div>
-              <span *ngIf="selectedPlatformRepo?.name === r.name" class="material-symbols-outlined text-[16px] text-[#4edea3]">check</span>
+              <span *ngIf="selectedPlatformRepo?.name === r.name" class="material-symbols-outlined text-[16px] text-[#10B981]">check</span>
             </div>
 
-            <div *ngIf="userPlatformRepos.length === 0" class="py-4 text-center text-[#908fa0] text-[11px]">
-              No repositories found. Ensure GITHUB_TOKEN or OAuth is connected in .env.
+            <div *ngIf="userPlatformRepos.length === 0" class="py-4 text-center text-[#908fa0] light:text-[#57606a] text-[11px] space-y-1">
+              <div>No repositories discovered automatically.</div>
+              <a href="https://github.com/settings/installations" target="_blank" class="text-[#8083ff] light:text-[#494bd6] hover:underline font-semibold block">
+                + Grant access to GitHub repositories
+              </a>
             </div>
           </div>
         </div>
 
-        <div class="flex justify-end gap-3 pt-3 border-t border-[#30363D]">
-          <button (click)="closeConnectModal()" class="px-4 py-2 rounded border border-[#30363D] text-[#e1e2eb] text-xs hover:bg-[#272a31]">Cancel</button>
+        <div class="flex justify-end gap-3 pt-3 border-t border-[#30363D] light:border-[#d0d7de]">
+          <button (click)="closeConnectModal()" class="px-4 py-2 rounded border border-[#30363D] light:border-[#d0d7de] text-[#e1e2eb] light:text-[#1f2328] text-xs hover:bg-[#272a31] light:hover:bg-[#f3f4f6]">Cancel</button>
           <button (click)="submitPlatformConnect()" 
                   [disabled]="!selectedPlatformRepo || isLoading" 
-                  class="px-5 py-2 rounded bg-[#494bd6] text-white font-semibold text-xs hover:bg-[#8083ff] hover:text-[#0d0096] disabled:opacity-50">
-            {{ isLoading ? 'Importing...' : 'Import & Track Repository' }}
+                  class="px-5 py-2 rounded bg-[#494bd6] text-white font-semibold text-xs hover:bg-[#8083ff] hover:text-[#0d0096] disabled:opacity-50 flex items-center gap-1.5">
+            <span *ngIf="isLoading" class="material-symbols-outlined text-[14px] animate-spin">autorenew</span>
+            <span>{{ isLoading ? 'Importing...' : 'Import & Track Repository' }}</span>
           </button>
         </div>
       </div>
@@ -204,36 +218,37 @@
       <!-- Option 2: Public Git URL Import -->
       <div *ngIf="connectMode === 'public_url'" class="space-y-4 text-xs">
         <div>
-          <label class="font-title-sm text-xs text-[#908fa0] mb-1 block">Public Git Clone URL (HTTPS)</label>
+          <label class="font-title-sm text-xs text-[#908fa0] light:text-[#57606a] mb-1 block">Public Git Clone URL (HTTPS)</label>
           <input type="text" 
                  [(ngModel)]="publicGitUrl" 
                  placeholder="https://github.com/owner/repository.git" 
-                 class="w-full bg-[#10131a] border border-[#30363D] rounded-md px-3 py-2 text-[#e1e2eb] font-mono text-xs focus:outline-none focus:border-[#8083ff]">
+                 class="w-full bg-[#10131a] light:bg-white border border-[#30363D] light:border-[#d0d7de] rounded-md px-3 py-2 text-[#e1e2eb] light:text-[#1f2328] font-mono text-xs focus:outline-none focus:border-[#8083ff] light:focus:border-[#494bd6]">
         </div>
 
         <div>
-          <label class="font-title-sm text-xs text-[#908fa0] mb-1 block">Default Base Branch</label>
+          <label class="font-title-sm text-xs text-[#908fa0] light:text-[#57606a] mb-1 block">Default Base Branch</label>
           <input type="text" 
                  [(ngModel)]="publicBaseBranch" 
                  placeholder="main" 
-                 class="w-full bg-[#10131a] border border-[#30363D] rounded-md px-3 py-2 text-[#e1e2eb] font-mono text-xs focus:outline-none focus:border-[#8083ff]">
+                 class="w-full bg-[#10131a] light:bg-white border border-[#30363D] light:border-[#d0d7de] rounded-md px-3 py-2 text-[#e1e2eb] light:text-[#1f2328] font-mono text-xs focus:outline-none focus:border-[#8083ff] light:focus:border-[#494bd6]">
         </div>
 
-        <div class="bg-[#10131a] p-3 rounded border border-[#30363D] text-[11px] text-[#908fa0] space-y-1">
-          <div class="text-[#e1e2eb] font-semibold flex items-center gap-1.5">
-            <span class="material-symbols-outlined text-[#4edea3] text-[14px]">public</span>
+        <div class="bg-[#10131a] light:bg-[#f6f8fa] p-3 rounded border border-[#30363D] light:border-[#d0d7de] text-[11px] text-[#908fa0] light:text-[#57606a] space-y-1">
+          <div class="text-[#e1e2eb] light:text-[#1f2328] font-semibold flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-[#10B981] text-[14px]">public</span>
             <span>Public Repository Inspection:</span>
           </div>
-          <div>• Automatically discovers remote branches with <code class="text-[#38BDF8]">git ls-remote</code></div>
+          <div>• Automatically discovers remote branches with <code class="text-[#38BDF8] light:text-[#0969da]">git ls-remote</code></div>
           <div>• Sandboxed isolated workspace created for patch verification</div>
         </div>
 
-        <div class="flex justify-end gap-3 pt-3 border-t border-[#30363D]">
-          <button (click)="closeConnectModal()" class="px-4 py-2 rounded border border-[#30363D] text-[#e1e2eb] text-xs hover:bg-[#272a31]">Cancel</button>
+        <div class="flex justify-end gap-3 pt-3 border-t border-[#30363D] light:border-[#d0d7de]">
+          <button (click)="closeConnectModal()" class="px-4 py-2 rounded border border-[#30363D] light:border-[#d0d7de] text-[#e1e2eb] light:text-[#1f2328] text-xs hover:bg-[#272a31] light:hover:bg-[#f3f4f6]">Cancel</button>
           <button (click)="submitPublicUrlConnect()" 
                   [disabled]="!publicGitUrl.trim() || isLoading" 
-                  class="px-5 py-2 rounded bg-[#494bd6] text-white font-semibold text-xs hover:bg-[#8083ff] hover:text-[#0d0096] disabled:opacity-50">
-            {{ isLoading ? 'Discovering Branches...' : 'Import Public Repository' }}
+                  class="px-5 py-2 rounded bg-[#494bd6] text-white font-semibold text-xs hover:bg-[#8083ff] hover:text-[#0d0096] disabled:opacity-50 flex items-center gap-1.5">
+            <span *ngIf="isLoading" class="material-symbols-outlined text-[14px] animate-spin">autorenew</span>
+            <span>{{ isLoading ? 'Discovering Branches...' : 'Import Public Repository' }}</span>
           </button>
         </div>
       </div>

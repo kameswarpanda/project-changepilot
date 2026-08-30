@@ -1,6 +1,11 @@
 <header class="h-16 px-6 w-full bg-[#10131a] light:bg-[#ffffff] border-b border-[#30363D] light:border-[#d0d7de] flex items-center justify-between sticky top-0 z-30 shrink-0">
-  <!-- Left: Breadcrumb Navigation -->
+  <!-- Left: Sidebar Toggle & Breadcrumb Navigation -->
   <div class="flex items-center gap-3">
+    <button (click)="state.toggleSidebar()" 
+            title="Toggle Sidebar" 
+            class="w-8 h-8 rounded-lg hover:bg-[#272a31] light:hover:bg-[#f3f4f6] text-[#908fa0] light:text-[#57606a] hover:text-[#e1e2eb] light:hover:text-[#1f2328] flex items-center justify-center transition-colors">
+      <span class="material-symbols-outlined text-[20px]">menu</span>
+    </button>
     <div class="flex items-center gap-2 text-[#908fa0] light:text-[#57606a] text-xs">
       <span class="font-semibold text-[#e1e2eb] light:text-[#1f2328]">ChangePilot</span>
       <span class="material-symbols-outlined text-[14px]">chevron_right</span>

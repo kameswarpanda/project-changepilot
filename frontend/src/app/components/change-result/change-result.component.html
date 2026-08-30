@@ -21,39 +21,39 @@
   </div>
 
   <!-- Page Header & Stats Banner -->
-  <section class="bg-[#161B22] border border-[#30363D] rounded-lg p-6 flex flex-col">
+  <section class="bg-[#161B22] light:bg-white border border-[#30363D] light:border-[#d0d7de] rounded-xl p-6 flex flex-col shadow-sm">
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
       <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-full bg-[#4edea3]/10 border border-[#4edea3]/30 flex items-center justify-center text-[#4edea3]">
+        <div class="w-10 h-10 rounded-full bg-[#10B981]/10 border border-[#10B981]/30 flex items-center justify-center text-[#10B981]">
           <span class="material-symbols-outlined text-[24px]">task_alt</span>
         </div>
         <div>
           <div class="flex items-center gap-3">
-            <h2 class="font-display-lg text-2xl font-bold text-[#e1e2eb]">
+            <h2 class="font-display-lg text-2xl font-bold text-[#e1e2eb] light:text-[#1f2328]">
               {{ (state.result$ | async)?.success ? 'Change completed successfully' : 'Pipeline Execution Results' }}
             </h2>
             <span class="px-2.5 py-0.5 rounded text-[11px] font-bold tracking-wide uppercase"
-                  [ngClass]="(state.result$ | async)?.success ? 'bg-[#4edea3]/10 text-[#4edea3] border border-[#4edea3]/20' : 'bg-[#ffb4ab]/10 text-[#ffb4ab] border border-[#ffb4ab]/20'">
+                  [ngClass]="(state.result$ | async)?.success ? 'bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/20' : 'bg-[#ffb4ab]/15 text-[#ffb4ab] border border-[#ffb4ab]/20'">
               {{ (state.result$ | async)?.status || 'SUCCESS' }}
             </span>
           </div>
-          <p class="font-body-md text-xs text-[#908fa0] mt-1">
-            Pipeline execution finished for #{{ (state.result$ | async)?.story_id || (state.storyIdSubject | async) }} • Commit: <code class="font-mono text-[#c0c1ff]">{{ (state.result$ | async)?.commit_sha || 'a83f91c' }}</code>
+          <p class="font-body-md text-xs text-[#908fa0] light:text-[#57606a] mt-1">
+            Pipeline execution finished for #{{ (state.result$ | async)?.story_id || (state.storyIdSubject | async) }} • Commit: <code class="font-mono text-[#c0c1ff] light:text-[#494bd6]">{{ (state.result$ | async)?.commit_sha || 'a83f91c' }}</code>
           </p>
         </div>
       </div>
 
       <!-- Action Buttons -->
       <div class="flex flex-wrap items-center gap-3">
-        <button (click)="state.setNav('audit')" class="px-4 py-2 rounded-md font-body-md text-xs border border-[#30363D] text-[#e1e2eb] hover:bg-[#272a31] transition-colors flex items-center gap-2">
+        <button (click)="state.setNav('audit')" class="px-4 py-2 rounded-lg font-body-md text-xs border border-[#30363D] light:border-[#d0d7de] text-[#e1e2eb] light:text-[#1f2328] hover:bg-[#272a31] light:hover:bg-[#f6f8fa] transition-colors flex items-center gap-2">
           <span class="material-symbols-outlined text-[16px]">history</span>
           <span>View Audit Trail</span>
         </button>
-        <button (click)="downloadPatch()" class="px-4 py-2 rounded-md font-body-md text-xs border border-[#30363D] text-[#e1e2eb] hover:bg-[#272a31] transition-colors flex items-center gap-2">
+        <button (click)="downloadPatch()" class="px-4 py-2 rounded-lg font-body-md text-xs border border-[#30363D] light:border-[#d0d7de] text-[#e1e2eb] light:text-[#1f2328] hover:bg-[#272a31] light:hover:bg-[#f6f8fa] transition-colors flex items-center gap-2">
           <span class="material-symbols-outlined text-[16px]">download</span>
           <span>Download .patch</span>
         </button>
-        <button (click)="state.setNav('requests')" class="px-4 py-2 rounded-md font-body-md text-xs bg-[#494bd6] text-white hover:bg-[#8083ff] hover:text-[#0d0096] transition-colors shadow-sm flex items-center gap-2 font-semibold">
+        <button (click)="state.setNav('requests')" class="px-4 py-2 rounded-lg font-body-md text-xs bg-[#494bd6] text-white hover:bg-[#8083ff] hover:text-[#0d0096] transition-colors shadow-sm flex items-center gap-2 font-semibold">
           <span class="material-symbols-outlined text-[16px]">play_arrow</span>
           <span>Run Another Change</span>
         </button>
@@ -61,12 +61,12 @@
     </div>
 
     <!-- Stats Grid -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-[#30363D]">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-[#30363D] light:border-[#d0d7de]">
       <div class="flex flex-col gap-1">
-        <span class="font-label-caps text-[10px] text-[#908fa0]">DURATION</span>
+        <span class="font-label-caps text-[10px] text-[#908fa0] light:text-[#57606a]">DURATION</span>
         <div class="flex items-center gap-2">
-          <span class="material-symbols-outlined text-[#908fa0] text-[18px]">timer</span>
-          <span class="font-code-md text-sm text-[#e1e2eb] font-bold">
+          <span class="material-symbols-outlined text-[#908fa0] light:text-[#57606a] text-[18px]">timer</span>
+          <span class="font-code-md text-sm text-[#e1e2eb] light:text-[#1f2328] font-bold">
             {{ getFormattedDuration() }}
           </span>
         </div>

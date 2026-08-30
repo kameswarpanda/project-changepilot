@@ -109,28 +109,34 @@
           READY
         </span>
       </div>
-    </div>
+    </div>    <!-- 9-Stage Node Flow with Continuous Progress Line -->
+    <div class="overflow-x-auto pb-3 pt-3">
+      <div class="relative min-w-[760px] px-6">
+        <!-- Connecting Line Background -->
+        <div class="absolute top-[22px] left-10 right-10 h-0.5 bg-[#30363D] light:bg-[#d0d7de] z-0"></div>
+        <!-- Active Progress Line -->
+        <div class="absolute top-[22px] left-10 h-0.5 bg-[#10B981] z-0 transition-all duration-500"
+             [style.width]="(((state.activeStageIndex$ | async) ?? 0) > 0 ? ((((state.activeStageIndex$ | async) ?? 0) / 8) * 100) + '%' : ((state.result$ | async)?.success ? '100%' : '0%'))"></div>
 
-    <!-- 9-Stage Node Flow -->
-    <div class="overflow-x-auto pb-2 pt-2">
-      <div class="flex items-center justify-between min-w-[720px] px-2 relative">
-        <div *ngFor="let s of state.stages; let i = index" class="flex flex-col items-center gap-1.5 z-10 w-20">
-          <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all shadow-sm"
-               [ngClass]="{
-                 'bg-[#10B981] text-white ring-2 ring-[#10B981]/30': getStageState(s.key).status === 'passed',
-                 'bg-[#8083ff] text-[#0d0096] ring-2 ring-[#8083ff]/40 animate-pulse': getStageState(s.key).status === 'running',
-                 'bg-[#EF4444] text-white ring-2 ring-[#EF4444]/30': getStageState(s.key).status === 'failed',
-                 'border border-[#30363D] light:border-[#d0d7de] bg-[#10131a] light:bg-[#f6f8fa] text-[#908fa0] light:text-[#57606a]': getStageState(s.key).status === 'pending'
-               }">
-            <span *ngIf="getStageState(s.key).status === 'passed'" class="material-symbols-outlined text-[14px]">check</span>
-            <span *ngIf="getStageState(s.key).status === 'running'" class="material-symbols-outlined text-[14px] animate-spin">autorenew</span>
-            <span *ngIf="getStageState(s.key).status === 'failed'" class="material-symbols-outlined text-[14px]">close</span>
-            <span *ngIf="getStageState(s.key).status === 'pending'">{{ s.number }}</span>
+        <div class="flex items-start justify-between relative z-10">
+          <div *ngFor="let s of state.stages; let i = index" class="flex flex-col items-center gap-1.5 w-20">
+            <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all shadow-md"
+                 [ngClass]="{
+                   'bg-[#10B981] text-white ring-4 ring-[#10B981]/20': getStageState(s.key).status === 'passed',
+                   'bg-[#8083ff] text-[#0d0096] ring-4 ring-[#8083ff]/40 animate-pulse': getStageState(s.key).status === 'running',
+                   'bg-[#EF4444] text-white ring-4 ring-[#EF4444]/20': getStageState(s.key).status === 'failed',
+                   'border border-[#30363D] light:border-[#d0d7de] bg-[#10131a] light:bg-[#ffffff] text-[#908fa0] light:text-[#57606a]': getStageState(s.key).status === 'pending'
+                 }">
+              <span *ngIf="getStageState(s.key).status === 'passed'" class="material-symbols-outlined text-[15px]">check</span>
+              <span *ngIf="getStageState(s.key).status === 'running'" class="material-symbols-outlined text-[15px] animate-spin">autorenew</span>
+              <span *ngIf="getStageState(s.key).status === 'failed'" class="material-symbols-outlined text-[15px]">close</span>
+              <span *ngIf="getStageState(s.key).status === 'pending'">{{ s.number }}</span>
+            </div>
+            <span class="font-label-caps text-[10px] text-center leading-tight truncate max-w-full"
+                  [ngClass]="getStageState(s.key).status === 'running' ? 'text-[#8083ff] light:text-[#494bd6] font-bold' : (getStageState(s.key).status === 'passed' ? 'text-[#10B981] font-semibold' : 'text-[#908fa0] light:text-[#57606a]')">
+              {{ s.label }}
+            </span>
           </div>
-          <span class="font-label-caps text-[9px] text-center leading-tight truncate max-w-full"
-                [ngClass]="getStageState(s.key).status === 'running' ? 'text-[#8083ff] light:text-[#494bd6] font-bold' : (getStageState(s.key).status === 'passed' ? 'text-[#10B981] font-semibold' : 'text-[#908fa0] light:text-[#57606a]')">
-            {{ s.label }}
-          </span>
         </div>
       </div>
     </div>

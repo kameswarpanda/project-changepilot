@@ -184,7 +184,7 @@ export interface ConnectedRepo {
   testRunner: string;
   fileCount: number;
   lastChecked: string;
-  status: 'Ready' | 'Needs Inspection';
+  status: 'ACTIVE' | 'INACTIVE' | 'Ready' | 'Needs Inspection' | string;
   branches?: string[];
   isPrivate?: boolean;
 }

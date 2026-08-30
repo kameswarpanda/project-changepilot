@@ -50,9 +50,20 @@ export interface PipelineStageItem {
   providedIn: 'root'
 })
 export class WorkflowStateService {
-  // Navigation State
+  // Navigation & Layout State
   public activeNavSubject = new BehaviorSubject<string>('dashboard');
   public activeNav$: Observable<string> = this.activeNavSubject.asObservable();
+
+  public isSidebarCollapsedSubject = new BehaviorSubject<boolean>(false);
+  public isSidebarCollapsed$: Observable<boolean> = this.isSidebarCollapsedSubject.asObservable();
+
+  public toggleSidebar(): void {
+    this.isSidebarCollapsedSubject.next(!this.isSidebarCollapsedSubject.value);
+  }
+
+  public setSidebarCollapsed(collapsed: boolean): void {
+    this.isSidebarCollapsedSubject.next(collapsed);
+  }
 
   // Selected / Active View Detail
   public selectedStoryIdSubject = new BehaviorSubject<string | null>(null);
@@ -121,6 +132,9 @@ export class WorkflowStateService {
   public recentRunsSubject = new BehaviorSubject<RecentRun[]>([]);
   public recentRuns$: Observable<RecentRun[]> = this.recentRunsSubject.asObservable();
 
+  public assignedTicketsSubject = new BehaviorSubject<any[]>([]);
+  public assignedTickets$: Observable<any[]> = this.assignedTicketsSubject.asObservable();
+
   public reportsSubject = new BehaviorSubject<any>(null);
   public reports$: Observable<any> = this.reportsSubject.asObservable();
 
@@ -174,6 +188,7 @@ export class WorkflowStateService {
   public refreshAllData(): void {
     this.loadRepositories();
     this.loadChangeRequests();
+    this.loadAssignedTickets();
     this.loadPipelines();
     this.loadSystemConfig();
     this.loadReports();
@@ -235,6 +250,26 @@ export class WorkflowStateService {
       next: (reqs) => this.changeRequestsSubject.next(reqs),
       error: () => {}
     });
+  }
+
+  public loadAssignedTickets(): void {
+    this.api.getAssignedTickets().subscribe({
+      next: (tkts) => this.assignedTicketsSubject.next(tkts),
+      error: () => {}
+    });
+  }
+
+  public selectAssignedTicket(tkt: any): void {
+    this.storyIdSubject.next(tkt.story_id);
+    this.titleSubject.next(tkt.title);
+    this.descriptionSubject.next(tkt.description + (tkt.acceptance_criteria ? '\n\nAcceptance Criteria:\n- ' + tkt.acceptance_criteria.join('\n- ') : ''));
+    if (tkt.repository) {
+      this.repoLocationSubject.next(tkt.repository);
+    }
+    if (tkt.base_branch) {
+      this.baseBranchSubject.next(tkt.base_branch);
+    }
+    this.setNav('requests');
   }
 
   public loadPipelines(): void {
