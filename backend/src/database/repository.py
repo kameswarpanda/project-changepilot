@@ -35,17 +35,26 @@ class DatabaseRepository:
             logger.warning(f"Database table initialization notice: {e}")
 
     def _migrate_schema(self):
-        """Auto-migrates SQLite columns if existing local db is missing newly added columns."""
-        if not settings.database_url.startswith("sqlite"):
-            return
+        """Auto-migrates columns in both SQLite and PostgreSQL on application startup."""
         try:
             with engine.connect() as conn:
-                res = conn.execute(text("PRAGMA table_info(users)"))
-                cols = [row[1] for row in res.fetchall()]
-                if cols and "password_hash" not in cols:
-                    conn.execute(text("ALTER TABLE users ADD COLUMN password_hash VARCHAR(256)"))
-                    conn.commit()
-                    logger.info("Auto-migrated 'password_hash' column into users table.")
+                if settings.database_url.startswith("sqlite"):
+                    res = conn.execute(text("PRAGMA table_info(users)"))
+                    cols = [row[1] for row in res.fetchall()]
+                    if cols and "password_hash" not in cols:
+                        conn.execute(text("ALTER TABLE users ADD COLUMN password_hash VARCHAR(256)"))
+                        conn.commit()
+                        logger.info("Auto-migrated 'password_hash' column into SQLite users table.")
+                else:
+                    # PostgreSQL / Cloud SQL auto-migrations
+                    try:
+                        conn.execute(text("ALTER TABLE pipeline_runs ALTER COLUMN title TYPE TEXT;"))
+                        conn.execute(text("ALTER TABLE change_requests ALTER COLUMN title TYPE TEXT;"))
+                        conn.execute(text("ALTER TABLE assigned_tickets ALTER COLUMN title TYPE TEXT;"))
+                        conn.commit()
+                        logger.info("Auto-migrated columns to TEXT in PostgreSQL Cloud SQL.")
+                    except Exception as pg_err:
+                        logger.debug(f"PostgreSQL column migration notice: {pg_err}")
         except Exception as e:
             logger.debug(f"Migration check notice: {e}")
 
