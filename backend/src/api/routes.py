@@ -210,59 +210,27 @@ async def reset_password_with_otp(req: ResetPasswordPayload):
 # -----------------------------------------------------------------------------
 @router.get("/api/integrations/assigned-tickets", tags=["Integrations"])
 async def get_assigned_tickets(user: User = Depends(get_current_user)):
-    """Fetches tickets assigned to ChangePilot from connected Jira, Azure DevOps, and GitHub repositories."""
-    return [
-        {
-            "id": "tkt-01",
-            "story_id": "CP-STR-0001",
-            "title": "Upgrade Payment Service for Production Readiness",
-            "description": "Implement ISO-4217 currency validation, structured transaction logging, and strict boundary JUnit test cases for all payment requests.",
-            "source": "GitHub Issues",
-            "repository": "kameswarpanda/changepilot-demo-payment",
-            "base_branch": "main",
-            "priority": "HIGH",
-            "acceptance_criteria": [
-                "Reject non-3-letter or invalid ISO currency codes with IllegalArgumentException",
-                "Maintain backward compatibility for existing valid EUR and USD transactions",
-                "Execute automated test suite with zero regressions"
-            ],
-            "assigned_to": "ChangePilot Agent",
-            "status": "READY"
-        },
-        {
-            "id": "tkt-02",
-            "story_id": "CP-1042",
-            "title": "Add Modular Discount Calculation to Core Engine",
-            "description": "Add calculate_total discount support and apply_discount standalone function with boundary validation.",
-            "source": "Jira Cloud",
-            "repository": "project-changepilot",
-            "base_branch": "main",
-            "priority": "CRITICAL",
-            "acceptance_criteria": [
-                "calculate_total([10, 20], discount=5) must evaluate to 25",
-                "Negative discount must raise ValueError with clear message",
-                "All unit tests in pytest must pass"
-            ],
-            "assigned_to": "ChangePilot Agent",
-            "status": "READY"
-        },
-        {
-            "id": "tkt-03",
-            "story_id": "ADO-7821",
-            "title": "Security Patch: In-Memory Token Blacklist Expiration",
-            "description": "Ensure revoked JWT tokens and expired session credentials are purged instantly across the cluster.",
-            "source": "Azure DevOps Boards",
-            "repository": "project-changepilot",
-            "base_branch": "main",
-            "priority": "MEDIUM",
-            "acceptance_criteria": [
-                "Revoked token returns 401 Unauthorized",
-                "Expired tokens must be pruned from cache every 15 minutes"
-            ],
-            "assigned_to": "ChangePilot Agent",
-            "status": "READY"
-        }
-    ]
+    """Fetches assigned cloud tickets from the persistent database."""
+    return db_repository.list_assigned_tickets(user_id=user.id)
+
+
+@router.post("/api/integrations/assigned-tickets", tags=["Integrations"])
+async def create_assigned_ticket(tkt: dict, user: User = Depends(get_current_user)):
+    """Creates a new assigned cloud ticket in the persistent database."""
+    try:
+        return db_repository.save_assigned_ticket(tkt, user_id=user.id)
+    except Exception as e:
+        logger.error(f"Error creating assigned ticket: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to create ticket.")
+
+
+@router.delete("/api/integrations/assigned-tickets/{ticket_id}", tags=["Integrations"])
+async def delete_assigned_ticket(ticket_id: str, user: User = Depends(get_current_user)):
+    """Deletes an assigned ticket from the database."""
+    success = db_repository.delete_assigned_ticket(ticket_id)
+    if not success:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ticket not found.")
+    return {"status": "deleted", "id": ticket_id}
 
 
 # -----------------------------------------------------------------------------

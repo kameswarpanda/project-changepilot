@@ -98,3 +98,23 @@ class AuditLogModel(Base):
     status = Column(String(32), index=True)
     safety_rule = Column(String(128), nullable=True)
     details = Column(JSON, nullable=True)
+
+
+class AssignedTicketModel(Base):
+    """Assigned cloud work ticket from Jira, Azure DevOps, or GitHub Issues."""
+    __tablename__ = "assigned_tickets"
+
+    id = Column(String(64), primary_key=True, index=True)
+    story_id = Column(String(64), index=True)
+    user_id = Column(String(64), index=True, default="usr-kameswar-01")
+    title = Column(String(256))
+    description = Column(Text)
+    source = Column(String(64), default="GitHub Issues")
+    repository = Column(String(256), default="project-changepilot")
+    base_branch = Column(String(64), default="main")
+    priority = Column(String(32), default="HIGH")
+    acceptance_criteria = Column(JSON, default=list)
+    assigned_to = Column(String(128), default="ChangePilot Agent")
+    status = Column(String(32), default="READY")
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+

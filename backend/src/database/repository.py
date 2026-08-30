@@ -6,6 +6,7 @@ from typing import Dict, List, Optional
 from sqlalchemy.orm import Session
 
 from backend.src.database.models import (
+    AssignedTicketModel,
     AuditLogModel,
     ChangeRequestModel,
     PipelineRunModel,
@@ -108,6 +109,66 @@ class DatabaseRepository:
                 ]
                 for req in requests:
                     session.merge(req)
+
+            # Seed assigned cloud tickets if none exist
+            if session.query(AssignedTicketModel).count() == 0:
+                tickets = [
+                    AssignedTicketModel(
+                        id="tkt-01",
+                        story_id="CP-STR-0001",
+                        user_id="usr-kameswar-01",
+                        title="Upgrade Payment Service for Production Readiness",
+                        description="Implement ISO-4217 currency validation, structured transaction logging, and strict boundary JUnit test cases for all payment requests.",
+                        source="GitHub Issues",
+                        repository="kameswarpanda/changepilot-demo-payment",
+                        base_branch="main",
+                        priority="HIGH",
+                        acceptance_criteria=[
+                            "Reject non-3-letter or invalid ISO currency codes with IllegalArgumentException",
+                            "Maintain backward compatibility for existing valid EUR and USD transactions",
+                            "Execute automated test suite with zero regressions"
+                        ],
+                        assigned_to="ChangePilot Agent",
+                        status="READY"
+                    ),
+                    AssignedTicketModel(
+                        id="tkt-02",
+                        story_id="CP-1042",
+                        user_id="usr-kameswar-01",
+                        title="Add Modular Discount Calculation to Core Engine",
+                        description="Add calculate_total discount support and apply_discount standalone function with boundary validation.",
+                        source="Jira Cloud",
+                        repository="project-changepilot",
+                        base_branch="main",
+                        priority="CRITICAL",
+                        acceptance_criteria=[
+                            "calculate_total([10, 20], discount=5) must evaluate to 25",
+                            "Negative discount must raise ValueError with clear message",
+                            "All unit tests in pytest must pass"
+                        ],
+                        assigned_to="ChangePilot Agent",
+                        status="READY"
+                    ),
+                    AssignedTicketModel(
+                        id="tkt-03",
+                        story_id="ADO-7821",
+                        user_id="usr-kameswar-01",
+                        title="Security Patch: In-Memory Token Blacklist Expiration",
+                        description="Ensure revoked JWT tokens and expired session credentials are purged instantly across the cluster.",
+                        source="Azure DevOps Boards",
+                        repository="project-changepilot",
+                        base_branch="main",
+                        priority="MEDIUM",
+                        acceptance_criteria=[
+                            "Revoked token returns 401 Unauthorized",
+                            "Expired tokens must be pruned from cache every 15 minutes"
+                        ],
+                        assigned_to="ChangePilot Agent",
+                        status="READY"
+                    )
+                ]
+                for t in tickets:
+                    session.merge(t)
 
             session.commit()
         except Exception as e:
@@ -553,6 +614,86 @@ class DatabaseRepository:
                     "mean_duration_ms": 2500.0
                 }
             }
+    def list_assigned_tickets(self, user_id: Optional[str] = None) -> List[dict]:
+        """Queries assigned cloud tickets directly from persistent database."""
+        session: Session = SessionLocal()
+        try:
+            q = session.query(AssignedTicketModel)
+            if user_id and user_id != "all":
+                q = q.filter((AssignedTicketModel.user_id == user_id) | (AssignedTicketModel.user_id == "usr-kameswar-01"))
+            tickets = q.order_by(AssignedTicketModel.created_at.desc()).all()
+            return [
+                {
+                    "id": t.id,
+                    "story_id": t.story_id,
+                    "title": t.title,
+                    "description": t.description,
+                    "source": t.source,
+                    "repository": t.repository,
+                    "base_branch": t.base_branch,
+                    "priority": t.priority,
+                    "acceptance_criteria": t.acceptance_criteria or [],
+                    "assigned_to": t.assigned_to,
+                    "status": t.status,
+                    "created_at": t.created_at.isoformat() if t.created_at else None
+                }
+                for t in tickets
+            ]
+        except Exception as e:
+            logger.warning(f"Error querying assigned tickets: {e}")
+            return []
+        finally:
+            session.close()
+
+    def save_assigned_ticket(self, tkt: dict, user_id: str = "usr-kameswar-01") -> dict:
+        """Persists a new or updated assigned cloud ticket in the database."""
+        session: Session = SessionLocal()
+        try:
+            tkt_id = tkt.get("id") or f"tkt-{uuid.uuid4().hex[:6]}"
+            model = AssignedTicketModel(
+                id=tkt_id,
+                story_id=tkt.get("story_id", "CP-NEW"),
+                user_id=user_id,
+                title=tkt.get("title", "New Change Task"),
+                description=tkt.get("description", ""),
+                source=tkt.get("source", "Cloud Integration"),
+                repository=tkt.get("repository", "project-changepilot"),
+                base_branch=tkt.get("base_branch", "main"),
+                priority=tkt.get("priority", "HIGH"),
+                acceptance_criteria=tkt.get("acceptance_criteria", []),
+                assigned_to=tkt.get("assigned_to", "ChangePilot Agent"),
+                status=tkt.get("status", "READY")
+            )
+            session.merge(model)
+            session.commit()
+            return {
+                "id": model.id,
+                "story_id": model.story_id,
+                "title": model.title,
+                "source": model.source,
+                "status": model.status
+            }
+        except Exception as e:
+            session.rollback()
+            logger.warning(f"Error saving assigned ticket: {e}")
+            raise
+        finally:
+            session.close()
+
+    def delete_assigned_ticket(self, ticket_id: str) -> bool:
+        """Deletes an assigned ticket by its ID."""
+        session: Session = SessionLocal()
+        try:
+            t = session.query(AssignedTicketModel).filter(AssignedTicketModel.id == ticket_id).first()
+            if t:
+                session.delete(t)
+                session.commit()
+                return True
+            return False
+        except Exception as e:
+            session.rollback()
+            logger.warning(f"Error deleting assigned ticket: {e}")
+            return False
         finally:
             session.close()
 

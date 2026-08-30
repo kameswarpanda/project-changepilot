@@ -122,18 +122,18 @@
           <div *ngFor="let s of state.stages; let i = index" class="flex flex-col items-center gap-1.5 w-20">
             <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all shadow-md"
                  [ngClass]="{
-                   'bg-[#10B981] text-white ring-4 ring-[#10B981]/20': getStageState(s.key).status === 'passed',
-                   'bg-[#8083ff] text-[#0d0096] ring-4 ring-[#8083ff]/40 animate-pulse': getStageState(s.key).status === 'running',
-                   'bg-[#EF4444] text-white ring-4 ring-[#EF4444]/20': getStageState(s.key).status === 'failed',
-                   'border border-[#30363D] light:border-[#d0d7de] bg-[#10131a] light:bg-[#ffffff] text-[#908fa0] light:text-[#57606a]': getStageState(s.key).status === 'pending'
+                   'bg-[#10B981] text-white ring-4 ring-[#10B981]/20': getStageState(s.key, i).status === 'passed',
+                   'bg-[#8083ff] text-[#0d0096] ring-4 ring-[#8083ff]/40 animate-pulse': getStageState(s.key, i).status === 'running',
+                   'bg-[#EF4444] text-white ring-4 ring-[#EF4444]/20': getStageState(s.key, i).status === 'failed',
+                   'border border-[#30363D] light:border-[#d0d7de] bg-[#10131a] light:bg-[#ffffff] text-[#908fa0] light:text-[#57606a]': getStageState(s.key, i).status === 'pending'
                  }">
-              <span *ngIf="getStageState(s.key).status === 'passed'" class="material-symbols-outlined text-[15px]">check</span>
-              <span *ngIf="getStageState(s.key).status === 'running'" class="material-symbols-outlined text-[15px] animate-spin">autorenew</span>
-              <span *ngIf="getStageState(s.key).status === 'failed'" class="material-symbols-outlined text-[15px]">close</span>
-              <span *ngIf="getStageState(s.key).status === 'pending'">{{ s.number }}</span>
+              <span *ngIf="getStageState(s.key, i).status === 'passed'" class="material-symbols-outlined text-[15px]">check</span>
+              <span *ngIf="getStageState(s.key, i).status === 'running'" class="material-symbols-outlined text-[15px] animate-spin">autorenew</span>
+              <span *ngIf="getStageState(s.key, i).status === 'failed'" class="material-symbols-outlined text-[15px]">close</span>
+              <span *ngIf="getStageState(s.key, i).status === 'pending'">{{ s.number }}</span>
             </div>
             <span class="font-label-caps text-[10px] text-center leading-tight truncate max-w-full"
-                  [ngClass]="getStageState(s.key).status === 'running' ? 'text-[#8083ff] light:text-[#494bd6] font-bold' : (getStageState(s.key).status === 'passed' ? 'text-[#10B981] font-semibold' : 'text-[#908fa0] light:text-[#57606a]')">
+                  [ngClass]="getStageState(s.key, i).status === 'running' ? 'text-[#8083ff] light:text-[#494bd6] font-bold' : (getStageState(s.key, i).status === 'passed' ? 'text-[#10B981] font-semibold' : 'text-[#908fa0] light:text-[#57606a]')">
               {{ s.label }}
             </span>
           </div>

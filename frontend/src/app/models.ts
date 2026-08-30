@@ -19,7 +19,7 @@ export interface AuthSessionResponse {
 }
 
 export interface PullRequestInfo {
-  pr_number: number;
+  pr_number?: number | null;
   pr_url: string;
   title: string;
   body: string;

@@ -28,7 +28,7 @@ export class ThemeService {
   setTheme(isDark: boolean): void {
     this.isDarkModeSubject.next(isDark);
 
-    const applyClasses = () => {
+    if (typeof document !== 'undefined') {
       if (isDark) {
         document.documentElement.classList.remove('light');
         document.documentElement.classList.add('dark');
@@ -42,14 +42,6 @@ export class ThemeService {
         document.body.classList.add('light-theme');
         localStorage.setItem('cp_theme', 'light');
       }
-    };
-
-    if (typeof document !== 'undefined' && 'startViewTransition' in document) {
-      (document as any).startViewTransition(() => {
-        applyClasses();
-      });
-    } else {
-      applyClasses();
     }
   }
 }

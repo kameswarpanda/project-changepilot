@@ -6,16 +6,22 @@
         <span class="material-symbols-outlined text-[20px]">merge_type</span>
       </div>
       <div>
-        <div class="font-title-sm text-sm font-semibold text-[#e1e2eb]">
-          GitHub Pull Request #{{ (state.result$ | async)?.pull_request?.pr_number }} Created
+        <div class="font-title-sm text-sm font-semibold text-[#e1e2eb] light:text-[#1f2328]">
+          <span *ngIf="(state.result$ | async)?.pull_request?.pr_number">
+            GitHub Pull Request #{{ (state.result$ | async)?.pull_request?.pr_number }} Created
+          </span>
+          <span *ngIf="!(state.result$ | async)?.pull_request?.pr_number">
+            GitHub Pull Request Ready (1-Click Compare & Merge)
+          </span>
         </div>
-        <div class="font-body-sm text-xs text-[#908fa0]">
-          Branch <code class="font-mono text-[#c0c1ff]">{{ (state.result$ | async)?.branch_name }}</code> published to <code class="font-mono text-[#ffb783]">{{ (state.result$ | async)?.pull_request?.base_branch }}</code>
+        <div class="font-body-sm text-xs text-[#908fa0] light:text-[#57606a]">
+          Branch <code class="font-mono text-[#c0c1ff] light:text-[#494bd6]">{{ (state.result$ | async)?.branch_name }}</code> &rarr; target <code class="font-mono text-[#10B981]">{{ (state.result$ | async)?.pull_request?.base_branch }}</code>
         </div>
       </div>
     </div>
-    <a [href]="(state.result$ | async)?.pull_request?.pr_url" target="_blank" class="px-4 py-1.5 rounded bg-[#494bd6] text-white hover:bg-[#8083ff] hover:text-[#0d0096] font-semibold text-xs transition-colors flex items-center gap-1.5 shrink-0 shadow-sm">
-      <span>Open Pull Request</span>
+    <a [href]="(state.result$ | async)?.pull_request?.pr_url" target="_blank" class="px-4 py-2 rounded-lg bg-[#494bd6] text-white hover:bg-[#8083ff] hover:text-[#0d0096] font-semibold text-xs transition-colors flex items-center gap-1.5 shrink-0 shadow-sm">
+      <span *ngIf="(state.result$ | async)?.pull_request?.pr_number">Open Pull Request</span>
+      <span *ngIf="!(state.result$ | async)?.pull_request?.pr_number">Review & Create PR on GitHub</span>
       <span class="material-symbols-outlined text-[14px]">open_in_new</span>
     </a>
   </div>

@@ -119,47 +119,24 @@ export class AuthPageComponent implements OnInit {
     }
   }
 
+  private isProcessingGoogle = false;
+
   handleGoogleSignIn(): void {
-    this.isLoading = true;
-    this.errorMessage = null;
-
-    if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
-      let promptHandled = false;
-      try {
-        google.accounts.id.prompt((notification: any) => {
-          this.ngZone.run(() => {
-            promptHandled = true;
-            if (notification.isNotDisplayed() || notification.isSkippedMoment() || notification.isDismissedMoment()) {
-              this.executeGoogleDirectLogin();
-            }
-          });
-        });
-
-        // Safe fallback if prompt callback does not return within 1.2s
-        setTimeout(() => {
-          this.ngZone.run(() => {
-            if (!promptHandled && !this.authService.isAuthenticated) {
-              this.executeGoogleDirectLogin();
-            }
-          });
-        }, 1200);
-        return;
-      } catch (e) {
-        console.warn('Google prompt fallback:', e);
-      }
+    if (this.isLoading || this.isProcessingGoogle) {
+      return;
     }
-    this.executeGoogleDirectLogin();
-  }
-
-  private executeGoogleDirectLogin(): void {
     this.isLoading = true;
+    this.isProcessingGoogle = true;
     this.errorMessage = null;
+
     this.authService.loginWithGoogle('kameswarpanda11@gmail.com').subscribe({
       next: () => {
         this.isLoading = false;
+        this.isProcessingGoogle = false;
       },
       error: (err) => {
         this.isLoading = false;
+        this.isProcessingGoogle = false;
         this.errorMessage = err.error?.detail || 'Google sign-in encountered an issue. Please try again.';
       }
     });
