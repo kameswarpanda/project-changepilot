@@ -22,6 +22,7 @@ dependencies = [
     "PyJWT>=2.8.0",
     "sqlalchemy>=2.0.0",
     "aiosqlite>=0.20.0",
+    "psycopg2-binary>=2.9.9",
     "cryptography>=42.0.0"
 ]
 
