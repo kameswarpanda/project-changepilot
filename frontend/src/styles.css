@@ -184,7 +184,7 @@ html.light input, html.light textarea, html.light select {
 }
 
 /* ==============================================================================
-   Diagonal Feather / Wipe Theme Transition Animation
+   Smooth Gradient Corner-to-Corner Theme Transition Animation
    ============================================================================== */
 ::view-transition-old(root),
 ::view-transition-new(root) {
@@ -198,16 +198,30 @@ html.light input, html.light textarea, html.light select {
 
 ::view-transition-new(root) {
   z-index: 9999;
-  animation: diagonalThemeWipe 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: themeCornerExpand 0.38s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
-@keyframes diagonalThemeWipe {
+@keyframes themeCornerExpand {
   0% {
-    clip-path: polygon(0 0, 0 0, 0 0, 0 0);
+    clip-path: circle(0% at calc(100% - 40px) 40px);
+    opacity: 0.96;
   }
   100% {
-    clip-path: polygon(0 0, 300% 0, 0 300%, 0 0);
+    clip-path: circle(150% at calc(100% - 40px) 40px);
+    opacity: 1;
   }
+}
+
+/* Global smooth element theme color blend */
+body, 
+.auth-wrapper, 
+.auth-card,
+aside, 
+header, 
+main {
+  transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), 
+              border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), 
+              color 0.15s ease;
 }
 
 /* Auth Sliding Tab Transition */
