@@ -3,12 +3,14 @@ import logging
 import uuid
 from datetime import datetime, timezone
 from typing import Dict, List, Optional
+from sqlalchemy import func, text
 from sqlalchemy.orm import Session
 
 from backend.src.database.models import (
     AssignedTicketModel,
     AuditLogModel,
     ChangeRequestModel,
+    PasswordResetOtpModel,
     PipelineRunModel,
     RepositoryModel,
     UserModel,
@@ -27,14 +29,61 @@ class DatabaseRepository:
         # Auto-create tables on initialization
         try:
             Base.metadata.create_all(bind=engine)
+            self._migrate_schema()
             self._seed_initial_data()
         except Exception as e:
             logger.warning(f"Database table initialization notice: {e}")
+
+    def _migrate_schema(self):
+        """Auto-migrates SQLite columns if existing local db is missing newly added columns."""
+        try:
+            with engine.connect() as conn:
+                res = conn.execute(text("PRAGMA table_info(users)"))
+                cols = [row[1] for row in res.fetchall()]
+                if cols and "password_hash" not in cols:
+                    conn.execute(text("ALTER TABLE users ADD COLUMN password_hash VARCHAR(256)"))
+                    conn.commit()
+                    logger.info("Auto-migrated 'password_hash' column into users table.")
+        except Exception as e:
+            logger.debug(f"Migration check notice: {e}")
 
     def _seed_initial_data(self):
         """Seeds initial connected repositories and change requests if empty."""
         session: Session = SessionLocal()
         try:
+            # Seed users if none exist
+            if session.query(UserModel).count() == 0:
+                import hashlib
+                def _hash_pwd(pwd: str) -> str:
+                    return hashlib.sha256(("cp_salt_2026_" + pwd).encode("utf-8")).hexdigest()
+
+                users = [
+                    UserModel(
+                        id="usr-kameswar-01",
+                        identity_provider_id="google-kameswar-2026",
+                        username="kameswar",
+                        display_name="Kameswar Panda",
+                        email="kameswar@changepilot.dev",
+                        password_hash=_hash_pwd("changepilot2026"),
+                        avatar_url="https://avatars.githubusercontent.com/u/583231",
+                        provider="google",
+                        roles=["admin", "developer"]
+                    ),
+                    UserModel(
+                        id="usr-alex-02",
+                        identity_provider_id="google-alex-mercer",
+                        username="alex.mercer",
+                        display_name="Alex Mercer",
+                        email="alex@changepilot.dev",
+                        password_hash=_hash_pwd("changepilot2026"),
+                        avatar_url=None,
+                        provider="google",
+                        roles=["developer"]
+                    )
+                ]
+                for u in users:
+                    session.merge(u)
+
             # Seed repositories if none exist
             if session.query(RepositoryModel).count() == 0:
                 repos = [
@@ -394,17 +443,21 @@ class DatabaseRepository:
         finally:
             session.close()
 
-    def list_connected_repositories(self) -> List[dict]:
-        """Lists connected repositories from database."""
+    def list_connected_repositories(self, user_id: Optional[str] = None) -> List[dict]:
+        """Lists connected repositories from database filtered by owner user_id."""
         session: Session = SessionLocal()
         try:
-            repos = session.query(RepositoryModel).all()
+            query = session.query(RepositoryModel)
+            if user_id:
+                query = query.filter((RepositoryModel.owner_user_id == user_id) | (RepositoryModel.is_private == False))
+            repos = query.all()
             return [
                 {
                     "id": r.id,
                     "name": r.name,
                     "full_name": r.full_name,
                     "clone_url": r.clone_url,
+                    "owner_user_id": r.owner_user_id,
                     "provider": r.provider,
                     "default_branch": r.default_branch,
                     "branches": r.branches or ["main"],
@@ -693,6 +746,195 @@ class DatabaseRepository:
         except Exception as e:
             session.rollback()
             logger.warning(f"Error deleting assigned ticket: {e}")
+            return False
+        finally:
+            session.close()
+
+    # -------------------------------------------------------------------------
+    # User Account Database Operations
+    # -------------------------------------------------------------------------
+    def get_user_by_id(self, user_id: str) -> Optional[dict]:
+        """Retrieves user model from database by ID."""
+        session: Session = SessionLocal()
+        try:
+            u = session.query(UserModel).filter(UserModel.id == user_id).first()
+            if u:
+                return {
+                    "id": u.id,
+                    "identity_provider_id": u.identity_provider_id,
+                    "username": u.username,
+                    "display_name": u.display_name,
+                    "email": u.email,
+                    "password_hash": u.password_hash,
+                    "avatar_url": u.avatar_url,
+                    "provider": u.provider,
+                    "roles": u.roles or ["developer"],
+                    "created_at": u.created_at.isoformat() if u.created_at else None,
+                    "last_login_at": u.last_login_at.isoformat() if u.last_login_at else None
+                }
+            return None
+        finally:
+            session.close()
+
+    def get_user_by_email(self, email: str) -> Optional[dict]:
+        """Retrieves user model from database by email."""
+        session: Session = SessionLocal()
+        try:
+            clean_email = email.strip().lower()
+            u = session.query(UserModel).filter(func.lower(UserModel.email) == clean_email).first()
+            if u:
+                return {
+                    "id": u.id,
+                    "identity_provider_id": u.identity_provider_id,
+                    "username": u.username,
+                    "display_name": u.display_name,
+                    "email": u.email,
+                    "password_hash": u.password_hash,
+                    "avatar_url": u.avatar_url,
+                    "provider": u.provider,
+                    "roles": u.roles or ["developer"],
+                    "created_at": u.created_at.isoformat() if u.created_at else None,
+                    "last_login_at": u.last_login_at.isoformat() if u.last_login_at else None
+                }
+            return None
+        finally:
+            session.close()
+
+    def get_user_by_username(self, username: str) -> Optional[dict]:
+        """Retrieves user model from database by username."""
+        session: Session = SessionLocal()
+        try:
+            clean_name = username.strip().lower()
+            u = session.query(UserModel).filter(func.lower(UserModel.username) == clean_name).first()
+            if u:
+                return {
+                    "id": u.id,
+                    "identity_provider_id": u.identity_provider_id,
+                    "username": u.username,
+                    "display_name": u.display_name,
+                    "email": u.email,
+                    "password_hash": u.password_hash,
+                    "avatar_url": u.avatar_url,
+                    "provider": u.provider,
+                    "roles": u.roles or ["developer"],
+                    "created_at": u.created_at.isoformat() if u.created_at else None,
+                    "last_login_at": u.last_login_at.isoformat() if u.last_login_at else None
+                }
+            return None
+        finally:
+            session.close()
+
+    def save_user(self, user_data: dict) -> dict:
+        """Saves or updates user model in database."""
+        session: Session = SessionLocal()
+        try:
+            user_id = user_data.get("id") or f"usr-{uuid.uuid4().hex[:6]}"
+            model = UserModel(
+                id=user_id,
+                identity_provider_id=user_data.get("identity_provider_id", f"local-{user_id}"),
+                username=user_data.get("username", user_id),
+                display_name=user_data.get("display_name", "ChangePilot Developer"),
+                email=user_data.get("email", f"{user_id}@changepilot.dev").strip().lower(),
+                password_hash=user_data.get("password_hash"),
+                avatar_url=user_data.get("avatar_url"),
+                provider=user_data.get("provider", "google"),
+                roles=user_data.get("roles", ["developer"]),
+                last_login_at=datetime.now(timezone.utc)
+            )
+            session.merge(model)
+            session.commit()
+            return {
+                "id": model.id,
+                "username": model.username,
+                "display_name": model.display_name,
+                "email": model.email,
+                "avatar_url": model.avatar_url,
+                "provider": model.provider,
+                "roles": model.roles
+            }
+        except Exception as e:
+            session.rollback()
+            logger.warning(f"Error saving user: {e}")
+            raise
+        finally:
+            session.close()
+
+    def update_user_password(self, email: str, password_hash: str) -> bool:
+        """Updates user password hash in persistent database."""
+        session: Session = SessionLocal()
+        try:
+            clean_email = email.strip().lower()
+            u = session.query(UserModel).filter(func.lower(UserModel.email) == clean_email).first()
+            if u:
+                u.password_hash = password_hash
+                session.commit()
+                return True
+            return False
+        except Exception as e:
+            session.rollback()
+            logger.warning(f"Error updating password: {e}")
+            return False
+        finally:
+            session.close()
+
+    # -------------------------------------------------------------------------
+    # Password Reset OTP Database Operations
+    # -------------------------------------------------------------------------
+    def save_password_reset_otp(self, email: str, otp_hash: str, expires_minutes: int = 10) -> dict:
+        """Stores a password reset OTP verification record with TTL."""
+        session: Session = SessionLocal()
+        try:
+            from datetime import timedelta
+            clean_email = email.strip().lower()
+            # Clean old records for this email
+            session.query(PasswordResetOtpModel).filter(func.lower(PasswordResetOtpModel.email) == clean_email).delete()
+            otp_id = f"otp-{uuid.uuid4().hex[:8]}"
+            expires_at = datetime.now(timezone.utc) + timedelta(minutes=expires_minutes)
+            model = PasswordResetOtpModel(
+                id=otp_id,
+                email=clean_email,
+                otp_hash=otp_hash,
+                expires_at=expires_at,
+                verified=False
+            )
+            session.add(model)
+            session.commit()
+            return {"id": model.id, "email": model.email, "expires_at": model.expires_at}
+        except Exception as e:
+            session.rollback()
+            logger.warning(f"Error saving reset OTP: {e}")
+            raise
+        finally:
+            session.close()
+
+    def verify_password_reset_otp(self, email: str, otp_hash: str) -> bool:
+        """Validates OTP hash and expiration time against database record."""
+        session: Session = SessionLocal()
+        try:
+            clean_email = email.strip().lower()
+            rec = session.query(PasswordResetOtpModel).filter(
+                func.lower(PasswordResetOtpModel.email) == clean_email,
+                PasswordResetOtpModel.otp_hash == otp_hash,
+                PasswordResetOtpModel.expires_at > datetime.now(timezone.utc)
+            ).first()
+            if rec:
+                rec.verified = True
+                session.commit()
+                return True
+            return False
+        finally:
+            session.close()
+
+    def mark_password_reset_otp_used(self, email: str) -> bool:
+        """Invalidates/deletes OTP records upon successful password change."""
+        session: Session = SessionLocal()
+        try:
+            clean_email = email.strip().lower()
+            session.query(PasswordResetOtpModel).filter(func.lower(PasswordResetOtpModel.email) == clean_email).delete()
+            session.commit()
+            return True
+        except Exception:
+            session.rollback()
             return False
         finally:
             session.close()

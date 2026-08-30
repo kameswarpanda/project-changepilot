@@ -16,6 +16,7 @@ class UserModel(Base):
     username = Column(String(64), unique=True, index=True)
     display_name = Column(String(128))
     email = Column(String(128), unique=True, index=True)
+    password_hash = Column(String(256), nullable=True)
     avatar_url = Column(String(512), nullable=True)
     provider = Column(String(32), default="google")
     roles = Column(JSON, default=lambda: ["developer"])
@@ -116,5 +117,17 @@ class AssignedTicketModel(Base):
     acceptance_criteria = Column(JSON, default=list)
     assigned_to = Column(String(128), default="ChangePilot Agent")
     status = Column(String(32), default="READY")
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+class PasswordResetOtpModel(Base):
+    """Stores password reset OTP verification records with strict TTL and audit status."""
+    __tablename__ = "password_reset_otps"
+
+    id = Column(String(64), primary_key=True, index=True)
+    email = Column(String(128), index=True)
+    otp_hash = Column(String(256))
+    expires_at = Column(DateTime)
+    verified = Column(Boolean, default=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 

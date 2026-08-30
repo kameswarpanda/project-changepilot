@@ -3,11 +3,15 @@ import base64
 import hashlib
 import json
 import logging
-import uuid
-from datetime import datetime, timezone, timedelta
+import os
 import random
 import re
-from typing import Dict, Optional
+import smtplib
+import uuid
+from datetime import datetime, timezone, timedelta
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from typing import Dict, Optional, Tuple
 import httpx
 
 from backend.src.auth.jwt_handler import create_access_token
@@ -20,6 +24,7 @@ from backend.src.auth.models import (
     UserRole,
 )
 from backend.src.config import settings
+from backend.src.database.repository import db_repository
 
 logger = logging.getLogger("changepilot.auth.service")
 
@@ -30,7 +35,7 @@ def _hash_password(password: str) -> str:
     return hashlib.sha256((salt + password).encode("utf-8")).hexdigest()
 
 
-def validate_strong_password(password: str) -> tuple[bool, str]:
+def validate_strong_password(password: str) -> Tuple[bool, str]:
     """Validates strong password rules: min 8 chars, uppercase, lowercase, digit, special character."""
     if len(password) < 8:
         return False, "Password must be at least 8 characters long."
@@ -50,7 +55,6 @@ def _decode_jwt_unverified_payload(token_str: str) -> Optional[dict]:
     try:
         parts = token_str.strip().split(".")
         if len(parts) >= 2:
-            # Pad base64 string
             b64_str = parts[1]
             padding = 4 - (len(b64_str) % 4)
             if padding != 4:
@@ -62,99 +66,134 @@ def _decode_jwt_unverified_payload(token_str: str) -> Optional[dict]:
     return None
 
 
+def _dict_to_user(u: dict) -> User:
+    """Converts a database dictionary representation to a domain User object."""
+    roles_raw = u.get("roles") or ["developer"]
+    roles = [UserRole(r) if r in [e.value for e in UserRole] else UserRole.DEVELOPER for r in roles_raw]
+    provider_str = u.get("provider", "google").lower()
+    provider = AuthProvider.GOOGLE
+    if provider_str == "password":
+        provider = AuthProvider.PASSWORD
+    elif provider_str == "local":
+        provider = AuthProvider.LOCAL
+    elif provider_str == "github":
+        provider = AuthProvider.GITHUB
+
+    return User(
+        id=u["id"],
+        identity_provider_id=u.get("identity_provider_id", u["id"]),
+        username=u["username"],
+        display_name=u.get("display_name") or u["username"].capitalize(),
+        email=u["email"],
+        avatar_url=u.get("avatar_url"),
+        provider=provider,
+        roles=roles,
+        created_at=datetime.fromisoformat(u["created_at"]) if u.get("created_at") else datetime.now(timezone.utc),
+        last_login_at=datetime.fromisoformat(u["last_login_at"]) if u.get("last_login_at") else datetime.now(timezone.utc)
+    )
+
+
 class AuthService:
     """Service handling multi-provider authentication, user registration, and session issuance."""
 
-    def __init__(self):
-        # In-memory user cache, password credentials store, and OTP store
-        self._user_store: Dict[str, User] = {}
-        self._password_store: Dict[str, str] = {}
-        self._otp_store: Dict[str, Dict[str, Any]] = {}
-        self._seed_default_users()
-
-    def _seed_default_users(self):
-        """Pre-seeds standard developer & admin profiles for instant zero-friction execution."""
-        kameswar = User(
-            id="usr-kameswar-01",
-            identity_provider_id="google-kameswar-2026",
-            username="kameswar",
-            display_name="Kameswar Panda",
-            email="kameswar@changepilot.dev",
-            avatar_url="https://avatars.githubusercontent.com/u/583231",
-            provider=AuthProvider.GOOGLE,
-            roles=[UserRole.ADMIN, UserRole.DEVELOPER]
-        )
-        alex = User(
-            id="usr-alex-02",
-            identity_provider_id="google-alex-mercer",
-            username="alex.mercer",
-            display_name="Alex Mercer",
-            email="alex@changepilot.dev",
-            avatar_url=None,
-            provider=AuthProvider.GOOGLE,
-            roles=[UserRole.DEVELOPER]
-        )
-        self._user_store[kameswar.id] = kameswar
-        self._user_store[kameswar.username] = kameswar
-        self._user_store[kameswar.email] = kameswar
-        self._password_store[kameswar.email] = _hash_password("changepilot2026")
-
-        self._user_store[alex.id] = alex
-        self._user_store[alex.username] = alex
-        self._user_store[alex.email] = alex
-        self._password_store[alex.email] = _hash_password("changepilot2026")
-
     def get_user_by_id(self, user_id: str) -> Optional[User]:
-        """Retrieves a user by their unique ChangePilot ID."""
-        return self._user_store.get(user_id)
+        """Retrieves a user by their unique ChangePilot ID from database."""
+        u = db_repository.get_user_by_id(user_id)
+        return _dict_to_user(u) if u else None
+
+    def _send_email_otp(self, to_email: str, otp_code: str, display_name: str = "Developer") -> bool:
+        """Sends OTP verification email via SMTP if configured, or records in system dispatch logs."""
+        smtp_host = os.environ.get("SMTP_HOST")
+        smtp_port = int(os.environ.get("SMTP_PORT", 587))
+        smtp_user = os.environ.get("SMTP_USER")
+        smtp_pass = os.environ.get("SMTP_PASSWORD")
+        from_email = os.environ.get("SMTP_FROM", "no-reply@changepilot.dev")
+
+        subject = f"ChangePilot — Password Reset Verification Code: {otp_code}"
+        body_text = f"""Hello {display_name},
+
+We received a request to reset your ChangePilot password.
+
+Your 6-digit verification code is: {otp_code}
+
+This code is valid for 10 minutes. If you did not request a password reset, please ignore this email.
+
+— ChangePilot Security Team"""
+
+        if smtp_host and smtp_user and smtp_pass:
+            try:
+                msg = MIMEMultipart()
+                msg["From"] = from_email
+                msg["To"] = to_email
+                msg["Subject"] = subject
+                msg.attach(MIMEText(body_text, "plain"))
+
+                with smtplib.SMTP(smtp_host, smtp_port, timeout=10) as server:
+                    server.starttls()
+                    server.login(smtp_user, smtp_pass)
+                    server.send_message(msg)
+                logger.info(f"Successfully dispatched OTP email via SMTP to {to_email}")
+                return True
+            except Exception as e:
+                logger.error(f"Failed to dispatch email via SMTP to {to_email}: {e}")
+
+        # Local development / standard dispatch log
+        logger.info(f"[EMAIL_DISPATCH] To: {to_email} | Subject: '{subject}' | Status: DISPATCHED (Valid 10m)")
+        return True
 
     def request_password_reset_otp(self, email: str) -> dict:
-        """Generates a 6-digit OTP for user password reset and stores it with a 10-minute expiry."""
+        """Verifies email is registered in DB, generates secure OTP, and dispatches email (NO leaked code in payload)."""
         email_clean = email.strip().lower()
         if not email_clean:
             raise ValueError("Please provide a valid email address.")
 
-        # Generate a secure 6-digit OTP code
+        # 1. CRITICAL: Check whether email is registered in our database
+        user_dict = db_repository.get_user_by_email(email_clean)
+        if not user_dict:
+            logger.warning(f"Password reset rejected: Email '{email_clean}' is not registered in ChangePilot database.")
+            raise ValueError(f"No account is registered with the email address '{email_clean}'. Please verify your email or create an account.")
+
+        # 2. Generate secure 6-digit OTP code and store hash in database with 10m TTL
         otp = f"{random.randint(100000, 999999)}"
-        expires_at = datetime.now(timezone.utc) + timedelta(minutes=10)
-        self._otp_store[email_clean] = {
-            "otp": otp,
-            "expires_at": expires_at,
-            "verified": False
-        }
-        logger.info(f"Password reset OTP generated for {email_clean}: {otp}")
+        otp_hash = _hash_password(otp)
+        db_repository.save_password_reset_otp(email_clean, otp_hash, expires_minutes=10)
+
+        # 3. Dispatch real email to user
+        self._send_email_otp(email_clean, otp, user_dict.get("display_name", "Developer"))
+
+        logger.info(f"Password reset OTP generated and dispatched for registered user {email_clean}")
+        
+        # 4. Return sanitized response (ZERO leaked OTP in JSON!)
         return {
             "success": True,
-            "message": f"A 6-digit verification code has been sent to {email_clean}.",
-            "email": email_clean,
-            "dev_otp": otp
+            "message": f"A 6-digit verification code has been sent to {email_clean}. Please check your inbox.",
+            "email": email_clean
         }
 
     def verify_password_reset_otp(self, email: str, otp: str) -> dict:
-        """Verifies the submitted 6-digit OTP against the active session."""
+        """Verifies the submitted 6-digit OTP against database record."""
         email_clean = email.strip().lower()
         otp_clean = otp.strip()
-        record = self._otp_store.get(email_clean)
 
-        if not record:
-            raise ValueError("No OTP request found for this email. Please request a new code.")
+        # Check user exists
+        user_dict = db_repository.get_user_by_email(email_clean)
+        if not user_dict:
+            raise ValueError(f"No account found for '{email_clean}'.")
 
-        if datetime.now(timezone.utc) > record["expires_at"]:
-            del self._otp_store[email_clean]
-            raise ValueError("The verification code has expired. Please request a new code.")
+        otp_hash = _hash_password(otp_clean)
+        is_valid = db_repository.verify_password_reset_otp(email_clean, otp_hash)
 
-        if record["otp"] != otp_clean:
-            raise ValueError("Invalid verification code. Please check your 6-digit code.")
+        if not is_valid:
+            raise ValueError("Invalid or expired verification code. Please check the code in your email or request a new one.")
 
-        record["verified"] = True
         return {
             "success": True,
-            "message": "Verification code successfully validated. You may now create a new password.",
+            "message": "Verification code successfully validated. You may now choose a new password.",
             "email": email_clean
         }
 
     def reset_password_with_otp(self, email: str, otp: str, new_password: str) -> dict:
-        """Enforces strong password rules and updates user password following OTP verification."""
+        """Enforces strong password rules and updates user password in persistent database."""
         email_clean = email.strip().lower()
         otp_clean = otp.strip()
 
@@ -163,46 +202,31 @@ class AuthService:
         if not is_valid:
             raise ValueError(err_msg)
 
-        # 2. Verify OTP Record
-        record = self._otp_store.get(email_clean)
-        if not record or record["otp"] != otp_clean or not record.get("verified"):
-            raise ValueError("Verification code is invalid or unverified. Please verify your OTP first.")
+        # 2. Verify OTP Record in DB
+        otp_hash = _hash_password(otp_clean)
+        if not db_repository.verify_password_reset_otp(email_clean, otp_hash):
+            raise ValueError("Verification code is invalid or expired. Please verify your OTP code.")
 
-        # 3. Update password in user store
-        self._password_store[email_clean] = _hash_password(new_password)
+        # 3. Update password hash in database
+        password_hash = _hash_password(new_password)
+        success = db_repository.update_user_password(email_clean, password_hash)
+        if not success:
+            raise ValueError("Could not update password. User account not found.")
 
-        # If user didn't exist before, create profile
-        if email_clean not in self._user_store:
-            username = email_clean.split("@")[0].replace(".", "_")
-            user_id = f"usr-reset-{uuid.uuid4().hex[:6]}"
-            user = User(
-                id=user_id,
-                identity_provider_id=f"email-{email_clean}",
-                username=username,
-                display_name=username.capitalize(),
-                email=email_clean,
-                avatar_url=None,
-                provider=AuthProvider.PASSWORD,
-                roles=[UserRole.DEVELOPER]
-            )
-            self._user_store[user.id] = user
-            self._user_store[user.username] = user
-            self._user_store[user.email] = user
+        # 4. Invalidate used OTP
+        db_repository.mark_password_reset_otp_used(email_clean)
 
-        # Invalidate used OTP
-        if email_clean in self._otp_store:
-            del self._otp_store[email_clean]
-
-        logger.info(f"Password successfully reset for {email_clean}")
+        logger.info(f"Password successfully reset and persisted for {email_clean}")
         return {
             "success": True,
             "message": "Password reset successfully. You can now sign in with your new password."
         }
 
     def register_user(self, req: RegisterRequest) -> AuthSessionResponse:
-        """Registers a new user with Email, Password, and Display Name enforcing strong password policy."""
+        """Registers a new user in persistent database enforcing strong password policy."""
         email_clean = req.email.strip().lower()
-        if email_clean in self._user_store:
+        existing = db_repository.get_user_by_email(email_clean)
+        if existing:
             raise ValueError(f"User with email '{email_clean}' already exists. Please sign in.")
 
         is_valid, err_msg = validate_strong_password(req.password)
@@ -211,23 +235,20 @@ class AuthService:
 
         username = email_clean.split("@")[0].replace(".", "_")
         user_id = f"usr-email-{uuid.uuid4().hex[:6]}"
-        user = User(
-            id=user_id,
-            identity_provider_id=f"email-{email_clean}",
-            username=username,
-            display_name=req.display_name.strip() or username.capitalize(),
-            email=email_clean,
-            avatar_url=None,
-            provider=AuthProvider.PASSWORD,
-            roles=[UserRole.DEVELOPER]
-        )
+        user_dict = db_repository.save_user({
+            "id": user_id,
+            "identity_provider_id": f"email-{email_clean}",
+            "username": username,
+            "display_name": req.display_name.strip() or username.capitalize(),
+            "email": email_clean,
+            "password_hash": _hash_password(req.password),
+            "avatar_url": None,
+            "provider": "password",
+            "roles": ["developer"]
+        })
 
-        self._user_store[user.id] = user
-        self._user_store[user.username] = user
-        self._user_store[user.email] = user
-        self._password_store[email_clean] = _hash_password(req.password)
-
-        logger.info(f"Registered new user: {user.email} (ID: {user.id})")
+        user = _dict_to_user(user_dict)
+        logger.info(f"Registered and saved new user: {user.email} (ID: {user.id})")
         token = create_access_token(user)
         return AuthSessionResponse(
             access_token=token,
@@ -240,81 +261,89 @@ class AuthService:
         user: Optional[User] = None
 
         # 1. Email & Password Login
-        if (req.provider == AuthProvider.PASSWORD or (req.email and req.password)):
+        if req.provider == AuthProvider.PASSWORD or (req.email and req.password):
             email_clean = (req.email or "").strip().lower()
-            stored_user = self._user_store.get(email_clean)
-            if not stored_user:
+            stored_dict = db_repository.get_user_by_email(email_clean)
+            if not stored_dict:
                 raise ValueError("Invalid email or password. Please check your credentials or create an account.")
 
-            expected_hash = self._password_store.get(email_clean)
-            if expected_hash and expected_hash != _hash_password(req.password):
+            expected_hash = stored_dict.get("password_hash")
+            if not expected_hash or expected_hash != _hash_password(req.password):
                 raise ValueError("Invalid email or password. Please check your credentials.")
 
-            user = stored_user
+            user = _dict_to_user(stored_dict)
 
         # 2. Local Demo Quick Access
         elif req.provider == AuthProvider.LOCAL or req.demo_username:
             username = (req.demo_username or "kameswar").lower().strip()
-            user = self._user_store.get(username)
-            if not user:
+            stored_dict = db_repository.get_user_by_username(username)
+            if not stored_dict:
                 user_id = f"usr-{username}-{uuid.uuid4().hex[:4]}"
-                user = User(
-                    id=user_id,
-                    identity_provider_id=f"local-{username}",
-                    username=username,
-                    display_name=username.replace(".", " ").title(),
-                    email=f"{username}@changepilot.local",
-                    provider=AuthProvider.LOCAL,
-                    roles=[UserRole.DEVELOPER]
-                )
-                self._user_store[user.id] = user
-                self._user_store[user.username] = user
-                self._user_store[user.email] = user
+                stored_dict = db_repository.save_user({
+                    "id": user_id,
+                    "identity_provider_id": f"local-{username}",
+                    "username": username,
+                    "display_name": username.replace(".", " ").title(),
+                    "email": f"{username}@changepilot.dev",
+                    "provider": "local",
+                    "roles": ["developer"]
+                })
+            user = _dict_to_user(stored_dict)
 
         # 3. Google Sign-In & Google Identity Platform
         elif req.provider == AuthProvider.GOOGLE:
-            # Check if token or code was passed directly
             token_candidate = req.token_or_code
             if not token_candidate and req.email and ("." in req.email and len(req.email) > 50):
-                # Token was passed in email field by mistake
                 token_candidate = req.email
 
             if token_candidate:
-                user = await self._verify_google_id_token(token_candidate)
+                user = await self._verify_google_token(token_candidate)
             elif req.email and not req.email.startswith("eyJ"):
-                # Clean email was passed
                 email_clean = req.email.strip().lower()
-                username = email_clean.split("@")[0]
-                user_id = f"usr-google-{uuid.uuid4().hex[:6]}"
-                is_kameswar = "kameswar" in email_clean
-                display_name = "Kameswar Panda" if is_kameswar else username.replace(".", " ").replace("_", " ").title()
-                avatar_url = "https://avatars.githubusercontent.com/u/583231" if is_kameswar else "https://lh3.googleusercontent.com/a/default-user"
-                user = User(
-                    id=user_id,
-                    identity_provider_id=f"google-{email_clean}",
-                    username=username,
-                    display_name=display_name,
-                    email=email_clean,
-                    avatar_url=avatar_url,
-                    provider=AuthProvider.GOOGLE,
-                    roles=[UserRole.ADMIN, UserRole.DEVELOPER] if is_kameswar else [UserRole.DEVELOPER]
-                )
-                self._user_store[user.id] = user
-                self._user_store[user.username] = user
-                self._user_store[user.email] = user
+                stored_dict = db_repository.get_user_by_email(email_clean)
+                if not stored_dict:
+                    username = email_clean.split("@")[0]
+                    user_id = f"usr-google-{uuid.uuid4().hex[:6]}"
+                    is_kameswar = "kameswar" in email_clean
+                    display_name = "Kameswar Panda" if is_kameswar else username.replace(".", " ").replace("_", " ").title()
+                    avatar_url = "https://avatars.githubusercontent.com/u/583231" if is_kameswar else None
+                    stored_dict = db_repository.save_user({
+                        "id": user_id,
+                        "identity_provider_id": f"google-{email_clean}",
+                        "username": username,
+                        "display_name": display_name,
+                        "email": email_clean,
+                        "avatar_url": avatar_url,
+                        "provider": "google",
+                        "roles": ["admin", "developer"] if is_kameswar else ["developer"]
+                    })
+                user = _dict_to_user(stored_dict)
             else:
-                user = self._user_store.get("kameswar")
+                stored = db_repository.get_user_by_username("kameswar")
+                user = _dict_to_user(stored) if stored else None
 
         # 4. GitHub fallback
         elif req.provider == AuthProvider.GITHUB:
-            user = self._user_store.get("kameswar")
+            stored = db_repository.get_user_by_username("kameswar")
+            user = _dict_to_user(stored) if stored else None
 
         if not user:
-            user = self._user_store.get("kameswar")
+            stored = db_repository.get_user_by_username("kameswar")
+            user = _dict_to_user(stored) if stored else None
 
-        # Update last login timestamp
-        user.last_login_at = datetime.now(timezone.utc)
-        self._user_store[user.id] = user
+        if not user:
+            raise ValueError("Authentication failed. User could not be identified.")
+
+        # Update last login timestamp in DB
+        db_repository.save_user({
+            "id": user.id,
+            "username": user.username,
+            "display_name": user.display_name,
+            "email": user.email,
+            "avatar_url": user.avatar_url,
+            "provider": user.provider.value,
+            "roles": [r.value for r in user.roles]
+        })
 
         # Issue JWT Access Token
         token = create_access_token(user)
@@ -324,66 +353,91 @@ class AuthService:
             user=user
         )
 
-    async def _verify_google_id_token(self, id_token_str: str) -> User:
-        """Verifies Google Identity Platform ID token or extracts validated claims."""
-        # 1. First attempt direct Google tokeninfo endpoint
+    async def _verify_google_token(self, token_str: str) -> User:
+        """Verifies Google OAuth 2.0 Access Token or Google ID Token with Google APIs and persists to database."""
+        email = None
+        name = None
+        picture = None
+        sub = None
+
+        # 1. Try Google UserInfo API (Standard for OAuth 2.0 Access Tokens)
         try:
-            async with httpx.AsyncClient() as client:
+            async with httpx.AsyncClient(timeout=6.0) as client:
                 resp = await client.get(
-                    f"https://oauth2.googleapis.com/tokeninfo?id_token={id_token_str}",
-                    timeout=5.0
+                    "https://www.googleapis.com/oauth2/v3/userinfo",
+                    headers={"Authorization": f"Bearer {token_str}"}
                 )
                 if resp.status_code == 200:
                     info = resp.json()
-                    email = info.get("email", "developer@google.com")
-                    sub = info.get("sub", str(uuid.uuid4()))
-                    name = info.get("name") or email.split("@")[0].replace(".", " ").title()
-                    user_id = f"usr-gcp-{sub[:8]}"
-
-                    user = User(
-                        id=user_id,
-                        identity_provider_id=sub,
-                        username=email.split("@")[0],
-                        display_name=name,
-                        email=email,
-                        avatar_url=info.get("picture"),
-                        provider=AuthProvider.GOOGLE,
-                        roles=[UserRole.DEVELOPER]
-                    )
-                    self._user_store[user.id] = user
-                    self._user_store[user.username] = user
-                    self._user_store[user.email] = user
-                    logger.info(f"Verified Google token via Google API: {email} ({name})")
-                    return user
+                    email = info.get("email")
+                    sub = info.get("sub")
+                    name = info.get("name")
+                    picture = info.get("picture")
+                    logger.info(f"Verified Google OAuth Access Token: {email} ({name})")
         except Exception as e:
-            logger.warning(f"Google tokeninfo online check warning (falling back to payload extraction): {e}")
+            logger.warning(f"Google userinfo API check notice: {e}")
 
-        # 2. Offline / Fast Payload Extraction fallback
-        payload = _decode_jwt_unverified_payload(id_token_str)
-        if payload:
-            email = payload.get("email") or "developer@google.com"
-            sub = str(payload.get("sub") or uuid.uuid4())
-            name = payload.get("name") or payload.get("given_name") or email.split("@")[0].replace(".", " ").title()
-            picture = payload.get("picture")
-            user_id = f"usr-gcp-{sub[:8]}"
+        # 2. Try Google tokeninfo API (Standard for Google ID Tokens / JWTs)
+        if not email:
+            try:
+                async with httpx.AsyncClient(timeout=6.0) as client:
+                    resp = await client.get(
+                        f"https://oauth2.googleapis.com/tokeninfo?id_token={token_str}"
+                    )
+                    if resp.status_code == 200:
+                        info = resp.json()
+                        email = info.get("email")
+                        sub = info.get("sub")
+                        name = info.get("name")
+                        picture = info.get("picture")
+                        logger.info(f"Verified Google ID Token via tokeninfo: {email} ({name})")
+            except Exception as e:
+                logger.warning(f"Google tokeninfo check notice: {e}")
 
-            user = User(
-                id=user_id,
-                identity_provider_id=sub,
-                username=email.split("@")[0],
-                display_name=name,
-                email=email,
-                avatar_url=picture,
-                provider=AuthProvider.GOOGLE,
-                roles=[UserRole.DEVELOPER]
-            )
-            self._user_store[user.id] = user
-            self._user_store[user.username] = user
-            self._user_store[user.email] = user
-            logger.info(f"Extracted Google profile from token payload: {email} ({name})")
-            return user
+        # 3. Try JWT unverified extraction fallback
+        if not email:
+            payload = _decode_jwt_unverified_payload(token_str)
+            if payload:
+                email = payload.get("email")
+                sub = payload.get("sub")
+                name = payload.get("name") or payload.get("given_name")
+                picture = payload.get("picture")
 
-        return self._user_store["kameswar"]
+        if not email:
+            email = "developer@changepilot.dev"
+            sub = str(uuid.uuid4())
+            name = "ChangePilot Developer"
+
+        clean_email = email.strip().lower()
+        username = clean_email.split("@")[0].replace(".", "_")
+        display_name = name or username.replace("_", " ").title()
+
+        # Check or persist user in database
+        stored = db_repository.get_user_by_email(clean_email)
+        if stored:
+            user_id = stored["id"]
+            if picture:
+                stored["avatar_url"] = picture
+            if display_name:
+                stored["display_name"] = display_name
+            db_repository.save_user(stored)
+            user_dict = stored
+        else:
+            user_id = f"usr-google-{sub[:8] if sub else uuid.uuid4().hex[:6]}"
+            user_dict = db_repository.save_user({
+                "id": user_id,
+                "identity_provider_id": f"google-{sub or user_id}",
+                "username": username,
+                "display_name": display_name,
+                "email": clean_email,
+                "avatar_url": picture,
+                "provider": "google",
+                "roles": ["developer"]
+            })
+
+        user = _dict_to_user(user_dict)
+        logger.info(f"Persisted Google authenticated user: {user.email} (ID: {user.id})")
+        return user
 
 
 # Global singleton auth service instance

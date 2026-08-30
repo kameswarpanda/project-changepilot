@@ -155,32 +155,57 @@ def test_strong_password_validator():
 
 
 def test_otp_forgot_password_full_flow():
-    """Verifies the 3-step OTP password reset flow."""
+    """Verifies the 3-step OTP password reset flow with database persistence."""
+    from backend.src.auth.service import _hash_password
+    from backend.src.database.repository import db_repository
+
     auth_svc = AuthService()
     email = "security_lead@changepilot.dev"
 
-    # Step 1: Request OTP
+    # Step 0: Requesting OTP for unregistered email MUST fail
+    with pytest.raises(ValueError) as exc:
+        auth_svc.request_password_reset_otp("unregistered.user@unknown.com")
+    assert "No account is registered" in str(exc.value)
+
+    # Step 1: Register/save user in database
+    db_repository.save_user({
+        "id": "usr-sec-lead",
+        "username": "security_lead",
+        "display_name": "Security Lead",
+        "email": email,
+        "password_hash": _hash_password("OldPassword123!"),
+        "provider": "password"
+    })
+
+    # Step 2: Request OTP for registered user (code dispatched securely, not in JSON)
     res = auth_svc.request_password_reset_otp(email)
     assert isinstance(res, dict)
-    otp = res["dev_otp"]
-    assert isinstance(otp, str)
-    assert len(otp) == 6
+    assert res["success"] is True
+    assert "dev_otp" not in res  # Never leak OTP code in response payload
 
-    # Step 2: Verify with bad OTP raises ValueError
+    # Step 3: Verify with bad OTP raises ValueError
     with pytest.raises(ValueError) as exc:
         auth_svc.verify_password_reset_otp(email, "000000")
-    assert "Invalid verification code" in str(exc.value)
+    assert "Invalid or expired" in str(exc.value)
 
-    # Step 3: Verify with correct OTP
-    good_res = auth_svc.verify_password_reset_otp(email, otp)
+    # Step 4: Verify with valid OTP saved in database
+    test_otp = "849201"
+    test_otp_hash = _hash_password(test_otp)
+    db_repository.save_password_reset_otp(email, test_otp_hash, expires_minutes=10)
+
+    good_res = auth_svc.verify_password_reset_otp(email, test_otp)
     assert good_res["success"] is True
 
-    # Step 4: Reset password with weak password fails
+    # Step 5: Reset password with weak password fails
     with pytest.raises(ValueError) as exc:
-        auth_svc.reset_password_with_otp(email, otp, "weak")
+        auth_svc.reset_password_with_otp(email, test_otp, "weak")
     assert "Password" in str(exc.value)
 
-    # Step 5: Reset password with strong password succeeds
-    reset_ok = auth_svc.reset_password_with_otp(email, otp, "NewSecurePass2026!#")
+    # Step 6: Reset password with strong password succeeds
+    reset_ok = auth_svc.reset_password_with_otp(email, test_otp, "NewSecurePass2026!#")
     assert reset_ok["success"] is True
+
+    # Step 7: Verify updated password in DB
+    updated_user = db_repository.get_user_by_email(email)
+    assert updated_user["password_hash"] == _hash_password("NewSecurePass2026!#")
 

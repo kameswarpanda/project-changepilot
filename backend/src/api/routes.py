@@ -363,7 +363,7 @@ async def disconnect_github(user: User = Depends(get_current_user)):
 @router.get("/api/repositories", tags=["Repositories"])
 async def list_repositories(user: User = Depends(get_current_user)):
     """Lists connected repositories from the database for the authenticated user."""
-    repos = db_repository.list_connected_repositories()
+    repos = db_repository.list_connected_repositories(user_id=user.id)
     return {
         "user": user.username,
         "repositories": repos

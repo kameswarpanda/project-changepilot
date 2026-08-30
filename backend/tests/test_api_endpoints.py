@@ -54,25 +54,46 @@ def test_assigned_tickets_endpoint():
 
 
 def test_otp_api_endpoints():
-    """Verifies the HTTP endpoints for OTP password reset."""
+    """Verifies the HTTP endpoints for OTP password reset with database security."""
+    from backend.src.auth.service import _hash_password
+    from backend.src.database.repository import db_repository
+
     email = "api_test_user@changepilot.dev"
 
-    # 1. Request OTP
+    # 1. Request OTP for unregistered email returns 400 Bad Request
+    unreg_resp = client.post("/api/auth/forgot-password/request-otp", json={"email": "nobody@unknown.com"})
+    assert unreg_resp.status_code == 400
+    assert "No account is registered" in unreg_resp.json()["detail"]
+
+    # 2. Register user in database
+    db_repository.save_user({
+        "id": "usr-api-test-01",
+        "username": "api_test_user",
+        "display_name": "API Test User",
+        "email": email,
+        "password_hash": _hash_password("OldPassword123!"),
+        "provider": "password"
+    })
+
+    # 3. Request OTP for registered email returns 200 OK without leaking dev_otp
     req_resp = client.post("/api/auth/forgot-password/request-otp", json={"email": email})
     assert req_resp.status_code == 200
-    otp = req_resp.json().get("dev_otp")
-    assert otp is not None
-    assert len(otp) == 6
+    assert req_resp.json()["success"] is True
+    assert "dev_otp" not in req_resp.json()
 
-    # 2. Verify with valid OTP
-    verify_resp = client.post("/api/auth/forgot-password/verify-otp", json={"email": email, "otp": otp})
+    # 4. Save test OTP in database for verification test
+    test_otp = "928374"
+    db_repository.save_password_reset_otp(email, _hash_password(test_otp), expires_minutes=10)
+
+    # 5. Verify with valid OTP
+    verify_resp = client.post("/api/auth/forgot-password/verify-otp", json={"email": email, "otp": test_otp})
     assert verify_resp.status_code == 200
     assert verify_resp.json()["success"] is True
 
-    # 3. Reset password
+    # 6. Reset password
     reset_resp = client.post("/api/auth/forgot-password/reset-password", json={
         "email": email,
-        "otp": otp,
+        "otp": test_otp,
         "new_password": "NewSecret2026!#"
     })
     assert reset_resp.status_code == 200

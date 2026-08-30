@@ -125,21 +125,62 @@ export class AuthPageComponent implements OnInit {
     if (this.isLoading || this.isProcessingGoogle) {
       return;
     }
-    this.isLoading = true;
-    this.isProcessingGoogle = true;
     this.errorMessage = null;
 
-    this.authService.loginWithGoogle('kameswarpanda11@gmail.com').subscribe({
-      next: () => {
-        this.isLoading = false;
-        this.isProcessingGoogle = false;
-      },
-      error: (err) => {
-        this.isLoading = false;
-        this.isProcessingGoogle = false;
-        this.errorMessage = err.error?.detail || 'Google sign-in encountered an issue. Please try again.';
+    // 1. Try Google Identity Services OAuth 2.0 Token Client (Popup)
+    if (typeof google !== 'undefined' && google.accounts && google.accounts.oauth2) {
+      try {
+        const client = google.accounts.oauth2.initTokenClient({
+          client_id: this.googleClientId,
+          scope: 'openid email profile',
+          callback: (tokenResponse: any) => {
+            this.ngZone.run(() => {
+              if (tokenResponse && tokenResponse.access_token) {
+                this.isLoading = true;
+                this.authService.loginWithGoogle(tokenResponse.access_token).subscribe({
+                  next: () => {
+                    this.isLoading = false;
+                  },
+                  error: (err) => {
+                    this.isLoading = false;
+                    this.errorMessage = err.error?.detail || 'Google sign-in failed. Please check credentials.';
+                  }
+                });
+              } else if (tokenResponse && tokenResponse.error) {
+                this.errorMessage = 'Google sign-in was cancelled or encountered an error.';
+              }
+            });
+          },
+          error_callback: (err: any) => {
+            this.ngZone.run(() => {
+              this.errorMessage = 'Google authentication popup could not be initialized.';
+            });
+          }
+        });
+        client.requestAccessToken({ prompt: 'select_account' });
+        return;
+      } catch (e) {
+        console.warn('Google Identity Token Client notice:', e);
       }
-    });
+    }
+
+    // 2. Fallback Google Identity prompt
+    if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
+      try {
+        google.accounts.id.prompt();
+        return;
+      } catch (e) {
+        console.warn('Google One Tap notice:', e);
+      }
+    }
+
+    // 3. Fallback direct Google OAuth 2.0 popup
+    const redirectUri = window.location.origin + '/auth';
+    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${this.googleClientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=openid%20email%20profile&prompt=select_account`;
+    const popup = window.open(authUrl, 'google_oauth_popup', 'width=520,height=620,top=100,left=100');
+    if (!popup) {
+      window.location.href = authUrl;
+    }
   }
 
   handlePasswordSignIn(): void {
@@ -211,10 +252,8 @@ export class AuthPageComponent implements OnInit {
       next: (res) => {
         this.isLoading = false;
         this.forgotStep = 'verify';
+        this.forgotOtp = ''; // User must manually enter the 6-digit code received via email
         this.successMessage = res.message || 'Verification code sent! Please check your email.';
-        if (res.dev_otp) {
-          this.forgotOtp = res.dev_otp; // Autofill OTP in dev for frictionless test
-        }
       },
       error: (err) => {
         this.isLoading = false;

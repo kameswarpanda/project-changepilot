@@ -89,8 +89,8 @@ export class AuthService {
     );
   }
 
-  requestPasswordResetOtp(email: string): Observable<{ success: boolean; message: string; email: string; dev_otp?: string }> {
-    return this.http.post<{ success: boolean; message: string; email: string; dev_otp?: string }>(
+  requestPasswordResetOtp(email: string): Observable<{ success: boolean; message: string; email: string }> {
+    return this.http.post<{ success: boolean; message: string; email: string }>(
       `${this.apiUrl}/forgot-password/request-otp`,
       { email }
     );
