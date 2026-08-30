@@ -60,13 +60,6 @@
       <span class="material-symbols-outlined text-[20px]" [class.fill-icon]="(state.activeNav$ | async) === 'reports'">analytics</span>
       <span>Reports</span>
     </a>
-
-    <a (click)="navigate('settings')" 
-       [class.active]="(state.activeNav$ | async) === 'settings'" 
-       class="nav-link mt-auto">
-      <span class="material-symbols-outlined text-[20px]" [class.fill-icon]="(state.activeNav$ | async) === 'settings'">settings</span>
-      <span>Settings</span>
-    </a>
   </nav>
 
   <!-- Authenticated User Profile Section -->

@@ -112,7 +112,7 @@ class RepositoryManager:
         self.base_workspace_dir.mkdir(parents=True, exist_ok=True)
 
     def validate_repository_location(self, location: str) -> str:
-        """Validates that the repository location is safe (local path or approved URL)."""
+        """Validates that the repository location is safe (local path, DB repo, shorthand, or approved URL)."""
         location = location.strip()
         if not location:
             raise RepositorySecurityError("Repository location cannot be empty.")
@@ -121,18 +121,38 @@ class RepositoryManager:
         if location.startswith("-") or "--" in location:
             raise RepositorySecurityError("Repository location contains invalid command-line flags.")
 
-        # Check local path
+        # 1. Check local path directly
         local_path = Path(location)
         if local_path.exists():
             return str(local_path.resolve())
 
-        # Check remote URL
+        # 2. Check if location is registered in ChangePilot database
+        try:
+            from backend.src.database.repository import DatabaseRepository
+            db_repo = DatabaseRepository()
+            matched = db_repo.get_repository(location)
+            if matched and matched.get("clone_url"):
+                return matched["clone_url"]
+        except Exception:
+            pass
+
+        # 3. Check remote HTTP/HTTPS Git URL
         if location.startswith("https://") or location.startswith("http://"):
-            # Ensure valid standard URL characters
             for forbidden in [";", "&", "|", "`", "$", "(", ")", "<", ">", "\n", "\r"]:
                 if forbidden in location:
                     raise RepositorySecurityError(f"Repository URL contains forbidden character: {forbidden}")
             return location
+
+        # 4. Check GitHub shorthand "owner/repo" or "owner/repo.git" (e.g. kameswarpanda/changepilot-demo-payment)
+        if "/" in location and not location.startswith("/"):
+            parts = location.strip().split("/")
+            if len(parts) == 2 and all(p.replace("-", "").replace("_", "").replace(".", "").isalnum() for p in parts):
+                return f"https://github.com/{location.replace('.git', '')}.git"
+
+        # 5. Check local relative directory in cwd or project root
+        for candidate in [Path(".") / location, Path("..") / location]:
+            if candidate.exists() and candidate.is_dir():
+                return str(candidate.resolve())
 
         raise RepositorySecurityError(
             f"Repository location is not a valid accessible local path or HTTP(S) URL: {location}"

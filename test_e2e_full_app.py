@@ -191,13 +191,13 @@ def run_full_app_test():
         print("   [OK] Audit logs trail rendered.")
 
         # ----------------------------------------------------------------------
-        # TEST 10: Settings Tab
+        # TEST 10: Topbar Status Badges (API, Vertex AI, Repo)
         # ----------------------------------------------------------------------
-        print("\n[TEST 10] Testing System Settings...")
-        page.locator("a.nav-link:has-text('Settings')").click()
-        time.sleep(1)
-        assert page.locator("text=System Configuration").count() > 0
-        print("   [OK] Settings active.")
+        print("\n[TEST 10] Verifying Topbar Status Badges...")
+        assert page.locator("header button:has-text('API')").count() > 0
+        assert page.locator("header button:has-text('Vertex AI')").count() > 0
+        assert page.locator("header button:has-text('Repo'), header button:has-text('GitHub')").count() > 0
+        print("   [OK] Topbar status badges verified (API, Vertex AI, Repo).")
 
         # Take full verification screenshot
         page.screenshot(path="e2e_full_verification_success.png", full_page=True)

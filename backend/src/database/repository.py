@@ -360,16 +360,85 @@ class DatabaseRepository:
         finally:
             session.close()
 
-    def save_repository(self, repo: dict) -> dict:
-        """Persists a newly connected repository."""
+    def get_repository(self, identifier: str) -> Optional[dict]:
+        """Finds a repository by exact ID, name, full_name, or clone_url."""
         session: Session = SessionLocal()
         try:
-            repo_id = repo.get("id") or f"repo-{uuid.uuid4().hex[:6]}"
+            ident_clean = identifier.strip().rstrip("/").replace(".git", "")
+            r = session.query(RepositoryModel).filter(
+                (RepositoryModel.id == identifier) |
+                (RepositoryModel.name == identifier) |
+                (RepositoryModel.full_name == identifier) |
+                (RepositoryModel.clone_url == identifier) |
+                (RepositoryModel.name == ident_clean) |
+                (RepositoryModel.full_name == ident_clean)
+            ).first()
+            if r:
+                return {
+                    "id": r.id,
+                    "name": r.name,
+                    "full_name": r.full_name,
+                    "clone_url": r.clone_url,
+                    "provider": r.provider,
+                    "default_branch": r.default_branch,
+                    "branches": r.branches or ["main"],
+                    "language": r.language,
+                    "test_runner": r.test_runner,
+                    "is_private": r.is_private,
+                    "path": r.clone_url or r.full_name
+                }
+            return None
+        except Exception as e:
+            logger.warning(f"Error finding repository {identifier}: {e}")
+            return None
+        finally:
+            session.close()
+
+    def delete_repository(self, repo_id: str) -> bool:
+        """Deletes/unlinks a repository from the database."""
+        session: Session = SessionLocal()
+        try:
+            r = session.query(RepositoryModel).filter(
+                (RepositoryModel.id == repo_id) |
+                (RepositoryModel.name == repo_id) |
+                (RepositoryModel.full_name == repo_id)
+            ).first()
+            if r:
+                session.delete(r)
+                session.commit()
+                logger.info(f"Unlinked and deleted repository {repo_id}")
+                return True
+            return False
+        except Exception as e:
+            session.rollback()
+            logger.warning(f"Error deleting repository {repo_id}: {e}")
+            return False
+        finally:
+            session.close()
+
+    def save_repository(self, repo: dict) -> dict:
+        """Persists or updates a connected repository avoiding duplicates."""
+        session: Session = SessionLocal()
+        try:
+            full_name = repo.get("full_name") or repo.get("name", "custom-repo")
+            clone_url = repo.get("clone_url")
+            
+            # Check for existing repository to avoid duplicates
+            existing = None
+            if repo.get("id"):
+                existing = session.query(RepositoryModel).filter(RepositoryModel.id == repo["id"]).first()
+            if not existing and full_name:
+                existing = session.query(RepositoryModel).filter(RepositoryModel.full_name == full_name).first()
+            if not existing and clone_url:
+                existing = session.query(RepositoryModel).filter(RepositoryModel.clone_url == clone_url).first()
+
+            repo_id = existing.id if existing else (repo.get("id") or f"repo-{uuid.uuid4().hex[:6]}")
+            
             model = RepositoryModel(
                 id=repo_id,
-                name=repo.get("name", "custom-repo"),
-                full_name=repo.get("full_name", repo.get("name", "custom-repo")),
-                clone_url=repo.get("clone_url"),
+                name=repo.get("name", full_name.split("/")[-1]),
+                full_name=full_name,
+                clone_url=clone_url or (existing.clone_url if existing else None),
                 owner_user_id=repo.get("owner_user_id", "usr-kameswar-01"),
                 provider=repo.get("provider", "github"),
                 default_branch=repo.get("default_branch", "main"),
@@ -385,7 +454,10 @@ class DatabaseRepository:
                 "name": model.name,
                 "full_name": model.full_name,
                 "provider": model.provider,
-                "branches": model.branches
+                "branches": model.branches,
+                "clone_url": model.clone_url,
+                "language": model.language,
+                "test_runner": model.test_runner
             }
         except Exception as e:
             session.rollback()

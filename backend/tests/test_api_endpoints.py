@@ -26,3 +26,15 @@ def test_analyze_repository_endpoint(tmp_path):
 def test_analyze_repository_invalid_path():
     response = client.post("/api/repository/analyze", json={"repository_location": "non_existent_folder_xyz_123"})
     assert response.status_code == 400
+
+
+def test_delete_repository_endpoint():
+    # Connect a repo first
+    client.post(
+        "/api/repositories/connect",
+        json={"repository_name": "test-repo-to-delete", "provider": "github", "base_branch": "main", "is_public": True}
+    )
+    # Delete the repo
+    del_resp = client.delete("/api/repositories/test-repo-to-delete")
+    assert del_resp.status_code == 200
+    assert del_resp.json()["status"] == "deleted"

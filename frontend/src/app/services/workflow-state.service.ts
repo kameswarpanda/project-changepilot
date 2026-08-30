@@ -62,6 +62,12 @@ export class WorkflowStateService {
   public searchQuerySubject = new BehaviorSubject<string>('');
   public searchQuery$: Observable<string> = this.searchQuerySubject.asObservable();
 
+  // Inspection Modal
+  public inspectionDetailsSubject = new BehaviorSubject<any | null>(null);
+  public inspectionDetails$: Observable<any | null> = this.inspectionDetailsSubject.asObservable();
+  public showInspectionModalSubject = new BehaviorSubject<boolean>(false);
+  public showInspectionModal$: Observable<boolean> = this.showInspectionModalSubject.asObservable();
+
   // Current Working Change Request State
   public storyIdSubject = new BehaviorSubject<string>('');
   public storyId$: Observable<string> = this.storyIdSubject.asObservable();
@@ -445,24 +451,55 @@ export class WorkflowStateService {
     this.repoLocationSubject.next(tmpl.repoLocation);
   }
 
+  public deleteRepository(repoId: string, repoName?: string): void {
+    this.api.deleteRepository(repoId).subscribe({
+      next: () => {
+        this.notif.addNotification(
+          'Repository Unlinked',
+          `Unlinked and removed ${repoName || repoId} from ChangePilot.`,
+          'success'
+        );
+        this.loadRepositories();
+      },
+      error: (err) => {
+        this.notif.addNotification(
+          'Unlink Failed',
+          err.error?.detail || 'Failed to remove repository.',
+          'error'
+        );
+      }
+    });
+  }
+
+  public closeInspectionModal(): void {
+    this.showInspectionModalSubject.next(false);
+  }
+
   public inspectRepository(path?: string): void {
     const target = path || this.repoLocationSubject.value;
+    if (!target) return;
     this.isInspectingSubject.next(true);
     this.api.analyzeRepository(target).subscribe({
       next: (ctx) => {
         this.isInspectingSubject.next(false);
+        this.inspectionDetailsSubject.next({
+          target: target,
+          ...ctx
+        });
+        this.showInspectionModalSubject.next(true);
         this.notif.addNotification(
-          'Analysis Completed',
-          `Detected ${ctx.languages.join(', ')} with runner: ${ctx.test_runner_command || 'Auto'}`,
+          'Topology Inspected',
+          `${target}: Detected ${ctx.primary_language} (${(ctx.frameworks || []).join(', ') || 'Standard'}) with runner: ${ctx.test_runner_command || 'Auto'}`,
           'info'
         );
+        this.loadRepositories();
       },
       error: (err) => {
         this.isInspectingSubject.next(false);
         this.notif.addNotification(
-          'Analysis Warning',
-          err.error?.detail || 'Repository structure cached.',
-          'info'
+          'Inspection Warning',
+          err.error?.detail || 'Failed to analyze repository topology.',
+          'error'
         );
       }
     });

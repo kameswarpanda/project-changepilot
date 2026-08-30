@@ -73,6 +73,10 @@ export class ApiService {
     return this.http.post<any>(`${this.baseUrl}/api/repositories/connect`, payload, { headers: this.getHeaders() });
   }
 
+  deleteRepository(repoId: string): Observable<any> {
+    return this.http.delete<any>(`${this.baseUrl}/api/repositories/${encodeURIComponent(repoId)}`, { headers: this.getHeaders() });
+  }
+
   listPipelines(): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}/api/pipelines`, { headers: this.getHeaders() });
   }

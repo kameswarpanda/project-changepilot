@@ -120,15 +120,22 @@ export class RepositoriesComponent implements OnInit {
   }
 
   inspect(repo: ConnectedRepo): void {
-    this.state.repoLocationSubject.next(repo.path);
-    this.state.inspectRepository(repo.path);
+    this.state.repoLocationSubject.next(repo.path || repo.name);
+    this.state.inspectRepository(repo.path || repo.name);
   }
 
   select(repo: ConnectedRepo): void {
-    this.state.repoLocationSubject.next(repo.path);
+    this.state.repoLocationSubject.next(repo.path || repo.name);
     if (repo.branches && repo.branches.length) {
       this.state.baseBranchSubject.next(repo.branches[0]);
     }
     this.state.setNav('requests');
+  }
+
+  deleteRepo(repo: ConnectedRepo, event: Event): void {
+    event.stopPropagation();
+    if (confirm(`Are you sure you want to unlink and remove repository "${repo.name}"?`)) {
+      this.state.deleteRepository(repo.id || repo.name, repo.name);
+    }
   }
 }

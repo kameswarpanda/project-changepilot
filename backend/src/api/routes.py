@@ -17,6 +17,7 @@ from backend.src.models.change_request import ChangeRequest
 from backend.src.models.workflow_result import WorkflowResult
 from backend.src.repository.analyzer import RepositoryAnalyzer, RepositoryContext
 from backend.src.repository.github_app import github_app_client
+from backend.src.repository.manager import RepositoryManager
 from backend.src.workflow.orchestrator import WorkflowOrchestrator
 
 logger = logging.getLogger("changepilot.api.routes")
@@ -24,6 +25,7 @@ router = APIRouter()
 
 orchestrator = WorkflowOrchestrator()
 analyzer = RepositoryAnalyzer()
+repo_manager = RepositoryManager()
 
 
 # -----------------------------------------------------------------------------
@@ -248,6 +250,15 @@ async def connect_repository(req: ConnectRepoRequest, user: User = Depends(get_c
     return {"status": "connected", "repository": saved}
 
 
+@router.delete("/api/repositories/{repo_id}", tags=["Repositories"])
+async def delete_repository(repo_id: str, user: User = Depends(get_current_user)):
+    """Deletes or unlinks a repository from the database."""
+    success = db_repository.delete_repository(repo_id)
+    if not success:
+        raise HTTPException(status_code=404, detail=f"Repository {repo_id} not found.")
+    return {"status": "deleted", "repository_id": repo_id}
+
+
 @router.get("/api/repositories/{repo_id}/branches", response_model=List[str], tags=["Repositories"])
 async def list_repository_branches(repo_id: str, user: User = Depends(get_current_user)):
     """Discovers available branches for a repository."""
@@ -258,28 +269,48 @@ async def list_repository_branches(repo_id: str, user: User = Depends(get_curren
 async def analyze_repository(req: AnalyzeRepoRequest, user: Optional[User] = Depends(get_optional_user)):
     """Inspects a repository topology, detected languages, frameworks, test runner, and file list."""
     loc = req.repository_location.strip()
-    target_path = Path(loc)
-    if not target_path.exists() or not target_path.is_dir():
-        # Check relative to cwd
-        cand = Path(".") / loc
-        if cand.exists() and cand.is_dir():
-            target_path = cand
+    try:
+        validated_loc = repo_manager.validate_repository_location(loc)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    temp_ws = None
+    try:
+        local_path = Path(validated_loc)
+        if local_path.exists() and local_path.is_dir():
+            target_path = local_path
         else:
-            raise HTTPException(status_code=400, detail=f"Invalid repository location: {loc}")
-    
-    ctx = analyzer.analyze(target_path)
-    return {
-        "primary_language": ctx.primary_language,
-        "languages": ctx.detected_languages,
-        "frameworks": ctx.detected_frameworks,
-        "detected_languages": ctx.detected_languages,
-        "detected_frameworks": ctx.detected_frameworks,
-        "test_runner_command": ctx.test_runner_command,
-        "all_files": ctx.all_files,
-        "source_files": [f.model_dump() for f in ctx.source_files],
-        "test_files": [f.model_dump() for f in ctx.test_files],
-        "total_files": len(ctx.all_files)
-    }
+            # Remote URL: clone into a temporary inspection workspace
+            temp_ws = repo_manager.create_isolated_workspace(
+                repository_location=validated_loc,
+                story_id="inspect-temp"
+            )
+            target_path = temp_ws.path
+
+        ctx = analyzer.analyze(target_path)
+
+        # Update cached repo language & runner in DB if found
+        repo_data = db_repository.get_repository(loc)
+        if repo_data:
+            repo_data["language"] = ctx.primary_language
+            repo_data["test_runner"] = ctx.test_runner_command or "Auto"
+            db_repository.save_repository(repo_data)
+
+        return {
+            "primary_language": ctx.primary_language,
+            "languages": ctx.detected_languages,
+            "frameworks": ctx.detected_frameworks,
+            "detected_languages": ctx.detected_languages,
+            "detected_frameworks": ctx.detected_frameworks,
+            "test_runner_command": ctx.test_runner_command,
+            "all_files": ctx.all_files,
+            "source_files": [f.model_dump() for f in ctx.source_files],
+            "test_files": [f.model_dump() for f in ctx.test_files],
+            "total_files": len(ctx.all_files)
+        }
+    finally:
+        if temp_ws:
+            temp_ws.cleanup()
 
 
 

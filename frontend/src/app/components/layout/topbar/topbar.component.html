@@ -1,90 +1,86 @@
-<header class="h-16 px-6 w-full bg-[#10131a] border-b border-[#30363D] flex items-center justify-between sticky top-0 z-30 shrink-0">
+<header class="h-16 px-6 w-full bg-[#10131a] light:bg-[#ffffff] border-b border-[#30363D] light:border-[#d0d7de] flex items-center justify-between sticky top-0 z-30 shrink-0">
   <!-- Left: Breadcrumb Navigation -->
   <div class="flex items-center gap-3">
-    <div class="flex items-center gap-2 text-[#908fa0] text-xs">
-      <span class="font-semibold text-[#e1e2eb]">ChangePilot</span>
+    <div class="flex items-center gap-2 text-[#908fa0] light:text-[#57606a] text-xs">
+      <span class="font-semibold text-[#e1e2eb] light:text-[#1f2328]">ChangePilot</span>
       <span class="material-symbols-outlined text-[14px]">chevron_right</span>
-      <span class="text-[#c0c1ff] font-medium capitalize">{{ (state.activeNav$ | async) }}</span>
+      <span class="text-[#c0c1ff] light:text-[#494bd6] font-medium capitalize">{{ (state.activeNav$ | async) }}</span>
     </div>
   </div>
 
   <!-- Right: Live Cloud Health Badges & Actions -->
-  <div class="flex items-center gap-3 text-[#c7c4d7]">
+  <div class="flex items-center gap-3 text-[#c7c4d7] light:text-[#57606a]">
     
     <!-- 1. FastAPI Backend Health Status -->
     <button (click)="state.refreshHealth()" 
-            class="h-8 px-2.5 rounded-md bg-[#161B22] border border-[#30363D] hover:bg-[#272a31] transition-colors flex items-center gap-1.5 text-xs text-[#e1e2eb]" 
-            [title]="(state.health$ | async)?.status === 'healthy' ? 'FastAPI Backend Online on port 8000' : 'Backend Server Offline'">
+            class="h-8 px-2.5 rounded-md bg-[#161B22] light:bg-[#f6f8fa] border border-[#30363D] light:border-[#d0d7de] hover:bg-[#272a31] light:hover:bg-[#e1e4e8] transition-colors flex items-center gap-1.5 text-xs text-[#e1e2eb] light:text-[#1f2328]" 
+            [title]="(state.health$ | async)?.status === 'healthy' ? 'FastAPI Backend Online' : 'Backend Server Offline'">
       <span *ngIf="(state.health$ | async)?.status === 'healthy'" 
-            class="material-symbols-outlined text-[16px] text-[#4edea3]">check_circle</span>
+            class="material-symbols-outlined text-[16px] text-[#10B981]">check_circle</span>
       <span *ngIf="(state.health$ | async)?.status !== 'healthy'" 
-            class="material-symbols-outlined text-[16px] text-[#ffb4ab]">cancel</span>
-      <span class="text-[11px] font-mono text-[#e1e2eb]">API 8000</span>
+            class="material-symbols-outlined text-[16px] text-[#EF4444]">cancel</span>
+      <span class="text-[11px] font-mono font-medium">API</span>
     </button>
 
     <!-- 2. Vertex AI Engine Status -->
-    <button (click)="state.setNav('settings')" 
-            class="h-8 px-2.5 rounded-md bg-[#161B22] border border-[#30363D] hover:bg-[#272a31] transition-colors flex items-center gap-1.5 text-xs text-[#e1e2eb]" 
-            [title]="(state.health$ | async)?.vertex_ai_configured ? 'Vertex AI Gemini 3.7 Flash Engine Active' : 'Vertex AI Application Default Credentials'">
-      <span *ngIf="(state.health$ | async)?.vertex_ai_configured" 
-            class="material-symbols-outlined text-[16px] text-[#4edea3]">check_circle</span>
-      <span *ngIf="!(state.health$ | async)?.vertex_ai_configured" 
-            class="material-symbols-outlined text-[16px] text-[#ffb783]">info</span>
-      <span class="text-[11px] font-mono text-[#e1e2eb]">Vertex AI</span>
+    <button class="h-8 px-2.5 rounded-md bg-[#161B22] light:bg-[#f6f8fa] border border-[#30363D] light:border-[#d0d7de] hover:bg-[#272a31] light:hover:bg-[#e1e4e8] transition-colors flex items-center gap-1.5 text-xs text-[#e1e2eb] light:text-[#1f2328]" 
+            title="Vertex AI Gemini 3.5 Flash Engine Active">
+      <span class="material-symbols-outlined text-[16px] text-[#10B981]">check_circle</span>
+      <span class="text-[11px] font-mono font-medium">Vertex AI</span>
     </button>
 
     <!-- 3. Repository Platform Integration Status -->
     <button (click)="state.setNav('repositories')" 
-            class="h-8 px-2.5 rounded-md bg-[#161B22] border border-[#30363D] hover:bg-[#272a31] transition-colors flex items-center gap-1.5 text-xs text-[#e1e2eb]" 
+            class="h-8 px-2.5 rounded-md bg-[#161B22] light:bg-[#f6f8fa] border border-[#30363D] light:border-[#d0d7de] hover:bg-[#272a31] light:hover:bg-[#e1e4e8] transition-colors flex items-center gap-1.5 text-xs text-[#e1e2eb] light:text-[#1f2328]" 
             title="Repository Platform Integration">
       <span *ngIf="((state.connectedRepos$ | async)?.length ?? 0) > 0" 
-            class="material-symbols-outlined text-[16px] text-[#4edea3]">check_circle</span>
+            class="material-symbols-outlined text-[16px] text-[#10B981]">check_circle</span>
       <span *ngIf="((state.connectedRepos$ | async)?.length ?? 0) === 0" 
             class="material-symbols-outlined text-[16px] text-[#908fa0]">link_off</span>
-      <span class="text-[11px] font-mono text-[#e1e2eb]">
-        {{ (state.connectedRepos$ | async)?.[0]?.provider === 'azure_devops' ? 'Azure DevOps' : 'GitHub' }}
+      <span class="text-[11px] font-mono font-medium">
+        {{ (state.connectedRepos$ | async)?.[0]?.provider === 'azure_devops' ? 'Azure DevOps' : 'Repo' }}
       </span>
     </button>
 
     <!-- 4. Notifications Dropdown Trigger -->
     <div class="relative">
       <button (click)="toggleNotifications($event)" 
-              class="w-8 h-8 flex items-center justify-center rounded-md hover:bg-[#272a31] transition-colors relative text-[#c7c4d7] hover:text-[#e1e2eb]">
+              class="w-8 h-8 flex items-center justify-center rounded-md hover:bg-[#272a31] light:hover:bg-[#e1e4e8] transition-colors relative text-[#c7c4d7] light:text-[#57606a] hover:text-[#e1e2eb] light:hover:text-[#1f2328]">
         <span class="material-symbols-outlined text-[18px]">notifications</span>
         <span *ngIf="((notifService.unreadCount$ | async) ?? 0) > 0" 
-              class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#ffb4ab]"></span>
+              class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#EF4444]"></span>
       </button>
 
       <!-- Notifications Dropdown -->
       <div *ngIf="showNotificationsDropdown" 
            (click)="$event.stopPropagation()"
-           class="absolute right-0 mt-2 w-80 bg-[#161B22] border border-[#30363D] rounded-lg shadow-2xl p-3 z-50">
-        <div class="flex items-center justify-between pb-2 mb-2 border-b border-[#30363D]">
-          <span class="font-bold text-xs text-[#e1e2eb]">Notifications</span>
+           class="absolute right-0 mt-2 w-80 bg-[#161B22] light:bg-white border border-[#30363D] light:border-[#d0d7de] rounded-lg shadow-2xl p-3 z-50">
+        <div class="flex items-center justify-between pb-2 mb-2 border-b border-[#30363D] light:border-[#d0d7de]">
+          <span class="font-bold text-xs text-[#e1e2eb] light:text-[#1f2328]">Notifications</span>
           <div class="flex items-center gap-2 text-[11px]">
-            <button (click)="markAllRead()" class="text-[#c0c1ff] hover:underline">Mark read</button>
-            <span class="text-[#464554]">|</span>
-            <button (click)="clearAll()" class="text-[#908fa0] hover:underline">Clear</button>
+            <button (click)="markAllRead()" class="text-[#8083ff] light:text-[#494bd6] hover:underline">Mark read</button>
+            <span class="text-[#464554] light:text-[#d0d7de]">|</span>
+            <button (click)="clearAll()" class="text-[#908fa0] light:text-[#57606a] hover:underline">Clear</button>
           </div>
         </div>
 
         <div class="max-h-60 overflow-y-auto space-y-2">
           <div *ngFor="let n of (notifService.notifications$ | async)" 
                (click)="onNotificationClick(n)"
-               class="p-2 rounded hover:bg-[#272a31] transition-colors cursor-pointer text-xs flex gap-2 items-start border border-transparent hover:border-[#30363D]"
+               class="p-2 rounded hover:bg-[#272a31] light:hover:bg-[#f6f8fa] transition-colors cursor-pointer text-xs flex gap-2 items-start border border-transparent hover:border-[#30363D] light:hover:border-[#d0d7de]"
                [class.opacity-60]="n.read">
             <span class="material-symbols-outlined text-[16px] shrink-0 mt-0.5"
-                  [ngClass]="n.type === 'success' ? 'text-[#4edea3]' : (n.type === 'error' ? 'text-[#ffb4ab]' : 'text-[#c0c1ff]')">
+                  [ngClass]="n.type === 'success' ? 'text-[#10B981]' : (n.type === 'error' ? 'text-[#EF4444]' : 'text-[#8083ff]')">
               {{ n.type === 'success' ? 'check_circle' : (n.type === 'error' ? 'cancel' : 'info') }}
             </span>
             <div class="flex-1 min-w-0">
-              <div class="font-semibold text-[#e1e2eb] truncate">{{ n.title }}</div>
-              <div class="text-[11px] text-[#908fa0] line-clamp-2">{{ n.message }}</div>
+              <div class="font-semibold text-[#e1e2eb] light:text-[#1f2328] truncate">{{ n.title }}</div>
+              <div class="text-[11px] text-[#908fa0] light:text-[#57606a] line-clamp-2">{{ n.message }}</div>
             </div>
-            <button (click)="dismiss(n.id, $event)" class="text-[#908fa0] hover:text-[#e1e2eb]">&times;</button>
+            <button (click)="dismiss(n.id, $event)" class="text-[#908fa0] light:text-[#57606a] hover:text-[#e1e2eb] light:hover:text-[#1f2328]">&times;</button>
           </div>
 
-          <div *ngIf="(notifService.notifications$ | async)?.length === 0" class="py-6 text-center text-xs text-[#908fa0] italic">
+          <div *ngIf="(notifService.notifications$ | async)?.length === 0" class="py-6 text-center text-xs text-[#908fa0] light:text-[#57606a] italic">
             No active notifications.
           </div>
         </div>
@@ -93,7 +89,7 @@
 
     <!-- 5. Theme Switcher (Dark / Light) -->
     <button (click)="themeService.toggleTheme()" 
-            class="w-8 h-8 flex items-center justify-center rounded-md hover:bg-[#272a31] transition-colors text-[#c7c4d7] hover:text-[#e1e2eb]"
+            class="w-8 h-8 flex items-center justify-center rounded-md hover:bg-[#272a31] light:hover:bg-[#e1e4e8] transition-colors text-[#c7c4d7] light:text-[#57606a] hover:text-[#e1e2eb] light:hover:text-[#1f2328]"
             [title]="(themeService.isDarkMode$ | async) ? 'Switch to Light Theme' : 'Switch to Dark Theme'">
       <span class="material-symbols-outlined text-[18px]">
         {{ (themeService.isDarkMode$ | async) ? 'dark_mode' : 'light_mode' }}
@@ -102,8 +98,8 @@
 
     <!-- 6. User Profile Dropdown & Sign Out -->
     <div class="relative ml-1">
-      <button (click)="toggleUserDropdown($event)" class="flex items-center gap-2 p-1 rounded-md hover:bg-[#272a31] transition-colors">
-        <div class="w-8 h-8 rounded-full bg-[#272a31] border border-[#464554] overflow-hidden flex items-center justify-center text-xs font-bold text-[#c0c1ff]">
+      <button (click)="toggleUserDropdown($event)" class="flex items-center gap-2 p-1 rounded-md hover:bg-[#272a31] light:hover:bg-[#e1e4e8] transition-colors">
+        <div class="w-8 h-8 rounded-full bg-[#272a31] light:bg-[#f6f8fa] border border-[#464554] light:border-[#d0d7de] overflow-hidden flex items-center justify-center text-xs font-bold text-[#c0c1ff] light:text-[#494bd6]">
           <img *ngIf="(authService.currentUser$ | async)?.avatar_url" 
                [src]="(authService.currentUser$ | async)?.avatar_url" 
                alt="Avatar" 
@@ -112,25 +108,25 @@
             {{ getUserInitials(authService.currentUser$ | async) }}
           </span>
         </div>
-        <span class="hidden md:inline text-xs font-semibold text-[#e1e2eb]">{{ (authService.currentUser$ | async)?.display_name || 'Developer' }}</span>
+        <span class="hidden md:inline text-xs font-semibold text-[#e1e2eb] light:text-[#1f2328]">{{ (authService.currentUser$ | async)?.display_name || 'Developer' }}</span>
       </button>
 
-      <!-- User Menu Dropdown (Clean, No Demo Identity Switcher) -->
+      <!-- User Menu Dropdown -->
       <div *ngIf="showUserDropdown" 
            (click)="$event.stopPropagation()"
-           class="absolute right-0 mt-2 w-60 bg-[#161B22] border border-[#30363D] rounded-lg shadow-2xl p-3 z-50 space-y-3">
-        <div class="pb-2 border-b border-[#30363D]">
-          <div class="font-bold text-xs text-[#e1e2eb]">{{ (authService.currentUser$ | async)?.display_name }}</div>
-          <div class="text-[11px] text-[#908fa0] truncate">{{ (authService.currentUser$ | async)?.email }}</div>
-          <div class="text-[10px] font-mono text-[#c0c1ff] mt-1 uppercase tracking-wider">
+           class="absolute right-0 mt-2 w-60 bg-[#161B22] light:bg-white border border-[#30363D] light:border-[#d0d7de] rounded-lg shadow-2xl p-3 z-50 space-y-3">
+        <div class="pb-2 border-b border-[#30363D] light:border-[#d0d7de]">
+          <div class="font-bold text-xs text-[#e1e2eb] light:text-[#1f2328]">{{ (authService.currentUser$ | async)?.display_name }}</div>
+          <div class="text-[11px] text-[#908fa0] light:text-[#57606a] truncate">{{ (authService.currentUser$ | async)?.email }}</div>
+          <div class="text-[10px] font-mono text-[#8083ff] light:text-[#494bd6] mt-1 uppercase tracking-wider">
             Roles: {{ (authService.currentUser$ | async)?.roles?.join(', ') || 'Developer' }}
           </div>
         </div>
 
         <div class="pt-1">
-          <button (click)="logout()" class="w-full text-left px-2 py-1.5 rounded text-xs text-[#ffb4ab] hover:bg-[#ffb4ab]/10 flex items-center gap-2 transition-colors">
+          <button (click)="logout()" class="w-full text-left px-2 py-1.5 rounded text-xs text-[#EF4444] hover:bg-[#EF4444]/10 flex items-center gap-2 transition-colors font-semibold">
             <span class="material-symbols-outlined text-[16px]">logout</span>
-            <span class="font-semibold">Sign Out</span>
+            <span>Sign Out</span>
           </button>
         </div>
       </div>

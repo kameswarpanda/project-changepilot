@@ -36,9 +36,52 @@ class BuildDetector:
         all_files_lower = [f.lower() for f in all_files]
 
         # -------------------------------------------------------------
-        # 1. Python Ecosystem
+        # 1. Java Ecosystem (Maven / Gradle / Spring Boot)
         # -------------------------------------------------------------
-        if primary_language == "Python" or any(f.endswith(".py") for f in all_files):
+        if primary_language == "Java" or "pom.xml" in manifest_keys or any("gradle" in k for k in manifest_keys) or any(f.endswith(".java") for f in all_files):
+            if "pom.xml" in manifest_keys or (root / "pom.xml").exists() or any("pom.xml" in f for f in all_files_lower):
+                build_tool = "Maven"
+                build_cmd = "mvn compile"
+                test_framework = "JUnit"
+                test_cmd = "mvn test"
+                if "Maven" not in frameworks:
+                    frameworks.append("Maven")
+            elif any(f in manifest_keys for f in ["build.gradle", "build.gradle.kts"]) or any("build.gradle" in f for f in all_files_lower):
+                build_tool = "Gradle"
+                build_cmd = "gradle build"
+                test_framework = "JUnit"
+                test_cmd = "gradle test"
+                if "Gradle" not in frameworks:
+                    frameworks.append("Gradle")
+            else:
+                build_tool = "javac"
+                test_cmd = "mvn test"
+
+            # Check Spring Boot & frameworks
+            is_spring = False
+            for _, content in manifest_contents.items():
+                content_lower = content.lower()
+                if "org.springframework" in content_lower or "spring-boot" in content_lower:
+                    is_spring = True
+                if "quarkus" in content_lower and "Quarkus" not in frameworks:
+                    frameworks.append("Quarkus")
+                if "micronaut" in content_lower and "Micronaut" not in frameworks:
+                    frameworks.append("Micronaut")
+
+            if is_spring or any("application.properties" in f or "application.yml" in f for f in all_files_lower):
+                if "Spring Boot" not in frameworks:
+                    frameworks.append("Spring Boot")
+            if "JUnit" not in frameworks:
+                frameworks.append("JUnit")
+
+            for candidate in ["src/main/java", "src/test/java"]:
+                if any(candidate in f for f in all_files):
+                    entry_points.append(candidate)
+
+        # -------------------------------------------------------------
+        # 2. Python Ecosystem
+        # -------------------------------------------------------------
+        elif primary_language == "Python" or any(f.endswith(".py") for f in all_files):
             build_tool = "pip"
             test_framework = "pytest"
             test_cmd = "pytest"
@@ -81,9 +124,9 @@ class BuildDetector:
                     entry_points.append(candidate)
 
         # -------------------------------------------------------------
-        # 2. JavaScript / TypeScript / Frontend Ecosystem
+        # 3. JavaScript / TypeScript / Frontend Ecosystem
         # -------------------------------------------------------------
-        elif primary_language in ["TypeScript", "JavaScript", "React/TypeScript", "React/JavaScript"]:
+        elif primary_language in ["TypeScript", "JavaScript", "React/TypeScript", "React/JavaScript"] or "package.json" in manifest_keys:
             build_tool = "npm"
             test_framework = "jest"
             test_cmd = "npm test"
@@ -127,29 +170,6 @@ class BuildDetector:
             for candidate in ["index.ts", "index.js", "main.ts", "main.js", "app.ts", "app.js", "src/main.ts", "src/index.ts"]:
                 if any(f.lower() == candidate for f in all_files):
                     entry_points.append(candidate)
-
-        # -------------------------------------------------------------
-        # 3. Java Ecosystem
-        # -------------------------------------------------------------
-        elif primary_language == "Java":
-            if "pom.xml" in manifest_keys or (root / "pom.xml").exists():
-                build_tool = "Maven"
-                build_cmd = "mvn compile"
-                test_framework = "JUnit"
-                test_cmd = "mvn test"
-                frameworks.append("Maven")
-            elif any(f in manifest_keys for f in ["build.gradle", "build.gradle.kts"]):
-                build_tool = "Gradle"
-                build_cmd = "gradle build"
-                test_framework = "JUnit"
-                test_cmd = "gradle test"
-                frameworks.append("Gradle")
-
-            for _, content in manifest_contents.items():
-                if "org.springframework" in content:
-                    frameworks.append("Spring Boot")
-                if "quarkus" in content:
-                    frameworks.append("Quarkus")
 
         # -------------------------------------------------------------
         # 4. Go Ecosystem

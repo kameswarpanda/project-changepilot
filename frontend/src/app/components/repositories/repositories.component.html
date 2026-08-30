@@ -80,9 +80,23 @@
                 ACTIVE
               </span>
             </td>
-            <td class="py-3 px-4 text-right space-x-2">
-              <button (click)="inspect(repo)" class="text-[#c0c1ff] hover:underline font-semibold">Inspect</button>
-              <button (click)="select(repo)" class="text-[#4edea3] hover:underline font-semibold">Create Change</button>
+            <td class="py-3 px-4 text-right space-x-3 whitespace-nowrap">
+              <button (click)="inspect(repo)" 
+                      [disabled]="(state.isInspecting$ | async)" 
+                      class="text-[#8083ff] light:text-[#494bd6] hover:underline font-semibold text-xs inline-flex items-center gap-1">
+                <span class="material-symbols-outlined text-[14px]">search_insights</span>
+                <span>Inspect</span>
+              </button>
+              <button (click)="select(repo)" class="text-[#10B981] hover:underline font-semibold text-xs inline-flex items-center gap-1">
+                <span class="material-symbols-outlined text-[14px]">play_arrow</span>
+                <span>Select</span>
+              </button>
+              <button (click)="deleteRepo(repo, $event)" 
+                      class="text-[#EF4444] hover:text-[#DC2626] hover:underline font-semibold text-xs inline-flex items-center gap-1" 
+                      title="Unlink and remove repository">
+                <span class="material-symbols-outlined text-[14px]">delete</span>
+                <span>Unlink</span>
+              </button>
             </td>
           </tr>
 
@@ -224,6 +238,67 @@
         </div>
       </div>
 
+    </div>
+  </div>
+
+  <!-- Repository Inspection Details Modal -->
+  <div *ngIf="(state.showInspectionModal$ | async)" class="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4">
+    <div class="bg-[#161B22] light:bg-white border border-[#30363D] light:border-[#d0d7de] rounded-xl w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden" *ngIf="(state.inspectionDetails$ | async) as insp">
+      <!-- Modal Header -->
+      <div class="p-4 border-b border-[#30363D] light:border-[#d0d7de] flex justify-between items-center bg-[#1d2026] light:bg-[#f6f8fa]">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-[#8083ff]">search_insights</span>
+          <h3 class="font-title-sm text-sm font-bold text-[#e1e2eb] light:text-[#1f2328]">Repository Topology Inspection</h3>
+        </div>
+        <button (click)="state.closeInspectionModal()" class="text-[#908fa0] hover:text-[#e1e2eb] text-lg font-bold">&times;</button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="p-5 overflow-y-auto space-y-4 text-xs">
+        <div class="bg-[#10131a] light:bg-[#f6f8fa] p-3 rounded-lg border border-[#30363D] light:border-[#d0d7de]">
+          <span class="text-[#908fa0] light:text-[#57606a] block text-[10px] font-label-caps uppercase">Target Repository</span>
+          <span class="font-mono font-semibold text-sm text-[#e1e2eb] light:text-[#1f2328]">{{ insp.target }}</span>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div class="bg-[#10131a] light:bg-[#f6f8fa] p-3 rounded border border-[#30363D] light:border-[#d0d7de]">
+            <span class="text-[#908fa0] light:text-[#57606a] block text-[10px] font-label-caps">Primary Language</span>
+            <span class="font-bold text-[#e1e2eb] light:text-[#1f2328]">{{ insp.primary_language || 'Auto-Detect' }}</span>
+          </div>
+          <div class="bg-[#10131a] light:bg-[#f6f8fa] p-3 rounded border border-[#30363D] light:border-[#d0d7de]">
+            <span class="text-[#908fa0] light:text-[#57606a] block text-[10px] font-label-caps">Frameworks</span>
+            <span class="font-bold text-[#10B981]">{{ insp.frameworks?.join(', ') || 'Standard' }}</span>
+          </div>
+          <div class="bg-[#10131a] light:bg-[#f6f8fa] p-3 rounded border border-[#30363D] light:border-[#d0d7de]">
+            <span class="text-[#908fa0] light:text-[#57606a] block text-[10px] font-label-caps">Test Runner</span>
+            <span class="font-bold font-mono text-[#8083ff] light:text-[#494bd6]">{{ insp.test_runner_command || 'Auto' }}</span>
+          </div>
+          <div class="bg-[#10131a] light:bg-[#f6f8fa] p-3 rounded border border-[#30363D] light:border-[#d0d7de]">
+            <span class="text-[#908fa0] light:text-[#57606a] block text-[10px] font-label-caps">Total Files</span>
+            <span class="font-bold text-[#e1e2eb] light:text-[#1f2328]">{{ insp.total_files || (insp.all_files?.length ?? 0) }} files</span>
+          </div>
+        </div>
+
+        <div>
+          <h4 class="font-label-caps text-[10px] text-[#908fa0] light:text-[#57606a] mb-2">Source & Manifest Files ({{ (insp.all_files || []).length }})</h4>
+          <div class="bg-[#10131a] light:bg-[#f6f8fa] border border-[#30363D] light:border-[#d0d7de] rounded-lg p-3 max-h-48 overflow-y-auto space-y-1 font-mono text-[11px] text-[#908fa0] light:text-[#57606a]">
+            <div *ngFor="let f of (insp.all_files || [])" class="flex items-center gap-1.5 hover:text-[#e1e2eb] light:hover:text-[#1f2328]">
+              <span class="material-symbols-outlined text-[13px] text-[#8083ff]">description</span>
+              <span>{{ f }}</span>
+            </div>
+            <div *ngIf="(!insp.all_files || insp.all_files.length === 0)" class="text-[#908fa0] italic">
+              No files mapped.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="p-3 border-t border-[#30363D] light:border-[#d0d7de] bg-[#1d2026] light:bg-[#f6f8fa] flex justify-end gap-2">
+        <button (click)="state.closeInspectionModal()" class="px-4 py-1.5 rounded border border-[#30363D] light:border-[#d0d7de] text-[#e1e2eb] light:text-[#1f2328] hover:bg-[#272a31] light:hover:bg-[#e1e4e8] text-xs font-semibold">
+          Close
+        </button>
+      </div>
     </div>
   </div>
 </div>

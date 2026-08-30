@@ -155,21 +155,21 @@
             <dt class="font-label-caps text-[10px] text-[#908fa0] light:text-[#57606a] mb-1">Primary Language</dt>
             <dd class="text-[#e1e2eb] light:text-[#1f2328] font-semibold flex items-center gap-2">
               <span class="material-symbols-outlined text-[16px] text-[#ffb783]">code</span>
-              {{ res.repository_summary?.primary_language || 'Python 3.11+' }}
+              {{ res.repository_summary?.primary_language || 'Auto-Detected' }}
             </dd>
           </div>
 
           <div class="bg-[#10131a] light:bg-[#f6f8fa] p-3 rounded border border-[#30363D] light:border-[#d0d7de]">
             <dt class="font-label-caps text-[10px] text-[#908fa0] light:text-[#57606a] mb-1">Detected Frameworks</dt>
             <dd class="text-[#e1e2eb] light:text-[#1f2328] font-semibold">
-              {{ res.repository_summary?.detected_frameworks?.join(', ') || 'pytest / setuptools' }}
+              {{ res.repository_summary?.detected_frameworks?.join(', ') || 'Standard / None' }}
             </dd>
           </div>
 
           <div class="bg-[#10131a] light:bg-[#f6f8fa] p-3 rounded border border-[#30363D] light:border-[#d0d7de]">
             <dt class="font-label-caps text-[10px] text-[#908fa0] light:text-[#57606a] mb-1">Test Runner</dt>
             <dd class="text-[#e1e2eb] light:text-[#1f2328] font-semibold">
-              {{ res.repository_summary?.test_runner || 'pytest runner' }}
+              {{ res.repository_summary?.test_runner || 'Auto-Detected' }}
             </dd>
           </div>
         </dl>

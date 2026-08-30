@@ -10,7 +10,6 @@ import { ChangeResultComponent } from './components/change-result/change-result.
 import { RepositoriesComponent } from './components/repositories/repositories.component';
 import { AuditLogsComponent } from './components/audit-logs/audit-logs.component';
 import { ReportsComponent } from './components/reports/reports.component';
-import { SettingsComponent } from './components/settings/settings.component';
 import { ReportModalComponent } from './components/modals/report-modal/report-modal.component';
 import { NewRequestModalComponent } from './components/modals/new-request-modal/new-request-modal.component';
 import { AuthPageComponent } from './components/auth/auth-page.component';
@@ -35,7 +34,6 @@ import { AuthService } from './services/auth.service';
     RepositoriesComponent,
     AuditLogsComponent,
     ReportsComponent,
-    SettingsComponent,
     ReportModalComponent,
     NewRequestModalComponent
   ],

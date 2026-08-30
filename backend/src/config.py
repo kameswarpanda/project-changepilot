@@ -53,7 +53,7 @@ class Settings(BaseSettings):
     google_genai_use_vertexai: bool = Field(default=True, alias="GOOGLE_GENAI_USE_VERTEXAI")
     google_cloud_project: Optional[str] = Field(default=None, alias="GOOGLE_CLOUD_PROJECT")
     google_cloud_location: str = Field(default="global", alias="GOOGLE_CLOUD_LOCATION")
-    gemini_model: str = Field(default="gemini-3.7-flash", alias="GEMINI_MODEL")
+    gemini_model: str = Field(default="gemini-3.5-flash", alias="GEMINI_MODEL")
     gemini_api_key: Optional[str] = Field(default=None, alias="GEMINI_API_KEY")
 
     # Safety & Execution Boundaries

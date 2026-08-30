@@ -105,63 +105,61 @@
   <!-- Summary & Files Changed 2-Column Grid -->
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
     <!-- Summary Card -->
-    <section class="lg:col-span-1 bg-[#161B22] border border-[#30363D] rounded-lg p-5 flex flex-col">
-      <h3 class="font-title-sm text-sm font-semibold text-[#e1e2eb] mb-3 flex items-center gap-2">
-        <span class="material-symbols-outlined text-[#c0c1ff] text-[18px]">notes</span>
+    <section class="lg:col-span-1 bg-[#161B22] light:bg-white border border-[#30363D] light:border-[#d0d7de] rounded-lg p-5 flex flex-col">
+      <h3 class="font-title-sm text-sm font-semibold text-[#e1e2eb] light:text-[#1f2328] mb-3 flex items-center gap-2">
+        <span class="material-symbols-outlined text-[#8083ff] light:text-[#494bd6] text-[18px]">notes</span>
         <span>Change Summary</span>
       </h3>
-      <div class="bg-[#0B0E14] p-4 rounded border border-[#30363D] flex-1 text-xs text-[#e1e2eb] space-y-3">
+      <div class="bg-[#0B0E14] light:bg-[#f6f8fa] p-4 rounded border border-[#30363D] light:border-[#d0d7de] flex-1 text-xs text-[#e1e2eb] light:text-[#1f2328] space-y-3">
         <p class="leading-relaxed">
-          {{ (state.result$ | async)?.change_plan?.summary || 'Implemented optional discount parameters and assertions while preserving backward compatibility for existing callers.' }}
+          {{ (state.result$ | async)?.change_plan?.summary || (state.descriptionSubject | async) || 'No change summary available. Submit a change request to view synthesized plan.' }}
         </p>
-        <ul class="space-y-1.5 text-[#908fa0] list-disc pl-4">
-          <li>Preserves existing callers when parameter is omitted</li>
-          <li>Rejects negative values & excessive discount values with ValueError</li>
-          <li>Synthesized unit tests and verified with automated pytest run</li>
-        </ul>
+        
+        <div *ngIf="(state.result$ | async)?.change_plan?.impacted_files as impacts" class="space-y-1.5 pt-2 border-t border-[#30363D] light:border-[#d0d7de]">
+          <span class="text-[10px] font-label-caps text-[#908fa0] light:text-[#57606a] uppercase">Impact Predictions</span>
+          <div *ngFor="let imp of impacts" class="text-[11px] text-[#908fa0] light:text-[#57606a]">
+            • <span class="font-mono text-[#8083ff] light:text-[#494bd6]">{{ imp.path }}</span>: {{ imp.reason }}
+          </div>
+        </div>
       </div>
     </section>
 
     <!-- Files Changed Table Card -->
-    <section class="lg:col-span-2 bg-[#161B22] border border-[#30363D] rounded-lg p-5">
-      <h3 class="font-title-sm text-sm font-semibold text-[#e1e2eb] mb-3 flex items-center gap-2">
-        <span class="material-symbols-outlined text-[#c0c1ff] text-[18px]">folder_open</span>
+    <section class="lg:col-span-2 bg-[#161B22] light:bg-white border border-[#30363D] light:border-[#d0d7de] rounded-lg p-5">
+      <h3 class="font-title-sm text-sm font-semibold text-[#e1e2eb] light:text-[#1f2328] mb-3 flex items-center gap-2">
+        <span class="material-symbols-outlined text-[#8083ff] light:text-[#494bd6] text-[18px]">folder_open</span>
         <span>Files Changed</span>
       </h3>
-      <div class="border border-[#30363D] rounded overflow-hidden">
+      <div class="border border-[#30363D] light:border-[#d0d7de] rounded overflow-hidden">
         <table class="w-full text-left border-collapse text-xs">
           <thead>
-            <tr class="bg-[#1d2026] border-b border-[#30363D]">
-              <th class="py-2.5 px-4 font-label-caps text-[#908fa0] font-medium">FILE PATH</th>
-              <th class="py-2.5 px-4 font-label-caps text-[#908fa0] font-medium w-32 text-right">STATUS</th>
+            <tr class="bg-[#1d2026] light:bg-[#f6f8fa] border-b border-[#30363D] light:border-[#d0d7de]">
+              <th class="py-2.5 px-4 font-label-caps text-[#908fa0] light:text-[#57606a] font-medium">FILE PATH</th>
+              <th class="py-2.5 px-4 font-label-caps text-[#908fa0] light:text-[#57606a] font-medium w-32 text-right">ACTION</th>
             </tr>
           </thead>
-          <tbody class="font-mono text-[#e1e2eb]">
-            <tr *ngFor="let f of (state.result$ | async)?.change_plan?.planned_changes || []" class="border-b border-[#30363D] hover:bg-[#1d2026] transition-colors">
-              <td class="py-3 px-4 flex items-center gap-2 text-[#c0c1ff]">
-                <span class="material-symbols-outlined text-[#ffb783] text-[16px]">description</span>
+          <tbody class="font-mono text-[#e1e2eb] light:text-[#1f2328]">
+            <tr *ngFor="let f of (state.result$ | async)?.change_plan?.planned_changes || []" class="border-b border-[#30363D] light:border-[#d0d7de] hover:bg-[#1d2026] light:hover:bg-[#f6f8fa] transition-colors">
+              <td class="py-3 px-4 flex items-center gap-2 text-[#8083ff] light:text-[#494bd6]">
+                <span class="material-symbols-outlined text-[16px]">description</span>
                 {{ f.file_path }}
               </td>
               <td class="py-3 px-4 text-right">
                 <span class="px-2 py-0.5 rounded text-[10px] font-bold"
                       [ngClass]="{
-                        'bg-[#4edea3]/10 text-[#4edea3] border border-[#4edea3]/20': f.change_type === 'CREATE',
-                        'bg-[#ffb783]/10 text-[#ffb783] border border-[#ffb783]/20': f.change_type === 'MODIFY',
-                        'bg-[#ffb4ab]/10 text-[#ffb4ab] border border-[#ffb4ab]/20': f.change_type === 'DELETE'
+                        'bg-[#10B981]/10 text-[#10B981] border border-[#10B981]/20': f.change_type === 'CREATE',
+                        'bg-[#F59E0B]/10 text-[#F59E0B] border border-[#F59E0B]/20': f.change_type === 'MODIFY',
+                        'bg-[#EF4444]/10 text-[#EF4444] border border-[#EF4444]/20': f.change_type === 'DELETE'
                       }">
                   {{ f.change_type }}
                 </span>
               </td>
             </tr>
 
-            <!-- Fallback row if empty -->
-            <tr *ngIf="!((state.result$ | async)?.change_plan?.planned_changes?.length)" class="hover:bg-[#1d2026]">
-              <td class="py-3 px-4 flex items-center gap-2 text-[#c0c1ff]">
-                <span class="material-symbols-outlined text-[#ffb783] text-[16px]">description</span>
-                calculator.py
-              </td>
-              <td class="py-3 px-4 text-right">
-                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-[#ffb783]/10 text-[#ffb783] border border-[#ffb783]/20">MODIFIED</span>
+            <!-- Empty state when no changes exist -->
+            <tr *ngIf="!((state.result$ | async)?.change_plan?.planned_changes?.length)">
+              <td colspan="2" class="py-6 text-center text-[#908fa0] light:text-[#57606a] italic font-sans">
+                No file modifications generated yet. Run a change request to view synthesized patches.
               </td>
             </tr>
           </tbody>
