@@ -17,6 +17,87 @@
     </div>
   </div>
 
+  <!-- GitHub Account & Personal Access Token Card -->
+  <div class="bg-[#161B22] light:bg-white border border-[#30363D] light:border-[#d0d7de] rounded-xl p-5 shadow-sm space-y-4">
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div class="flex items-center gap-3.5">
+        <div class="w-10 h-10 rounded-lg bg-[#272a31] light:bg-[#f6f8fa] border border-[#30363D] light:border-[#d0d7de] flex items-center justify-center text-[#e1e2eb] light:text-[#1f2328]">
+          <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+        </div>
+        <div>
+          <div class="flex items-center gap-2.5">
+            <h3 class="font-title-sm text-sm font-bold text-[#e1e2eb] light:text-[#1f2328]">GitHub Repository Access & Pull Request Sync</h3>
+            <span *ngIf="(state.githubStatus$ | async)?.connected" class="bg-[#10B981]/15 text-[#10B981] text-[10px] font-bold px-2 py-0.5 rounded-full border border-[#10B981]/30 flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-[#10B981]"></span>
+              <span>CONNECTED ({{ (state.githubStatus$ | async)?.username || 'Active' }})</span>
+            </span>
+            <span *ngIf="!(state.githubStatus$ | async)?.connected" class="bg-[#F59E0B]/15 text-[#F59E0B] text-[10px] font-bold px-2 py-0.5 rounded-full border border-[#F59E0B]/30 flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-[#F59E0B]"></span>
+              <span>TOKEN NEEDED FOR LIVE PRs</span>
+            </span>
+          </div>
+          <p class="text-[11px] text-[#908fa0] light:text-[#57606a] mt-0.5">
+            Linking your GitHub Personal Access Token (PAT) enables ChangePilot to automatically push isolated branches and create live Pull Requests directly in your GitHub repositories.
+          </p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 shrink-0">
+        <button *ngIf="!(state.githubStatus$ | async)?.connected || showGitHubTokenForm" 
+                (click)="toggleGitHubTokenForm()" 
+                class="bg-[#494bd6] text-white hover:bg-[#8083ff] hover:text-[#0d0096] text-xs font-semibold px-3.5 py-1.5 rounded-md transition-colors flex items-center gap-1.5 shadow-sm">
+          <span class="material-symbols-outlined text-[15px]">key</span>
+          <span>{{ showGitHubTokenForm ? 'Hide Token Form' : 'Configure GitHub Token' }}</span>
+        </button>
+        <button *ngIf="(state.githubStatus$ | async)?.connected && !showGitHubTokenForm" 
+                (click)="toggleGitHubTokenForm()" 
+                class="bg-[#272a31] light:bg-[#f6f8fa] border border-[#30363D] light:border-[#d0d7de] text-[#e1e2eb] light:text-[#1f2328] hover:bg-[#32353c] text-xs font-semibold px-3 py-1.5 rounded-md transition-colors flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-[15px]">edit</span>
+          <span>Change Token</span>
+        </button>
+        <button *ngIf="(state.githubStatus$ | async)?.connected" 
+                (click)="disconnectGitHub()" 
+                class="border border-[#EF4444]/30 text-[#EF4444] hover:bg-[#EF4444]/10 text-xs font-semibold px-3 py-1.5 rounded-md transition-colors flex items-center gap-1">
+          <span class="material-symbols-outlined text-[15px]">link_off</span>
+          <span>Disconnect</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Collapsible Token Input Form -->
+    <div *ngIf="showGitHubTokenForm || !(state.githubStatus$ | async)?.connected" class="pt-3 border-t border-[#30363D] light:border-[#d0d7de] space-y-3">
+      <div class="flex flex-col sm:flex-row items-center gap-3">
+        <div class="flex-1 w-full relative">
+          <input type="password" 
+                 [(ngModel)]="githubTokenInput" 
+                 placeholder="ghp_xxxxxxxxxxxxxxxxxxxx (GitHub Personal Access Token with repo scope)" 
+                 class="w-full bg-[#10131a] light:bg-[#f6f8fa] border border-[#30363D] light:border-[#d0d7de] rounded-lg px-3.5 py-2 text-xs font-mono text-[#e1e2eb] light:text-[#1f2328] focus:outline-none focus:border-[#8083ff] light:focus:border-[#494bd6] placeholder-[#908fa0]/60">
+        </div>
+        <button (click)="submitGitHubTokenConnect()" 
+                [disabled]="!githubTokenInput.trim() || isConnectingGitHub" 
+                class="w-full sm:w-auto px-5 py-2 rounded-lg bg-[#10B981] text-white font-semibold text-xs hover:bg-[#059669] disabled:opacity-50 transition-colors flex items-center justify-center gap-1.5 shadow-sm">
+          <span *ngIf="isConnectingGitHub" class="material-symbols-outlined text-[14px] animate-spin">autorenew</span>
+          <span>{{ isConnectingGitHub ? 'Verifying Token...' : 'Verify & Connect GitHub' }}</span>
+        </button>
+      </div>
+
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center text-[11px] text-[#908fa0] light:text-[#57606a] gap-2">
+        <div class="flex items-center gap-1">
+          <span class="material-symbols-outlined text-[14px] text-[#8083ff] light:text-[#494bd6]">info</span>
+          <span>Requires a GitHub token with <code class="text-[#8083ff] light:text-[#494bd6] font-mono">repo</code> scope (or fine-grained Contents + Pull Requests: Read & Write).</span>
+        </div>
+        <a href="https://github.com/settings/tokens/new?scopes=repo&description=ChangePilot" target="_blank" class="text-[#8083ff] light:text-[#494bd6] hover:underline font-semibold flex items-center gap-1 shrink-0">
+          <span>Generate Token on GitHub</span>
+          <span class="material-symbols-outlined text-[12px]">open_in_new</span>
+        </a>
+      </div>
+
+      <div *ngIf="githubConnectMessage" class="p-2.5 rounded text-xs bg-[#10B981]/10 text-[#10B981] border border-[#10B981]/20">
+        {{ githubConnectMessage }}
+      </div>
+    </div>
+  </div>
+
   <!-- Repositories Table Card -->
   <div class="bg-[#161B22] border border-[#30363D] rounded-lg overflow-hidden flex flex-col">
     <!-- Toolbar -->

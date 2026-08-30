@@ -32,6 +32,12 @@ export class RepositoriesComponent implements OnInit {
   publicGitUrl = '';
   publicBaseBranch = 'main';
 
+  // GitHub Personal Access Token / SSO Integration
+  githubTokenInput = '';
+  isConnectingGitHub = false;
+  githubConnectMessage: string | null = null;
+  showGitHubTokenForm = false;
+
   isLoading = false;
 
   constructor(
@@ -130,6 +136,48 @@ export class RepositoriesComponent implements OnInit {
       this.state.baseBranchSubject.next(repo.branches[0]);
     }
     this.state.setNav('requests');
+  }
+
+  submitGitHubTokenConnect(): void {
+    const token = this.githubTokenInput.trim();
+    if (!token) return;
+
+    this.isConnectingGitHub = true;
+    this.githubConnectMessage = null;
+
+    this.state.connectGitHubToken(token).subscribe({
+      next: (res) => {
+        this.isConnectingGitHub = false;
+        this.githubTokenInput = '';
+        this.showGitHubTokenForm = false;
+        this.githubConnectMessage = res.message;
+        this.state.loadGitHubStatus();
+        this.state.loadRepositories();
+        this.fetchUserPlatformRepos();
+        this.notif.addNotification(
+          'GitHub Connected',
+          res.message || 'GitHub token connected with push and pull request permissions.',
+          'success'
+        );
+      },
+      error: (err) => {
+        this.isConnectingGitHub = false;
+        const msg = err.error?.detail || err.message || 'Failed to authenticate GitHub token.';
+        this.githubConnectMessage = msg;
+        this.notif.addNotification('GitHub Authentication Error', msg, 'error');
+      }
+    });
+  }
+
+  disconnectGitHub(): void {
+    if (confirm('Are you sure you want to disconnect your GitHub account? Automated remote push will be disabled.')) {
+      this.state.disconnectGitHub();
+    }
+  }
+
+  toggleGitHubTokenForm(): void {
+    this.showGitHubTokenForm = !this.showGitHubTokenForm;
+    this.githubConnectMessage = null;
   }
 
   deleteRepo(repo: ConnectedRepo, event: Event): void {

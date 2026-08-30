@@ -37,13 +37,13 @@
     <!-- 3. Repository Platform Integration Status -->
     <button (click)="state.setNav('repositories')" 
             class="h-8 px-2.5 rounded-md bg-[#161B22] light:bg-[#f6f8fa] border border-[#30363D] light:border-[#d0d7de] hover:bg-[#272a31] light:hover:bg-[#e1e4e8] transition-colors flex items-center gap-1.5 text-xs text-[#e1e2eb] light:text-[#1f2328]" 
-            title="Repository Platform Integration">
-      <span *ngIf="((state.connectedRepos$ | async)?.length ?? 0) > 0" 
+            [title]="(state.githubStatus$ | async)?.connected ? 'GitHub Connected (@' + (state.githubStatus$ | async)?.username + ')' : 'Click to Configure GitHub Token'">
+      <span *ngIf="(state.githubStatus$ | async)?.connected" 
             class="material-symbols-outlined text-[16px] text-[#10B981]">check_circle</span>
-      <span *ngIf="((state.connectedRepos$ | async)?.length ?? 0) === 0" 
-            class="material-symbols-outlined text-[16px] text-[#908fa0]">link_off</span>
+      <span *ngIf="!(state.githubStatus$ | async)?.connected" 
+            class="material-symbols-outlined text-[16px] text-[#F59E0B]">link_off</span>
       <span class="text-[11px] font-mono font-medium">
-        {{ (state.connectedRepos$ | async)?.[0]?.provider === 'azure_devops' ? 'Azure DevOps' : 'Repo' }}
+        {{ (state.githubStatus$ | async)?.connected ? '@' + (state.githubStatus$ | async)?.username : 'GitHub' }}
       </span>
     </button>
 

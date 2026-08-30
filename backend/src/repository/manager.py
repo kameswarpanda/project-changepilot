@@ -81,6 +81,41 @@ class IsolatedWorkspace:
             return False
         except Exception as e:
             logger.error(f"Failed to commit changes: {e}")
+    def push_branch(
+        self,
+        target_branch: Optional[str] = None,
+        token: Optional[str] = None,
+        remote_url: Optional[str] = None
+    ) -> bool:
+        """Pushes the current isolated branch to the remote git repository."""
+        if not self.repo:
+            return False
+        try:
+            branch = target_branch or self.branch_name
+            # If explicit remote_url and token provided
+            if remote_url and token:
+                auth_url = remote_url
+                if "@" not in remote_url and "https://" in remote_url:
+                    auth_url = remote_url.replace("https://", f"https://x-access-token:{token}@")
+                self.repo.git.push(auth_url, f"{branch}:{branch}", force=True)
+                logger.info(f"Successfully pushed branch {branch} to {remote_url}")
+                return True
+
+            # If origin remote exists on the repository
+            remotes = [r.name for r in self.repo.remotes]
+            if "origin" in remotes:
+                origin = self.repo.remote("origin")
+                origin_url = origin.url
+                if token and "https://" in origin_url and "@" not in origin_url:
+                    auth_url = origin_url.replace("https://", f"https://x-access-token:{token}@")
+                    self.repo.git.push(auth_url, f"{branch}:{branch}", force=True)
+                else:
+                    self.repo.git.push("origin", f"{branch}:{branch}", force=True)
+                logger.info(f"Successfully pushed branch {branch} to origin")
+                return True
+            return False
+        except Exception as e:
+            logger.warning(f"Git push notice (branch pushed locally): {e}")
             return False
 
     def cleanup(self, force: bool = False):

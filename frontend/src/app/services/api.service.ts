@@ -101,6 +101,22 @@ export class ApiService {
     );
   }
 
+  getGitHubStatus(): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/api/integrations/github/status`, { headers: this.getHeaders() });
+  }
+
+  connectGitHub(token: string): Observable<any> {
+    return this.http.post<any>(
+      `${this.baseUrl}/api/integrations/github/connect`,
+      { token },
+      { headers: this.getHeaders() }
+    );
+  }
+
+  disconnectGitHub(): Observable<any> {
+    return this.http.delete<any>(`${this.baseUrl}/api/integrations/github/disconnect`, { headers: this.getHeaders() });
+  }
+
   executeChange(payload: ChangeRequestPayload): Observable<WorkflowResult> {
     const correlationId = 'ui-' + Math.random().toString(36).substring(2, 9);
     let headers = this.getHeaders().set('X-Correlation-ID', correlationId);

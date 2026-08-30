@@ -141,6 +141,10 @@ export class WorkflowStateService {
   public auditLogsSubject = new BehaviorSubject<any[]>([]);
   public auditLogs$: Observable<any[]> = this.auditLogsSubject.asObservable();
 
+  // GitHub Account Integration Status
+  public githubStatusSubject = new BehaviorSubject<any>(null);
+  public githubStatus$: Observable<any> = this.githubStatusSubject.asObservable();
+
   // Modals & Inspection Tabs
   public showReportModalSubject = new BehaviorSubject<boolean>(false);
   public showReportModal$: Observable<boolean> = this.showReportModalSubject.asObservable();
@@ -193,6 +197,28 @@ export class WorkflowStateService {
     this.loadSystemConfig();
     this.loadReports();
     this.loadAuditLogs();
+    this.loadGitHubStatus();
+  }
+
+  public loadGitHubStatus(): void {
+    this.api.getGitHubStatus().subscribe({
+      next: (st) => this.githubStatusSubject.next(st),
+      error: () => this.githubStatusSubject.next({ connected: false })
+    });
+  }
+
+  public connectGitHubToken(token: string): Observable<any> {
+    return this.api.connectGitHub(token);
+  }
+
+  public disconnectGitHub(): void {
+    this.api.disconnectGitHub().subscribe({
+      next: () => {
+        this.githubStatusSubject.next({ connected: false });
+        this.notif.addNotification('GitHub Disconnected', 'Disconnected GitHub account credentials.', 'info');
+      },
+      error: () => {}
+    });
   }
 
   public setNav(nav: string): void {
