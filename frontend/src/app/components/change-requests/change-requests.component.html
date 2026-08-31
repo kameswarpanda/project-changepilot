@@ -195,78 +195,92 @@
   </div>
 
   <!-- Saved Stories & Change Requests Section -->
-  <div class="pt-6 border-t border-[#30363D] light:border-[#d0d7de] space-y-4">
-    <div class="flex items-center justify-between">
-      <div class="flex items-center gap-2.5">
-        <span class="material-symbols-outlined text-[#8083ff] text-[22px]">folder_special</span>
-        <h2 class="font-display-lg text-lg font-bold text-[#e1e2eb] light:text-[#1f2328]">Saved Stories & Change Requests</h2>
-        <span class="px-2 py-0.5 rounded-full bg-[#30363D]/60 light:bg-[#eaeef2] text-xs font-mono text-[#8083ff] font-semibold">
-          {{ (state.changeRequests$ | async)?.length || 0 }}
-        </span>
+  <div class="pt-8 border-t border-[#30363D] light:border-[#d0d7de] space-y-6">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#494bd6]/25 to-[#8083ff]/10 border border-[#8083ff]/30 flex items-center justify-center text-[#8083ff] shrink-0">
+          <span class="material-symbols-outlined text-[22px]">folder_special</span>
+        </div>
+        <div>
+          <div class="flex items-center gap-2.5">
+            <h2 class="font-display-lg text-lg font-bold text-[#e1e2eb] light:text-[#1f2328]">Saved Stories & Change Requests</h2>
+            <span class="px-2.5 py-0.5 rounded-full bg-[#494bd6]/20 border border-[#8083ff]/40 text-xs font-mono text-[#8083ff] font-bold">
+              {{ (state.changeRequests$ | async)?.length || 0 }}
+            </span>
+          </div>
+          <p class="font-body-md text-xs text-[#908fa0] light:text-[#57606a] mt-0.5">
+            Select any saved story draft to load its parameters into the execution form or manage your backlog.
+          </p>
+        </div>
       </div>
-      <p class="font-body-md text-xs text-[#908fa0] light:text-[#57606a] hidden sm:block">
-        Click any card to load its parameters into the execution form.
-      </p>
     </div>
 
     <!-- Empty State -->
     <div *ngIf="!(state.changeRequests$ | async)?.length" 
-         class="bg-[#161B22]/50 light:bg-white border border-dashed border-[#30363D] light:border-[#d0d7de] rounded-xl p-8 text-center space-y-2">
-      <span class="material-symbols-outlined text-3xl text-[#908fa0] opacity-40">post_add</span>
-      <h4 class="text-sm font-semibold text-[#e1e2eb] light:text-[#1f2328]">No Saved Stories Yet</h4>
-      <p class="text-xs text-[#908fa0] light:text-[#57606a] max-w-md mx-auto">
-        Fill out the Ticket ID, Change Title, Requirements, and Target Repository above and click <strong>"Save Draft"</strong> to create a reusable story card.
+         class="bg-[#161B22]/60 light:bg-white border border-dashed border-[#30363D] light:border-[#d0d7de] rounded-2xl p-10 text-center space-y-3">
+      <div class="w-14 h-14 rounded-2xl bg-[#494bd6]/10 border border-[#8083ff]/20 mx-auto flex items-center justify-center text-[#8083ff]">
+        <span class="material-symbols-outlined text-3xl">post_add</span>
+      </div>
+      <h4 class="text-sm font-bold text-[#e1e2eb] light:text-[#1f2328]">No Saved Stories Yet</h4>
+      <p class="text-xs text-[#908fa0] light:text-[#57606a] max-w-md mx-auto leading-relaxed">
+        Fill out the Ticket ID, Change Title, Requirements, and Target Repository in the form above and click <strong>"Save Draft"</strong> to create a reusable story card.
       </p>
     </div>
 
     <!-- Stories Grid -->
-    <div *ngIf="(state.changeRequests$ | async) as requests" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div *ngIf="(state.changeRequests$ | async) as requests" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
       <div *ngFor="let req of requests" 
            (click)="selectStory(req)"
            [attr.data-story-id]="req.story_id"
-           [class.border-[#8083ff]]="selectedStoryId === req.story_id"
-           [class.ring-1]="selectedStoryId === req.story_id"
-           [class.ring-[#8083ff]]="selectedStoryId === req.story_id"
-           class="story-card bg-[#161B22] light:bg-white border border-[#30363D] light:border-[#d0d7de] rounded-xl p-4.5 space-y-3 shadow-sm hover:border-[#8083ff]/60 hover:shadow-md transition-all cursor-pointer relative group flex flex-col justify-between">
+           [class.active-story-card]="selectedStoryId === req.story_id"
+           class="story-card bg-gradient-to-b from-[#161B22] to-[#12161E] light:from-white light:to-[#f8fafc] border border-[#30363D] light:border-[#d0d7de] rounded-2xl p-6 shadow-sm hover:shadow-xl hover:border-[#8083ff]/70 transition-all duration-200 cursor-pointer relative group flex flex-col justify-between min-h-[250px] gap-4">
         
-        <div class="space-y-2.5">
-          <!-- Card Header -->
-          <div class="flex items-center justify-between gap-2">
-            <div class="flex items-center gap-2">
-              <span class="px-2 py-0.5 rounded bg-[#494bd6]/20 border border-[#8083ff]/30 text-[#8083ff] font-mono font-bold text-xs">
-                #{{ req.story_id }}
+        <div class="space-y-3.5">
+          <!-- Card Top Bar: Badge, Priority & Actions -->
+          <div class="flex items-center justify-between gap-3">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="px-3 py-1 rounded-lg bg-[#494bd6]/25 border border-[#8083ff]/40 text-[#c0c1ff] light:text-[#494bd6] font-mono font-bold text-xs flex items-center gap-1.5 shadow-sm">
+                <span class="w-1.5 h-1.5 rounded-full bg-[#8083ff] animate-pulse"></span>
+                <span>#{{ req.story_id }}</span>
               </span>
-              <span class="px-1.5 py-0.5 rounded bg-[#272a31] light:bg-[#eaeef2] text-[#908fa0] light:text-[#57606a] text-[10px] font-semibold uppercase">
+              <span [ngClass]="req.priority === 'HIGH' ? 'bg-[#FF7B72]/15 text-[#FF7B72] border-[#FF7B72]/30' : (req.priority === 'LOW' ? 'bg-[#10B981]/15 text-[#10B981] border-[#10B981]/30' : 'bg-[#F59E0B]/15 text-[#F59E0B] border-[#F59E0B]/30')"
+                    class="px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase border">
                 {{ req.priority || 'HIGH' }}
+              </span>
+              <span *ngIf="req.status" class="px-2 py-0.5 rounded-md text-[10px] font-mono uppercase bg-[#272a31]/80 light:bg-[#eaeef2] text-[#908fa0] light:text-[#57606a]">
+                {{ req.status }}
               </span>
             </div>
 
             <!-- Delete Button -->
             <button (click)="promptDeleteStory(req, $event)" 
                     title="Delete change request"
-                    class="p-1 rounded text-[#908fa0] hover:text-[#ff7b72] hover:bg-[#ff7b72]/10 transition-colors cursor-pointer">
-              <span class="material-symbols-outlined text-[18px]">delete</span>
+                    class="w-8 h-8 rounded-lg bg-[#272a31]/40 light:bg-[#f6f8fa] border border-[#30363D] light:border-[#d0d7de] hover:bg-[#ff7b72]/15 hover:border-[#ff7b72]/50 text-[#908fa0] hover:text-[#ff7b72] flex items-center justify-center transition-all cursor-pointer shrink-0">
+              <span class="material-symbols-outlined text-[17px]">delete</span>
             </button>
           </div>
 
           <!-- Card Title -->
-          <h3 class="font-title-sm text-sm font-semibold text-[#e1e2eb] light:text-[#1f2328] line-clamp-1 group-hover:text-[#8083ff] transition-colors" [title]="req.title">
+          <h3 class="font-display-lg text-base font-bold text-[#e1e2eb] light:text-[#1f2328] group-hover:text-[#8083ff] transition-colors leading-snug line-clamp-2" [title]="req.title">
             {{ req.title }}
           </h3>
 
-          <!-- Card Requirements snippet -->
-          <p class="font-body-md text-xs text-[#908fa0] light:text-[#57606a] line-clamp-2 leading-relaxed">
-            {{ req.description || 'No detailed requirements specified.' }}
-          </p>
+          <!-- Card Requirements snippet box -->
+          <div class="bg-[#10131a]/70 light:bg-[#f6f8fa] border border-[#30363D]/50 light:border-[#d0d7de] rounded-xl p-3.5">
+            <p class="font-body-md text-xs text-[#908fa0] light:text-[#57606a] line-clamp-3 leading-relaxed">
+              {{ req.description || 'No detailed requirements specified.' }}
+            </p>
+          </div>
         </div>
 
-        <!-- Card Footer -->
-        <div class="pt-3 border-t border-[#30363D]/60 light:border-[#d0d7de] flex items-center justify-between text-[11px]">
-          <div class="flex items-center gap-1.5 text-[#4edea3] font-mono truncate max-w-[180px]" [title]="req.repository">
-            <span class="material-symbols-outlined text-[14px]">folder_open</span>
-            <span class="truncate">{{ req.repository }}</span>
+        <!-- Card Footer: Repo Info & Load Action -->
+        <div class="pt-3 border-t border-[#30363D]/70 light:border-[#d0d7de] flex items-center justify-between gap-3 text-xs">
+          <div class="flex items-center gap-1.5 text-[#4edea3] font-mono truncate max-w-[68%]" [title]="req.repository">
+            <span class="material-symbols-outlined text-[16px] shrink-0">folder_open</span>
+            <span class="truncate font-semibold">{{ req.repository }}</span>
+            <span class="text-[10px] font-mono text-[#ffb783] bg-[#ffb783]/10 px-1.5 py-0.5 rounded shrink-0">{{ req.base_branch || 'main' }}</span>
           </div>
-          <div class="flex items-center gap-1 text-[#8083ff] font-semibold text-[11px] group-hover:translate-x-0.5 transition-transform">
+          <div class="flex items-center gap-1 text-[#8083ff] font-semibold text-xs px-3 py-1.5 rounded-lg bg-[#494bd6]/10 group-hover:bg-[#494bd6] group-hover:text-white border border-[#8083ff]/30 transition-all shrink-0">
             <span>Load</span>
             <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
           </div>

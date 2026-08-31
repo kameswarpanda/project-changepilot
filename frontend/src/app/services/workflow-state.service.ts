@@ -554,6 +554,7 @@ export class WorkflowStateService {
   public confirmAndExecutePipeline(): void {
     this.showConfirmModalSubject.next(false);
     this.executeWorkflow();
+    this.setNav('pipelines');
   }
 
   public cancelConfirmModal(): void {
