@@ -25,13 +25,15 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r backend/requirements.txt
+          pip install -e .
+          pip install pytest pytest-asyncio pytest-cov
 
       - name: Run Pytest Test Suite
         env:
           GOOGLE_GENAI_USE_VERTEXAI: "false"
           APP_ENV: "test"
         run: |
-          pytest backend/tests -v --tb=short
+          python -m pytest backend/tests -v --tb=short
 
   frontend-build:
     name: Frontend Angular 19 Production Build

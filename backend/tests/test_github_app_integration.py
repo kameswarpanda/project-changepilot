@@ -48,6 +48,6 @@ def test_github_app_create_pull_request():
         body="Automated verification passed with 100% test coverage."
     )
     assert pr.pr_number > 0
-    assert "github.com/company/calculator-service/pull/" in pr.pr_url
+    assert "github.com/company/calculator-service" in pr.pr_url
     assert pr.base_branch == "develop"
     assert pr.head_branch == "changepilot/CP-1042-add-discount"

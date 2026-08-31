@@ -125,9 +125,18 @@ export class RepositoriesComponent implements OnInit {
     this.showConnectModal = false;
   }
 
+  inspectingRepoId: string | null = null;
+
   inspect(repo: ConnectedRepo): void {
+    this.inspectingRepoId = repo.id || repo.name || 'repo';
     this.state.repoLocationSubject.next(repo.path || repo.name);
     this.state.inspectRepository(repo.path || repo.name);
+    const sub = this.state.isInspecting$.subscribe(isInspecting => {
+      if (!isInspecting) {
+        this.inspectingRepoId = null;
+        sub.unsubscribe();
+      }
+    });
   }
 
   select(repo: ConnectedRepo): void {

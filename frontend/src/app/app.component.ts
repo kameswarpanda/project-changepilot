@@ -9,7 +9,6 @@ import { PipelinesComponent } from './components/pipelines/pipelines.component';
 import { ChangeResultComponent } from './components/change-result/change-result.component';
 import { RepositoriesComponent } from './components/repositories/repositories.component';
 import { AuditLogsComponent } from './components/audit-logs/audit-logs.component';
-import { ReportsComponent } from './components/reports/reports.component';
 import { ReportModalComponent } from './components/modals/report-modal/report-modal.component';
 import { NewRequestModalComponent } from './components/modals/new-request-modal/new-request-modal.component';
 import { AuthPageComponent } from './components/auth/auth-page.component';
@@ -33,7 +32,6 @@ import { AuthService } from './services/auth.service';
     ChangeResultComponent,
     RepositoriesComponent,
     AuditLogsComponent,
-    ReportsComponent,
     ReportModalComponent,
     NewRequestModalComponent
   ],

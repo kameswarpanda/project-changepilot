@@ -211,3 +211,48 @@ def test_otp_forgot_password_full_flow():
     updated_user = db_repository.get_user_by_email(email)
     assert updated_user["password_hash"] == _hash_password("NewSecurePass2026!#")
 
+
+def test_signup_otp_verification_flow():
+    """Verifies that new user account is only created after successful email OTP verification."""
+    import uuid
+    from backend.src.auth.service import _hash_password
+    from backend.src.database.repository import db_repository
+
+    auth_svc = AuthService()
+    new_email = f"new_engineer_{uuid.uuid4().hex[:6]}@enterprise.dev"
+    strong_pwd = "StrongSecure2026!@"
+
+    # 1. Request signup OTP with invalid password fails
+    with pytest.raises(ValueError):
+        auth_svc.request_signup_otp(new_email, "weak", "New Engineer")
+
+    # 2. Request signup OTP with strong password succeeds
+    res = auth_svc.request_signup_otp(new_email, strong_pwd, "New Engineer")
+    assert res["success"] is True
+    assert res["email"] == new_email
+
+    # Verify user is NOT yet in the database
+    assert db_repository.get_user_by_email(new_email) is None
+
+    # 3. Verify with bad OTP fails
+    with pytest.raises(ValueError) as exc:
+        auth_svc.verify_signup_otp(new_email, "000000")
+    assert "Invalid" in str(exc.value)
+
+    # 4. Mock known OTP for deterministic verification
+    test_otp = "654321"
+    test_otp_hash = _hash_password(test_otp)
+    db_repository.save_password_reset_otp(f"signup:{new_email}", test_otp_hash, expires_minutes=10)
+
+    # 5. Verify with valid OTP succeeds, creates user, and returns JWT session
+    session = auth_svc.verify_signup_otp(new_email, test_otp)
+    assert session.access_token is not None
+    assert session.user.email == new_email
+    assert session.user.display_name == "New Engineer"
+
+    # Verify user IS now in the database
+    created_user = db_repository.get_user_by_email(new_email)
+    assert created_user is not None
+    assert created_user["email"] == new_email
+
+

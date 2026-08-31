@@ -135,8 +135,10 @@ class GitHubAppClient:
     ) -> PullRequestInfo:
         """Creates a real GitHub Pull Request via API if token is configured, or generates official PR link."""
         import urllib.parse
-        clean_repo = repository.replace('local/', '').replace('demo_repo', 'project-changepilot').strip('/')
-        if "/" not in clean_repo:
+        clean_repo = repository.replace("https://github.com/", "").replace(".git", "").replace("local/", "").strip("/")
+        if clean_repo in ("demo_repo", "calculator-service"):
+            clean_repo = "kameswarpanda/project-changepilot"
+        elif "/" not in clean_repo:
             clean_repo = f"kameswarpanda/{clean_repo}"
 
         # 1. If GitHub token is present, attempt live Pull Request creation via GitHub REST API
@@ -168,13 +170,17 @@ class GitHubAppClient:
                             head_branch=head_branch,
                             status="OPEN"
                         )
+                    else:
+                        logger.info(f"GitHub API Pulls response {resp.status_code}: {resp.text}")
             except Exception as e:
                 logger.warning(f"GitHub API Pull Request creation notice: {e}")
 
-        # 2. Structured Pull Request Info with deterministic PR # and official PR URL
+        # 2. Official GitHub Compare & Pull Request URL with pre-filled title and description
         pr_number = (abs(hash(f"{clean_repo}:{head_branch}")) % 900) + 100
-        pr_url = f"https://github.com/{clean_repo}/pull/{pr_number}"
-        logger.info(f"Generated GitHub Pull Request #{pr_number} URL on {clean_repo}: {head_branch} -> {base_branch}")
+        quoted_title = urllib.parse.quote(title)
+        quoted_body = urllib.parse.quote(body)
+        pr_url = f"https://github.com/{clean_repo}/compare/{base_branch}...{head_branch}?expand=1&title={quoted_title}&body={quoted_body}"
+        logger.info(f"Generated official GitHub PR link for {clean_repo}: {pr_url}")
 
         return PullRequestInfo(
             pr_number=pr_number,
@@ -183,7 +189,7 @@ class GitHubAppClient:
             body=body,
             base_branch=base_branch,
             head_branch=head_branch,
-            status="OPEN"
+            status="READY"
         )
 
 

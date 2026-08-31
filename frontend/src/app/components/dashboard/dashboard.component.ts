@@ -27,42 +27,53 @@ export class DashboardComponent implements OnInit {
     return ms ? (ms / 1000).toFixed(2) + 's' : '3.24s';
   }
 
-  getStageState(stageKey: WorkflowStage, stageIndex: number): { status: 'pending' | 'running' | 'passed' | 'failed'; duration?: number } {
-    const isRunning = this.state.isRunningSubject.value;
-    const activeIndex = this.state.activeStageIndexSubject.value ?? 0;
-    const result = this.state.resultSubject.value;
-
-    // 1. When actively executing a pipeline
+  getStageStatus(
+    stageId: string,
+    index: number,
+    result: any,
+    isRunning: boolean,
+    activeStageIndex: number
+  ): 'success' | 'failed' | 'running' | 'pending' {
     if (isRunning) {
-      if (stageIndex < activeIndex) {
-        return { status: 'passed' };
-      } else if (stageIndex === activeIndex) {
-        return { status: 'running' };
-      } else {
-        return { status: 'pending' };
-      }
+      if (index < activeStageIndex) return 'success';
+      if (index === activeStageIndex) return 'running';
+      return 'pending';
     }
 
-    // 2. When a pipeline execution result is present
-    if (result) {
-      if (result.success) {
-        return { status: 'passed' };
-      } else {
-        const failedStageId = result.error_stage || result.current_stage;
-        const failedIdx = this.state.stages.findIndex(s => s.id === failedStageId);
-        const resolvedFailedIdx = failedIdx !== -1 ? failedIdx : 3;
-        
-        if (stageIndex < resolvedFailedIdx) {
-          return { status: 'passed' };
-        } else if (stageIndex === resolvedFailedIdx) {
-          return { status: 'failed' };
-        } else {
-          return { status: 'pending' };
-        }
-      }
+    if (!result) {
+      return 'pending';
     }
 
-    // 3. Initial idle state before running
-    return { status: 'pending' };
+    if (result.success) {
+      return 'success';
+    }
+
+    // Workflow failed
+    const failedStage = result.error_stage || result.current_stage || '';
+    const failedIdx = this.state.stages.findIndex(s => s.id === failedStage);
+    const resolvedFailedIdx = failedIdx !== -1 ? failedIdx : activeStageIndex;
+
+    if (index < resolvedFailedIdx) return 'success';
+    if (index === resolvedFailedIdx) return 'failed';
+    return 'pending';
+  }
+
+  getStageMessage(stageId: string, result: any): string | null {
+    if (!result || !result.audit_trail) return null;
+    const rec = result.audit_trail.find((a: any) => a.stage === stageId);
+    return rec?.message || null;
+  }
+
+  getStageDuration(stageId: string, result: any): string | null {
+    if (!result || !result.audit_trail) return null;
+    const rec = result.audit_trail.find((a: any) => a.stage === stageId);
+    if (rec && rec.duration_ms !== undefined && rec.duration_ms !== null) {
+      return `${(rec.duration_ms / 1000).toFixed(1)}s`;
+    }
+    return null;
+  }
+
+  openReport(tab: 'diff' | 'plan' | 'logs' | 'audit'): void {
+    this.state.openReportModal(tab);
   }
 }

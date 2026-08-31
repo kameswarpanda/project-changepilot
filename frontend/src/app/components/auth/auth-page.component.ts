@@ -20,11 +20,13 @@ export class AuthPageComponent implements OnInit {
   signInEmail = '';
   signInPassword = '';
 
-  // Sign Up form
+  // Sign Up form (with 2-Step OTP Verification Gate)
+  signUpStep: 'form' | 'verify' = 'form';
   signUpName = '';
   signUpEmail = '';
   signUpPassword = '';
   signUpConfirmPassword = '';
+  signUpOtp = '';
 
   // Forgot Password 3-Step Flow
   forgotStep: 'request' | 'verify' | 'reset' = 'request';
@@ -39,6 +41,7 @@ export class AuthPageComponent implements OnInit {
   isLoading = false;
   errorMessage: string | null = null;
   successMessage: string | null = null;
+  devHintMessage: string | null = null;
 
   constructor(
     public authService: AuthService,
@@ -111,6 +114,11 @@ export class AuthPageComponent implements OnInit {
     this.authMode = mode;
     this.errorMessage = null;
     this.successMessage = null;
+    this.devHintMessage = null;
+    if (mode === 'signup') {
+      this.signUpStep = 'form';
+      this.signUpOtp = '';
+    }
     if (mode === 'forgot') {
       this.forgotStep = 'request';
       this.forgotOtp = '';
@@ -204,6 +212,10 @@ export class AuthPageComponent implements OnInit {
   }
 
   handleSignUp(): void {
+    this.handleRequestSignUpOtp();
+  }
+
+  handleRequestSignUpOtp(): void {
     if (!this.signUpName.trim() || !this.signUpEmail.trim() || !this.signUpPassword) {
       this.errorMessage = 'Please complete all required fields.';
       return;
@@ -221,18 +233,45 @@ export class AuthPageComponent implements OnInit {
 
     this.isLoading = true;
     this.errorMessage = null;
+    this.successMessage = null;
 
-    this.authService.register(
+    this.authService.requestSignupOtp(
       this.signUpEmail.trim(),
       this.signUpPassword,
       this.signUpName.trim()
     ).subscribe({
-      next: () => {
+      next: (res: any) => {
         this.isLoading = false;
+        this.signUpStep = 'verify';
+        this.signUpOtp = '';
+        this.successMessage = res.message || `Verification code sent to ${this.signUpEmail}. Please enter the 6-digit code.`;
+        this.devHintMessage = res.dev_hint || null;
       },
       error: (err) => {
         this.isLoading = false;
-        this.errorMessage = err.error?.detail || 'Registration failed. Email may already be in use.';
+        this.errorMessage = err.error?.detail || 'Failed to send verification code. Email may already be in use.';
+      }
+    });
+  }
+
+  handleVerifySignUpOtp(): void {
+    if (!this.signUpOtp.trim() || this.signUpOtp.trim().length !== 6) {
+      this.errorMessage = 'Please enter the valid 6-digit verification code sent to your email.';
+      return;
+    }
+
+    this.isLoading = true;
+    this.errorMessage = null;
+    this.successMessage = null;
+
+    this.authService.verifySignupOtp(this.signUpEmail.trim(), this.signUpOtp.trim()).subscribe({
+      next: () => {
+        this.isLoading = false;
+        this.successMessage = 'Account created and verified successfully! Redirecting...';
+      },
+      error: (err) => {
+        this.isLoading = false;
+        this.errorMessage = err.error?.detail || 'Invalid or expired verification code.';
       }
     });
   }
@@ -249,11 +288,12 @@ export class AuthPageComponent implements OnInit {
     this.successMessage = null;
 
     this.authService.requestPasswordResetOtp(this.forgotEmail.trim()).subscribe({
-      next: (res) => {
+      next: (res: any) => {
         this.isLoading = false;
         this.forgotStep = 'verify';
         this.forgotOtp = ''; // User must manually enter the 6-digit code received via email
         this.successMessage = res.message || 'Verification code sent! Please check your email.';
+        this.devHintMessage = res.dev_hint || null;
       },
       error: (err) => {
         this.isLoading = false;

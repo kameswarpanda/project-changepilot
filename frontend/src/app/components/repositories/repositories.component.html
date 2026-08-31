@@ -10,10 +10,6 @@
         <span class="material-symbols-outlined text-[16px]">add_link</span>
         <span>+ Connect Repository</span>
       </button>
-      <button (click)="state.loadRepositories()" class="bg-[#161B22] border border-[#30363D] text-[#e1e2eb] font-semibold text-xs px-4 py-2 rounded-md hover:bg-[#272a31] transition-colors flex items-center gap-2">
-        <span class="material-symbols-outlined text-[16px]">sync</span>
-        <span>Sync All</span>
-      </button>
     </div>
   </div>
 
@@ -171,10 +167,11 @@
             </td>
             <td class="py-3 px-4 text-right space-x-2 whitespace-nowrap">
               <button (click)="inspect(repo)" 
-                      [disabled]="(state.isInspecting$ | async)" 
-                      class="text-[#8083ff] light:text-[#494bd6] hover:underline font-semibold text-xs inline-flex items-center gap-1">
-                <span class="material-symbols-outlined text-[14px]">search_insights</span>
-                <span>Inspect</span>
+                      [disabled]="inspectingRepoId === repo.id || (state.isInspecting$ | async)" 
+                      class="text-[#8083ff] light:text-[#494bd6] hover:underline font-semibold text-xs inline-flex items-center gap-1 disabled:opacity-60">
+                <span *ngIf="inspectingRepoId === repo.id" class="material-symbols-outlined text-[14px] animate-spin">autorenew</span>
+                <span *ngIf="inspectingRepoId !== repo.id" class="material-symbols-outlined text-[14px]">search_insights</span>
+                <span>{{ inspectingRepoId === repo.id ? 'Inspecting...' : 'Inspect' }}</span>
               </button>
               <button (click)="deleteRepo(repo, $event)" 
                       class="p-1 rounded text-[#EF4444] hover:bg-[#EF4444]/10 transition-colors inline-flex items-center" 
@@ -222,18 +219,24 @@
       <!-- Option 1: Platform Account Discovery (GitHub / Azure DevOps) -->
       <div *ngIf="connectMode === 'platform'" class="space-y-4 text-xs">
         <div>
-          <label class="font-title-sm text-xs text-[#908fa0] light:text-[#57606a] mb-1.5 block">Select Platform</label>
-          <div class="grid grid-cols-2 gap-2">
+          <label class="font-title-sm text-xs text-[#908fa0] light:text-[#57606a] mb-1.5 block font-semibold">Select Platform</label>
+          <div class="grid grid-cols-2 gap-2.5">
             <button (click)="connectProvider = 'github'; fetchUserPlatformRepos()" 
-                    [ngClass]="connectProvider === 'github' ? 'border-[#8083ff] light:border-[#494bd6] bg-[#272a31] light:bg-[#eef2ff] text-white light:text-[#494bd6] font-semibold' : 'border-[#30363D] light:border-[#d0d7de] bg-[#10131a] light:bg-[#f6f8fa] text-[#908fa0] light:text-[#57606a]'" 
-                    class="py-2.5 px-3 rounded-lg border text-left flex items-center justify-between transition-all">
-              <span>GitHub Account</span>
+                    [ngClass]="connectProvider === 'github' ? 'border-[#8083ff] light:border-[#494bd6] bg-[#272a31] light:bg-[#eef2ff] text-white light:text-[#494bd6] font-bold shadow-sm' : 'border-[#30363D] light:border-[#d0d7de] bg-[#10131a] light:bg-[#ffffff] text-[#908fa0] light:text-[#1f2328] hover:bg-[#161B22] light:hover:bg-[#f6f8fa]'" 
+                    class="py-3 px-3.5 rounded-lg border text-left flex items-center justify-between transition-all">
+              <div class="flex items-center gap-2">
+                <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+                <span class="text-xs font-semibold text-[#e1e2eb] light:text-[#1f2328]">GitHub Account</span>
+              </div>
               <span class="material-symbols-outlined text-[16px] text-[#10B981]">check_circle</span>
             </button>
             <button (click)="connectProvider = 'azure_devops'; fetchUserPlatformRepos()" 
-                    [ngClass]="connectProvider === 'azure_devops' ? 'border-[#8083ff] light:border-[#494bd6] bg-[#272a31] light:bg-[#eef2ff] text-white light:text-[#494bd6] font-semibold' : 'border-[#30363D] light:border-[#d0d7de] bg-[#10131a] light:bg-[#f6f8fa] text-[#908fa0] light:text-[#57606a]'" 
-                    class="py-2.5 px-3 rounded-lg border text-left flex items-center justify-between transition-all">
-              <span>Azure DevOps</span>
+                    [ngClass]="connectProvider === 'azure_devops' ? 'border-[#8083ff] light:border-[#494bd6] bg-[#272a31] light:bg-[#eef2ff] text-white light:text-[#494bd6] font-bold shadow-sm' : 'border-[#30363D] light:border-[#d0d7de] bg-[#10131a] light:bg-[#ffffff] text-[#908fa0] light:text-[#1f2328] hover:bg-[#161B22] light:hover:bg-[#f6f8fa]'" 
+                    class="py-3 px-3.5 rounded-lg border text-left flex items-center justify-between transition-all">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-[18px] text-[#0078D4]">cloud</span>
+                <span class="text-xs font-semibold text-[#e1e2eb] light:text-[#1f2328]">Azure DevOps</span>
+              </div>
               <span class="material-symbols-outlined text-[16px] text-[#908fa0] light:text-[#57606a]">cloud_sync</span>
             </button>
           </div>

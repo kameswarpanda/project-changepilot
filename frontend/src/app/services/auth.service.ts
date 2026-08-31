@@ -91,6 +91,22 @@ export class AuthService {
     );
   }
 
+  requestSignupOtp(email: string, password: string, displayName: string): Observable<{ success: boolean; message: string; email: string }> {
+    return this.http.post<{ success: boolean; message: string; email: string }>(
+      `${this.apiUrl}/signup/request-otp`,
+      { email, password, display_name: displayName }
+    );
+  }
+
+  verifySignupOtp(email: string, otp: string): Observable<AuthSessionResponse> {
+    return this.http.post<AuthSessionResponse>(
+      `${this.apiUrl}/signup/verify-otp`,
+      { email, otp }
+    ).pipe(
+      tap((res) => this.handleAuthSuccess(res))
+    );
+  }
+
   requestPasswordResetOtp(email: string): Observable<{ success: boolean; message: string; email: string }> {
     return this.http.post<{ success: boolean; message: string; email: string }>(
       `${this.apiUrl}/forgot-password/request-otp`,

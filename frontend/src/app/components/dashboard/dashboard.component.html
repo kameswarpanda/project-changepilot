@@ -82,74 +82,163 @@
     </div>
   </section>
 
-  <!-- SECTION 2: Active Pipeline Real-Time Monitor -->
-  <section class="bg-[#161B22] light:bg-white border border-[#30363D] light:border-[#d0d7de] rounded-xl p-5 shadow-sm space-y-4">
-    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-3 border-b border-[#30363D] light:border-[#d0d7de]">
+  <!-- SECTION 2: Active Pipeline Real-Time Monitor (Exact Mirror of Pipelines Stepper) -->
+  <section class="bg-[#161B22] light:bg-white border border-[#30363D] light:border-[#d0d7de] rounded-xl p-6 shadow-sm space-y-6">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
       <div>
-        <div class="flex items-center gap-2">
-          <span class="w-2.5 h-2.5 rounded-full bg-[#8083ff] animate-pulse"></span>
-          <h3 class="font-title-sm text-sm font-bold text-[#e1e2eb] light:text-[#1f2328]">
-            Active Pipeline: #{{ (state.storyIdSubject | async) || 'CP-DEMO-01' }}
+        <div class="flex items-center gap-3">
+          <h3 class="font-display-lg text-xl font-bold text-[#e1e2eb] light:text-[#1f2328]">
+            Active Pipeline: #{{ (state.storyIdSubject | async) || 'CP-DEMO' }}
           </h3>
-          <span class="text-xs text-[#908fa0] light:text-[#57606a] font-mono">• {{ (state.repoLocationSubject | async) || 'demo_repo' }}</span>
-        </div>
-        <p class="font-body-sm text-xs text-[#908fa0] light:text-[#57606a] mt-1">{{ state.titleSubject | async }}</p>
-      </div>
-
-      <div class="flex items-center gap-2">
-        <span *ngIf="(state.isRunning$ | async)" class="bg-[#8083ff]/15 text-[#8083ff] light:bg-[#494bd6]/10 light:text-[#494bd6] text-xs font-semibold px-2.5 py-1 rounded-full border border-[#8083ff]/30 flex items-center gap-1.5 animate-pulse">
-          <span class="material-symbols-outlined text-[14px] animate-spin">autorenew</span>
-          <span>RUNNING STAGES</span>
-        </span>
-        <span *ngIf="!(state.isRunning$ | async) && (state.result$ | async)?.success" class="bg-[#10B981]/15 text-[#10B981] text-xs font-semibold px-2.5 py-1 rounded-full border border-[#10B981]/30 flex items-center gap-1.5">
-          <span class="material-symbols-outlined text-[14px]">check_circle</span>
-          <span>PASSED (9/9)</span>
-        </span>
-        <span *ngIf="!(state.isRunning$ | async) && !(state.result$ | async)" class="bg-[#272a31] light:bg-[#f6f8fa] text-[#908fa0] light:text-[#57606a] text-xs font-semibold px-2.5 py-1 rounded-full border border-[#30363D] light:border-[#d0d7de]">
-          READY
-        </span>
-      </div>
-    </div>    <!-- 9-Stage Node Flow with Continuous Progress Line -->
-    <div class="overflow-x-auto pb-3 pt-3">
-      <div class="relative min-w-[760px] px-6">
-        <!-- Connecting Line Background -->
-        <div class="absolute top-[22px] left-10 right-10 h-0.5 bg-[#30363D] light:bg-[#d0d7de] z-0"></div>
-        <!-- Active Progress Line -->
-        <div class="absolute top-[22px] left-10 h-0.5 bg-[#10B981] z-0 transition-all duration-500"
-             [style.width]="(((state.activeStageIndex$ | async) ?? 0) > 0 ? ((((state.activeStageIndex$ | async) ?? 0) / 8) * 100) + '%' : ((state.result$ | async)?.success ? '100%' : '0%'))"></div>
-
-        <div class="flex items-start justify-between relative z-10">
-          <div *ngFor="let s of state.stages; let i = index" class="flex flex-col items-center gap-1.5 w-20">
-            <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all shadow-md"
-                 [ngClass]="{
-                   'bg-[#10B981] text-white ring-4 ring-[#10B981]/20': getStageState(s.key, i).status === 'passed',
-                   'bg-[#8083ff] text-[#0d0096] ring-4 ring-[#8083ff]/40 animate-pulse': getStageState(s.key, i).status === 'running',
-                   'bg-[#EF4444] text-white ring-4 ring-[#EF4444]/20': getStageState(s.key, i).status === 'failed',
-                   'border border-[#30363D] light:border-[#d0d7de] bg-[#10131a] light:bg-[#ffffff] text-[#908fa0] light:text-[#57606a]': getStageState(s.key, i).status === 'pending'
-                 }">
-              <span *ngIf="getStageState(s.key, i).status === 'passed'" class="material-symbols-outlined text-[15px]">check</span>
-              <span *ngIf="getStageState(s.key, i).status === 'running'" class="material-symbols-outlined text-[15px] animate-spin">autorenew</span>
-              <span *ngIf="getStageState(s.key, i).status === 'failed'" class="material-symbols-outlined text-[15px]">close</span>
-              <span *ngIf="getStageState(s.key, i).status === 'pending'">{{ s.number }}</span>
-            </div>
-            <span class="font-label-caps text-[10px] text-center leading-tight truncate max-w-full"
-                  [ngClass]="getStageState(s.key, i).status === 'running' ? 'text-[#8083ff] light:text-[#494bd6] font-bold' : (getStageState(s.key, i).status === 'passed' ? 'text-[#10B981] font-semibold' : 'text-[#908fa0] light:text-[#57606a]')">
-              {{ s.label }}
+          
+          <!-- Dynamic Status Badge -->
+          <ng-container *ngIf="(state.isRunning$ | async)">
+            <span class="px-2.5 py-0.5 rounded text-[11px] font-bold tracking-wide uppercase bg-[#8083ff]/15 text-[#8083ff] light:bg-[#6366f1]/10 light:text-[#494bd6] border border-[#8083ff]/30 flex items-center gap-1.5 animate-pulse">
+              <span class="material-symbols-outlined text-[14px] animate-spin">autorenew</span>
+              <span>RUNNING (Stage {{ ((state.activeStageIndex$ | async) || 0) + 1 }}/9)</span>
             </span>
-          </div>
+          </ng-container>
+
+          <ng-container *ngIf="!(state.isRunning$ | async) && (state.result$ | async) as res">
+            <span *ngIf="res.success" class="px-2.5 py-0.5 rounded text-[11px] font-bold tracking-wide uppercase bg-[#4edea3]/15 text-[#4edea3] light:bg-[#10b981]/15 light:text-[#047857] border border-[#4edea3]/30 flex items-center gap-1">
+              <span class="material-symbols-outlined text-[14px]">check_circle</span>
+              <span>SUCCESS (9/9 Gates Passed)</span>
+            </span>
+            <span *ngIf="!res.success" class="px-2.5 py-0.5 rounded text-[11px] font-bold tracking-wide uppercase bg-[#ffb4ab]/15 text-[#ffb4ab] light:bg-[#fee2e2] light:text-[#b91c1c] border border-[#ffb4ab]/30 flex items-center gap-1">
+              <span class="material-symbols-outlined text-[14px]">error</span>
+              <span>HALTED ({{ res.error_stage || res.current_stage }})</span>
+            </span>
+          </ng-container>
+
+          <ng-container *ngIf="!(state.isRunning$ | async) && !(state.result$ | async)">
+            <span class="px-2.5 py-0.5 rounded text-[11px] font-bold tracking-wide uppercase bg-[#30363D]/50 text-[#908fa0] light:bg-[#f3f4f6] light:text-[#57606a] border border-[#30363D] light:border-[#d0d7de]">
+              READY TO RUN
+            </span>
+          </ng-container>
         </div>
+
+        <p class="font-body-md text-xs text-[#908fa0] light:text-[#57606a] mt-1 font-mono">
+          {{ (state.titleSubject | async) || 'Autonomous Change Execution' }} • {{ (state.repoLocationSubject | async) || 'demo_repo' }} [{{ state.baseBranchSubject | async }}]
+        </p>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <button (click)="runPipeline()" [disabled]="(state.isRunning$ | async)" class="px-4 py-2 rounded-md bg-[#494bd6] hover:bg-[#8083ff] text-white hover:text-[#0d0096] text-xs font-semibold transition-colors flex items-center gap-2 disabled:opacity-60 shadow-sm">
+          <span *ngIf="!(state.isRunning$ | async)" class="material-symbols-outlined text-[16px]">play_arrow</span>
+          <span *ngIf="(state.isRunning$ | async)" class="material-symbols-outlined text-[16px] animate-spin">autorenew</span>
+          <span>{{ (state.isRunning$ | async) ? 'Running Pipeline...' : 'Run Pipeline' }}</span>
+        </button>
+        <button (click)="state.setNav('results')" class="px-4 py-2 rounded-md border border-[#30363D] light:border-[#d0d7de] text-[#e1e2eb] light:text-[#1f2328] hover:bg-[#272a31] light:hover:bg-[#f3f4f6] text-xs font-semibold transition-colors flex items-center gap-2">
+          <span class="material-symbols-outlined text-[16px]">task_alt</span>
+          <span>View Result Diff</span>
+        </button>
       </div>
     </div>
 
-    <div class="pt-2 border-t border-[#30363D] light:border-[#d0d7de] flex justify-between items-center text-xs">
-      <div class="flex items-center gap-4 text-[#908fa0] light:text-[#57606a]">
-        <span>Branch: <code class="text-[#8083ff] light:text-[#494bd6] font-mono">{{ (state.result$ | async)?.branch_name || 'changepilot/main' }}</code></span>
-        <span>Duration: <strong class="text-[#e1e2eb] light:text-[#1f2328]">{{ getFormattedDuration() }}</strong></span>
+    <!-- 9-Stage Connected Dynamic Stepper Track -->
+    <div class="overflow-x-auto pb-4 pt-2">
+      <div class="flex items-center justify-between min-w-[860px] px-2 relative">
+        <ng-container *ngFor="let s of state.stages; let i = index; let last = last">
+          
+          <!-- Stage Node -->
+          <div class="flex flex-col items-center gap-2 z-10 w-24 text-center group cursor-pointer"
+               (click)="openReport('logs')"
+               [title]="getStageMessage(s.id, (state.result$ | async)) || s.label">
+            
+            <ng-container [ngSwitch]="getStageStatus(s.id, i, (state.result$ | async), !!(state.isRunning$ | async), (state.activeStageIndex$ | async) || 0)">
+              
+              <!-- 1. SUCCESS: Solid Vibrant Green with check icon -->
+              <div *ngSwitchCase="'success'" 
+                   class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold bg-[#10B981] text-white ring-4 ring-[#10B981]/20 shadow-md transition-all">
+                <span class="material-symbols-outlined text-[18px]">check</span>
+              </div>
+
+              <!-- 2. FAILED: Solid Vibrant Crimson Red with close icon -->
+              <div *ngSwitchCase="'failed'" 
+                   class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold bg-[#EF4444] text-white ring-4 ring-[#EF4444]/30 shadow-md animate-bounce transition-all">
+                <span class="material-symbols-outlined text-[18px]">close</span>
+              </div>
+
+              <!-- 3. RUNNING: Pulsating Blue/Purple Ring with sync spinner -->
+              <div *ngSwitchCase="'running'" 
+                   class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold bg-[#8083ff] text-[#0d0096] ring-4 ring-[#8083ff]/40 shadow-lg animate-pulse transition-all">
+                <span class="material-symbols-outlined text-[18px] animate-spin">sync</span>
+              </div>
+
+              <!-- 4. PENDING: Subdued Neutral Grey with Stage Number -->
+              <div *ngSwitchDefault 
+                   class="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold border-2 border-[#30363D] light:border-[#d0d7de] bg-[#10131a] light:bg-[#f6f8fa] text-[#908fa0] light:text-[#57606a] transition-all">
+                {{ i + 1 }}
+              </div>
+            </ng-container>
+
+            <!-- Stage Label -->
+            <span class="font-body-sm text-[11px] leading-tight transition-colors"
+                  [ngClass]="{
+                    'text-[#10B981] font-semibold': getStageStatus(s.id, i, (state.result$ | async), !!(state.isRunning$ | async), (state.activeStageIndex$ | async) || 0) === 'success',
+                    'text-[#EF4444] font-bold': getStageStatus(s.id, i, (state.result$ | async), !!(state.isRunning$ | async), (state.activeStageIndex$ | async) || 0) === 'failed',
+                    'text-[#8083ff] light:text-[#494bd6] font-bold': getStageStatus(s.id, i, (state.result$ | async), !!(state.isRunning$ | async), (state.activeStageIndex$ | async) || 0) === 'running',
+                    'text-[#908fa0] light:text-[#57606a]': getStageStatus(s.id, i, (state.result$ | async), !!(state.isRunning$ | async), (state.activeStageIndex$ | async) || 0) === 'pending'
+                  }">
+              {{ s.label }}
+            </span>
+
+            <!-- Duration / Status Badge -->
+            <span class="text-[10px] font-mono leading-none"
+                  [ngClass]="{
+                    'text-[#10B981]': getStageStatus(s.id, i, (state.result$ | async), !!(state.isRunning$ | async), (state.activeStageIndex$ | async) || 0) === 'success',
+                    'text-[#8083ff] animate-pulse': getStageStatus(s.id, i, (state.result$ | async), !!(state.isRunning$ | async), (state.activeStageIndex$ | async) || 0) === 'running',
+                    'text-[#EF4444]': getStageStatus(s.id, i, (state.result$ | async), !!(state.isRunning$ | async), (state.activeStageIndex$ | async) || 0) === 'failed',
+                    'text-[#64748b]': getStageStatus(s.id, i, (state.result$ | async), !!(state.isRunning$ | async), (state.activeStageIndex$ | async) || 0) === 'pending'
+                  }">
+              <ng-container *ngIf="getStageStatus(s.id, i, (state.result$ | async), !!(state.isRunning$ | async), (state.activeStageIndex$ | async) || 0) === 'success'">
+                {{ getStageDuration(s.id, (state.result$ | async)) || 'Passed' }}
+              </ng-container>
+              <ng-container *ngIf="getStageStatus(s.id, i, (state.result$ | async), !!(state.isRunning$ | async), (state.activeStageIndex$ | async) || 0) === 'running'">
+                Active
+              </ng-container>
+              <ng-container *ngIf="getStageStatus(s.id, i, (state.result$ | async), !!(state.isRunning$ | async), (state.activeStageIndex$ | async) || 0) === 'failed'">
+                Failed
+              </ng-container>
+              <ng-container *ngIf="getStageStatus(s.id, i, (state.result$ | async), !!(state.isRunning$ | async), (state.activeStageIndex$ | async) || 0) === 'pending'">
+                Queued
+              </ng-container>
+            </span>
+          </div>
+
+          <!-- Connecting Track Line (between node i and i+1) -->
+          <div *ngIf="!last" class="flex-1 h-[2px] mx-1 transition-all"
+               [ngClass]="{
+                 'bg-[#10B981]': getStageStatus(state.stages[i+1].id, i+1, (state.result$ | async), !!(state.isRunning$ | async), (state.activeStageIndex$ | async) || 0) === 'success',
+                 'bg-[#EF4444]': getStageStatus(state.stages[i+1].id, i+1, (state.result$ | async), !!(state.isRunning$ | async), (state.activeStageIndex$ | async) || 0) === 'failed',
+                 'bg-[#8083ff] animate-pulse': getStageStatus(state.stages[i+1].id, i+1, (state.result$ | async), !!(state.isRunning$ | async), (state.activeStageIndex$ | async) || 0) === 'running',
+                 'bg-[#30363D] light:bg-[#d0d7de]': getStageStatus(state.stages[i+1].id, i+1, (state.result$ | async), !!(state.isRunning$ | async), (state.activeStageIndex$ | async) || 0) === 'pending'
+               }">
+          </div>
+
+        </ng-container>
       </div>
-      <button (click)="state.setNav('results')" class="text-[#8083ff] light:text-[#494bd6] hover:underline font-semibold flex items-center gap-1">
-        <span>View Diff & Changes</span>
-        <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
-      </button>
+    </div>
+
+    <!-- Safety Gate Violation / Failure Diagnostic Box (Only visible if failed) -->
+    <div *ngIf="(state.result$ | async) as res" [hidden]="res.success" class="p-4 rounded-lg bg-[#1E1215] light:bg-[#FEF2F2] border border-[#EF4444]/40 light:border-[#EF4444]/30 space-y-3">
+      <div class="flex items-start justify-between gap-3">
+        <div class="flex items-start gap-2.5">
+          <span class="material-symbols-outlined text-[#EF4444] text-[22px] shrink-0 mt-0.5">report</span>
+          <div>
+            <h4 class="font-bold text-xs text-[#FFE2E5] light:text-[#991B1B]">
+              Pipeline Halted at Gate: {{ res.error_stage || res.current_stage }}
+            </h4>
+            <p class="text-xs text-[#ffb4ab] light:text-[#b91c1c] mt-1 leading-relaxed">
+              {{ res.error_message || 'Safety policy check failed during autonomous execution.' }}
+            </p>
+          </div>
+        </div>
+        <button (click)="runPipeline()" class="px-3 py-1.5 rounded bg-[#EF4444] hover:bg-[#DC2626] text-white text-xs font-semibold shrink-0 transition-colors flex items-center gap-1">
+          <span class="material-symbols-outlined text-[14px]">refresh</span>
+          <span>Retry</span>
+        </button>
+      </div>
     </div>
   </section>
 

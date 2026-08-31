@@ -143,6 +143,49 @@ async def register(req: RegisterRequest):
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Registration failed: {str(e)}")
 
 
+@router.get("/api/auth/me", response_model=User, tags=["Auth"])
+async def get_current_user_profile(user: User = Depends(get_current_user)):
+    """Returns the authenticated user profile for session hydration."""
+    return user
+
+
+class RequestSignupOtpPayload(BaseModel):
+    email: str
+    password: str
+    display_name: str
+
+
+class VerifySignupOtpPayload(BaseModel):
+    email: str
+    otp: str
+
+
+@router.post("/api/auth/signup/request-otp", tags=["Auth"])
+async def request_signup_otp(req: RequestSignupOtpPayload):
+    """Enforces password complexity and dispatches 6-digit OTP to user's email."""
+    try:
+        res = auth_service.request_signup_otp(req.email, req.password, req.display_name)
+        return res
+    except ValueError as ve:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(ve))
+    except Exception as e:
+        logger.exception(f"Error requesting signup OTP: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to dispatch verification email: {str(e)}")
+
+
+@router.post("/api/auth/signup/verify-otp", response_model=AuthSessionResponse, tags=["Auth"])
+async def verify_signup_otp(req: VerifySignupOtpPayload):
+    """Validates 6-digit OTP code, registers user, and issues authenticated session."""
+    try:
+        session = auth_service.verify_signup_otp(req.email, req.otp)
+        return session
+    except ValueError as ve:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(ve))
+    except Exception as e:
+        logger.exception(f"Error verifying signup OTP: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to verify account: {str(e)}")
+
+
 @router.post("/api/auth/login", response_model=AuthSessionResponse, tags=["Auth"])
 async def login(req: LoginRequest):
     """Authenticates user with Google Identity, Email/Password, or Demo profile."""
@@ -212,9 +255,19 @@ async def reset_password_with_otp(req: ResetPasswordPayload):
 # Assigned Cloud Tickets Integration (Jira / Azure DevOps / GitHub)
 # -----------------------------------------------------------------------------
 @router.get("/api/integrations/assigned-tickets", tags=["Integrations"])
-async def get_assigned_tickets(user: User = Depends(get_current_user)):
-    """Fetches assigned cloud tickets from the persistent database."""
-    return db_repository.list_assigned_tickets(user_id=user.id)
+async def get_assigned_tickets(notify: bool = False, user: User = Depends(get_current_user)):
+    """Fetches assigned cloud tickets from the persistent database and notifies user if assigned."""
+    tickets = db_repository.list_assigned_tickets(user_id=user.id)
+    if tickets and user.email:
+        try:
+            auth_service.send_ticket_assignment_notification(
+                to_email=user.email,
+                tickets=tickets,
+                display_name=user.display_name or user.username
+            )
+        except Exception as ex:
+            logger.debug(f"Assigned tickets email notification notice: {ex}")
+    return tickets
 
 
 @router.post("/api/integrations/assigned-tickets", tags=["Integrations"])

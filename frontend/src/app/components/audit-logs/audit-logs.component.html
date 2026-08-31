@@ -56,15 +56,25 @@
         </span>
       </div>
 
-      <!-- Events Stats -->
-      <div class="grid grid-cols-2 gap-2 bg-[#10131a] light:bg-[#f6f8fa] p-2.5 rounded-lg border border-[#30363D] light:border-[#d0d7de] text-xs">
-        <div>
-          <span class="text-[10px] text-[#908fa0] light:text-[#57606a] block">Audit Events</span>
-          <span class="font-bold text-[#e1e2eb] light:text-[#1f2328]">{{ group.total_events }} Recorded</span>
+      <!-- Events & Step Breakdown Stats -->
+      <div class="space-y-2 bg-[#10131a] light:bg-[#f6f8fa] p-3 rounded-lg border border-[#30363D] light:border-[#d0d7de] text-xs">
+        <div class="flex items-center justify-between">
+          <span class="text-[10px] text-[#908fa0] light:text-[#57606a] font-label-caps uppercase">Step Breakdown</span>
+          <span class="font-bold text-[11px]" [ngClass]="group.final_status === 'PASSED' ? 'text-[#10B981]' : 'text-[#EF4444]'">
+            {{ group.latest_step_summary }}
+          </span>
         </div>
-        <div>
-          <span class="text-[10px] text-[#908fa0] light:text-[#57606a] block">Safety Gates</span>
-          <span class="font-bold text-[#10B981]">{{ group.passed_events }}/{{ group.total_events }} Passed</span>
+        <div class="grid grid-cols-2 gap-2 pt-1.5 border-t border-[#30363D]/40 light:border-[#d0d7de]/40">
+          <div>
+            <span class="text-[10px] text-[#908fa0] light:text-[#57606a] block">Executions</span>
+            <span class="font-bold text-[#e1e2eb] light:text-[#1f2328]">
+              {{ group.total_runs }} {{ group.total_runs === 1 ? 'Run' : 'Runs (Retry)' }}
+            </span>
+          </div>
+          <div>
+            <span class="text-[10px] text-[#908fa0] light:text-[#57606a] block">Audit Records</span>
+            <span class="font-bold text-[#38BDF8] light:text-[#0969da]">{{ group.total_events }} Gates Logged</span>
+          </div>
         </div>
       </div>
 
@@ -72,7 +82,7 @@
       <div class="flex items-center justify-between text-[11px] text-[#908fa0] light:text-[#57606a] pt-1">
         <span class="truncate max-w-[180px]">By {{ group.user_email }}</span>
         <span class="font-semibold text-[#8083ff] light:text-[#494bd6] flex items-center gap-0.5 group-hover:translate-x-0.5 transition-transform">
-          <span>View Trail</span>
+          <span>View Detailed Steps</span>
           <span class="material-symbols-outlined text-[13px]">arrow_forward</span>
         </span>
       </div>
@@ -83,7 +93,7 @@
     No audit events matched your search query. Run a change pipeline to record safety evaluations.
   </div>
 
-  <!-- Story Audit Trail Modal -->
+  <!-- Story Audit Trail Modal with Step-Level Breakdown & Retry Runs -->
   <div *ngIf="showDetailModal && selectedStoryGroup" class="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 animate-fadeIn">
     <div class="bg-[#161B22] light:bg-white border border-[#30363D] light:border-[#d0d7de] rounded-xl w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden text-[#e1e2eb] light:text-[#1f2328]">
       
@@ -95,7 +105,7 @@
           </div>
           <div>
             <h3 class="font-title-sm text-base font-bold text-[#e1e2eb] light:text-[#1f2328]">
-              Audit Trail — {{ selectedStoryGroup.story_id }}
+              Step-by-Step Audit Trail — {{ selectedStoryGroup.story_id }}
             </h3>
             <p class="font-mono text-xs text-[#908fa0] light:text-[#57606a]">
               {{ selectedStoryGroup.repository }} • {{ selectedStoryGroup.user_email }}
@@ -105,31 +115,73 @@
         <button (click)="closeStoryDetail()" class="text-[#908fa0] light:text-[#57606a] hover:text-[#e1e2eb] text-xl font-bold">&times;</button>
       </div>
 
-      <!-- Modal Body: Chronological Trail -->
+      <!-- Multi-Run Selector (If Retry/Multiple Runs exist) -->
+      <div *ngIf="selectedStoryGroup.runs.length > 1" class="px-6 py-2.5 bg-[#161B22] light:bg-[#ffffff] border-b border-[#30363D] light:border-[#d0d7de] flex items-center gap-2 overflow-x-auto text-xs">
+        <span class="text-[11px] text-[#908fa0] light:text-[#57606a] font-semibold shrink-0">Execution Run:</span>
+        <button *ngFor="let run of selectedStoryGroup.runs; let runIdx = index" 
+                (click)="selectedRunIndex = runIdx" 
+                [ngClass]="selectedRunIndex === runIdx ? 'bg-[#494bd6] text-white font-bold shadow-sm' : 'bg-[#10131a] light:bg-[#f6f8fa] text-[#908fa0] light:text-[#57606a] border border-[#30363D] light:border-[#d0d7de]'"
+                class="px-3 py-1 rounded-md text-[11px] flex items-center gap-1.5 shrink-0 transition-colors">
+          <span class="material-symbols-outlined text-[13px]" [ngClass]="run.status === 'PASSED' ? 'text-[#10B981]' : 'text-[#EF4444]'">
+            {{ run.status === 'PASSED' ? 'check_circle' : 'cancel' }}
+          </span>
+          <span>Run {{ selectedStoryGroup.runs.length - runIdx }} ({{ run.status }}: {{ run.passed_steps }}/{{ run.total_steps }} Steps)</span>
+        </button>
+      </div>
+
+      <!-- Step Status Summary Bar in Modal -->
+      <div class="px-6 py-3 bg-[#1d2026] light:bg-[#f6f8fa] border-b border-[#30363D] light:border-[#d0d7de] flex items-center justify-between text-xs">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-[16px] text-[#8083ff] light:text-[#494bd6]">account_tree</span>
+          <span class="font-semibold text-[#e1e2eb] light:text-[#1f2328]">
+            {{ selectedStoryGroup.runs[selectedRunIndex] ? selectedStoryGroup.runs[selectedRunIndex].passed_steps : selectedStoryGroup.passed_events }} of {{ selectedStoryGroup.runs[selectedRunIndex] ? selectedStoryGroup.runs[selectedRunIndex].total_steps : selectedStoryGroup.total_events }} Steps Passed
+          </span>
+        </div>
+        <span class="px-2 py-0.5 rounded text-[10px] font-bold"
+              [ngClass]="(selectedStoryGroup.runs[selectedRunIndex] ? selectedStoryGroup.runs[selectedRunIndex].status : selectedStoryGroup.final_status) === 'PASSED' ? 'bg-[#10B981]/15 text-[#10B981]' : 'bg-[#EF4444]/15 text-[#EF4444]'">
+          {{ selectedStoryGroup.runs[selectedRunIndex] ? selectedStoryGroup.runs[selectedRunIndex].status : selectedStoryGroup.final_status }}
+        </span>
+      </div>
+
+      <!-- Modal Body: Step-Level Breakdown Trail -->
       <div class="p-6 overflow-y-auto space-y-4 flex-1">
         <div class="relative pl-6 border-l-2 border-[#30363D] light:border-[#d0d7de] space-y-6">
-          <div *ngFor="let ev of selectedStoryGroup.events" class="relative group">
-            <!-- Timeline Dot -->
-            <div class="absolute -left-[31px] top-1 w-4 h-4 rounded-full border-2 bg-[#161B22] light:bg-white flex items-center justify-center"
+          <div *ngFor="let ev of (selectedStoryGroup.runs[selectedRunIndex]?.steps || selectedStoryGroup.events); let stepNum = index" class="relative group">
+            
+            <!-- Timeline Dot with Check / Cross Icon -->
+            <div class="absolute -left-[32px] top-1 w-5 h-5 rounded-full border-2 bg-[#161B22] light:bg-white flex items-center justify-center shadow-sm"
                  [ngClass]="ev.status === 'PASSED' ? 'border-[#10B981] text-[#10B981]' : 'border-[#EF4444] text-[#EF4444]'">
-              <div class="w-1.5 h-1.5 rounded-full" [ngClass]="ev.status === 'PASSED' ? 'bg-[#10B981]' : 'bg-[#EF4444]'"></div>
+              <span class="material-symbols-outlined text-[12px] font-bold">
+                {{ ev.status === 'PASSED' ? 'check' : 'close' }}
+              </span>
             </div>
 
-            <!-- Event Card -->
-            <div class="bg-[#10131a] light:bg-[#f6f8fa] border border-[#30363D] light:border-[#d0d7de] rounded-lg p-3.5 space-y-1.5 text-xs">
+            <!-- Step Event Card -->
+            <div class="bg-[#10131a] light:bg-[#f6f8fa] border rounded-lg p-3.5 space-y-1.5 text-xs shadow-sm transition-colors"
+                 [ngClass]="ev.status === 'PASSED' ? 'border-[#30363D] light:border-[#d0d7de]' : 'border-[#EF4444]/50 light:border-[#EF4444]/40 bg-[#1E1215]/30 light:bg-[#FEF2F2]'">
               <div class="flex items-center justify-between">
-                <span class="font-mono font-bold text-[#38BDF8] light:text-[#0969da]">{{ ev.stage }}</span>
+                <div class="flex items-center gap-2">
+                  <span class="w-5 h-5 rounded bg-[#8083ff]/15 text-[#8083ff] light:text-[#494bd6] font-bold text-[10px] flex items-center justify-center">
+                    {{ stepNum + 1 }}
+                  </span>
+                  <span class="font-mono font-bold text-[#38BDF8] light:text-[#0969da]">{{ ev.stage }}</span>
+                </div>
                 <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold"
                       [ngClass]="ev.status === 'PASSED' ? 'bg-[#10B981]/15 text-[#10B981]' : 'bg-[#EF4444]/15 text-[#EF4444]'">
                   {{ ev.status }}
                 </span>
               </div>
-              <div class="text-[#e1e2eb] light:text-[#1f2328] font-medium">{{ ev.action }}</div>
-              <div *ngIf="ev.safety_rule" class="font-mono text-[11px] text-[#908fa0] light:text-[#57606a]">
+
+              <div class="text-[#e1e2eb] light:text-[#1f2328] font-medium leading-relaxed pl-7">
+                {{ ev.action }}
+              </div>
+
+              <div *ngIf="ev.safety_rule" class="font-mono text-[11px] text-[#908fa0] light:text-[#57606a] pl-7">
                 Policy: {{ ev.safety_rule }}
               </div>
-              <div class="text-[10px] text-[#908fa0] light:text-[#57606a] pt-1 border-t border-[#30363D] light:border-[#d0d7de] flex justify-between">
-                <span>{{ ev.timestamp ? (ev.timestamp | date:'medium') : 'Recorded in execution' }}</span>
+
+              <div class="text-[10px] text-[#908fa0] light:text-[#57606a] pt-1.5 mt-1 border-t border-[#30363D] light:border-[#d0d7de] flex justify-between pl-7">
+                <span>{{ ev.timestamp ? (ev.timestamp | date:'medium') : 'Recorded in pipeline run' }}</span>
                 <span class="font-mono">{{ ev.target_repository }}</span>
               </div>
             </div>
@@ -139,7 +191,7 @@
 
       <!-- Modal Footer -->
       <div class="px-6 py-3 border-t border-[#30363D] light:border-[#d0d7de] flex justify-end bg-[#10131a] light:bg-[#f6f8fa]">
-        <button (click)="closeStoryDetail()" class="px-4 py-1.5 rounded-lg bg-[#494bd6] text-white text-xs font-semibold hover:bg-[#8083ff]">
+        <button (click)="closeStoryDetail()" class="px-5 py-2 rounded-lg bg-[#494bd6] text-white text-xs font-semibold hover:bg-[#8083ff] hover:text-[#0d0096] transition-colors shadow-sm">
           Close
         </button>
       </div>

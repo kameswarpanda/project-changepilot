@@ -99,84 +99,135 @@
           </button>
         </form>
 
-        <!-- 2. CREATE ACCOUNT (SIGN UP) FORM -->
-        <form *ngIf="authMode === 'signup'" (ngSubmit)="handleSignUp()" autocomplete="off" class="space-y-3.5 text-xs">
-          <div>
-            <label class="font-title-sm text-xs text-[#908fa0] light:text-[#57606a] mb-1 block">Full Name</label>
-            <input type="text" 
-                   [(ngModel)]="signUpName" 
-                   name="signUpName"
-                   autocomplete="off"
-                   placeholder="Kameswar Panda" 
-                   required
-                   class="w-full bg-[#10131a] light:bg-white border border-[#30363D] light:border-[#d0d7de] rounded-md px-3 py-2 text-[#e1e2eb] light:text-[#1f2328] text-xs focus:outline-none focus:border-[#8083ff] light:focus:border-[#494bd6]">
-          </div>
-
-          <div>
-            <label class="font-title-sm text-xs text-[#908fa0] light:text-[#57606a] mb-1 block">Work Email</label>
-            <input type="email" 
-                   [(ngModel)]="signUpEmail" 
-                   name="signUpEmail"
-                   autocomplete="off"
-                   placeholder="kameswar@company.com" 
-                   required
-                   class="w-full bg-[#10131a] light:bg-white border border-[#30363D] light:border-[#d0d7de] rounded-md px-3 py-2 text-[#e1e2eb] light:text-[#1f2328] text-xs focus:outline-none focus:border-[#8083ff] light:focus:border-[#494bd6]">
-          </div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <!-- 2. CREATE ACCOUNT (SIGN UP) 2-STEP OTP FLOW -->
+        <div *ngIf="authMode === 'signup'" class="space-y-3.5 text-xs">
+          <!-- Step 1: Initial Registration Form -->
+          <form *ngIf="signUpStep === 'form'" (ngSubmit)="handleRequestSignUpOtp()" autocomplete="off" class="space-y-3.5">
             <div>
-              <label class="font-title-sm text-xs text-[#908fa0] light:text-[#57606a] mb-1 block">Password</label>
-              <input type="password" 
-                     [(ngModel)]="signUpPassword" 
-                     name="signUpPassword"
-                     autocomplete="new-password"
-                     placeholder="Strong password" 
+              <label class="font-title-sm text-xs text-[#908fa0] light:text-[#57606a] mb-1 block">Full Name</label>
+              <input type="text" 
+                     [(ngModel)]="signUpName" 
+                     name="signUpName"
+                     autocomplete="off"
+                     placeholder="Kameswar Panda" 
                      required
                      class="w-full bg-[#10131a] light:bg-white border border-[#30363D] light:border-[#d0d7de] rounded-md px-3 py-2 text-[#e1e2eb] light:text-[#1f2328] text-xs focus:outline-none focus:border-[#8083ff] light:focus:border-[#494bd6]">
             </div>
+
             <div>
-              <label class="font-title-sm text-xs text-[#908fa0] light:text-[#57606a] mb-1 block">Confirm Password</label>
-              <input type="password" 
-                     [(ngModel)]="signUpConfirmPassword" 
-                     name="signUpConfirmPassword"
-                     autocomplete="new-password"
-                     placeholder="Repeat password" 
+              <label class="font-title-sm text-xs text-[#908fa0] light:text-[#57606a] mb-1 block">Work Email</label>
+              <input type="email" 
+                     [(ngModel)]="signUpEmail" 
+                     name="signUpEmail"
+                     autocomplete="off"
+                     placeholder="kameswar@company.com" 
                      required
                      class="w-full bg-[#10131a] light:bg-white border border-[#30363D] light:border-[#d0d7de] rounded-md px-3 py-2 text-[#e1e2eb] light:text-[#1f2328] text-xs focus:outline-none focus:border-[#8083ff] light:focus:border-[#494bd6]">
             </div>
-          </div>
 
-          <!-- Strong Password Requirement Indicators -->
-          <div class="bg-[#10131a] light:bg-[#f6f8fa] p-3 rounded-lg border border-[#30363D] light:border-[#d0d7de] space-y-1 text-[11px]">
-            <div class="font-semibold text-[#c0c1ff] light:text-[#494bd6] mb-1">Password Requirements:</div>
-            <div class="grid grid-cols-2 gap-1 text-[10px]">
-              <div class="flex items-center gap-1.5" [ngClass]="isMinLength(signUpPassword) ? 'text-[#10B981]' : 'text-[#908fa0] light:text-[#57606a]'">
-                <span class="material-symbols-outlined text-[14px]">{{ isMinLength(signUpPassword) ? 'check_circle' : 'radio_button_unchecked' }}</span>
-                <span>8+ Characters</span>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="font-title-sm text-xs text-[#908fa0] light:text-[#57606a] mb-1 block">Password</label>
+                <input type="password" 
+                       [(ngModel)]="signUpPassword" 
+                       name="signUpPassword"
+                       autocomplete="new-password"
+                       placeholder="Strong password" 
+                       required
+                       class="w-full bg-[#10131a] light:bg-white border border-[#30363D] light:border-[#d0d7de] rounded-md px-3 py-2 text-[#e1e2eb] light:text-[#1f2328] text-xs focus:outline-none focus:border-[#8083ff] light:focus:border-[#494bd6]">
               </div>
-              <div class="flex items-center gap-1.5" [ngClass]="hasUpper(signUpPassword) ? 'text-[#10B981]' : 'text-[#908fa0] light:text-[#57606a]'">
-                <span class="material-symbols-outlined text-[14px]">{{ hasUpper(signUpPassword) ? 'check_circle' : 'radio_button_unchecked' }}</span>
-                <span>Uppercase (A-Z)</span>
-              </div>
-              <div class="flex items-center gap-1.5" [ngClass]="hasLower(signUpPassword) ? 'text-[#10B981]' : 'text-[#908fa0] light:text-[#57606a]'">
-                <span class="material-symbols-outlined text-[14px]">{{ hasLower(signUpPassword) ? 'check_circle' : 'radio_button_unchecked' }}</span>
-                <span>Lowercase (a-z)</span>
-              </div>
-              <div class="flex items-center gap-1.5" [ngClass]="hasNumber(signUpPassword) && hasSpecial(signUpPassword) ? 'text-[#10B981]' : 'text-[#908fa0] light:text-[#57606a]'">
-                <span class="material-symbols-outlined text-[14px]">{{ hasNumber(signUpPassword) && hasSpecial(signUpPassword) ? 'check_circle' : 'radio_button_unchecked' }}</span>
-                <span>Number & Special Char</span>
+              <div>
+                <label class="font-title-sm text-xs text-[#908fa0] light:text-[#57606a] mb-1 block">Confirm Password</label>
+                <input type="password" 
+                       [(ngModel)]="signUpConfirmPassword" 
+                       name="signUpConfirmPassword"
+                       autocomplete="new-password"
+                       placeholder="Repeat password" 
+                       required
+                       class="w-full bg-[#10131a] light:bg-white border border-[#30363D] light:border-[#d0d7de] rounded-md px-3 py-2 text-[#e1e2eb] light:text-[#1f2328] text-xs focus:outline-none focus:border-[#8083ff] light:focus:border-[#494bd6]">
               </div>
             </div>
-          </div>
 
-          <button type="submit" 
-                  [disabled]="isLoading || !isPasswordStrong(signUpPassword)"
-                  class="w-full py-2.5 px-4 rounded-lg bg-[#494bd6] hover:bg-[#8083ff] hover:text-[#0d0096] text-white font-semibold text-xs transition-colors flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 mt-1">
-            <span *ngIf="!isLoading" class="material-symbols-outlined text-[16px]">person_add</span>
-            <span *ngIf="isLoading" class="material-symbols-outlined text-[16px] animate-spin">autorenew</span>
-            <span>{{ isLoading ? 'Creating Account...' : 'Create Account' }}</span>
-          </button>
-        </form>
+            <!-- Strong Password Requirement Indicators -->
+            <div class="bg-[#10131a] light:bg-[#f6f8fa] p-3 rounded-lg border border-[#30363D] light:border-[#d0d7de] space-y-1 text-[11px]">
+              <div class="font-semibold text-[#c0c1ff] light:text-[#494bd6] mb-1">Password Requirements:</div>
+              <div class="grid grid-cols-2 gap-1 text-[10px]">
+                <div class="flex items-center gap-1.5" [ngClass]="isMinLength(signUpPassword) ? 'text-[#10B981]' : 'text-[#908fa0] light:text-[#57606a]'">
+                  <span class="material-symbols-outlined text-[14px]">{{ isMinLength(signUpPassword) ? 'check_circle' : 'radio_button_unchecked' }}</span>
+                  <span>8+ Characters</span>
+                </div>
+                <div class="flex items-center gap-1.5" [ngClass]="hasUpper(signUpPassword) ? 'text-[#10B981]' : 'text-[#908fa0] light:text-[#57606a]'">
+                  <span class="material-symbols-outlined text-[14px]">{{ hasUpper(signUpPassword) ? 'check_circle' : 'radio_button_unchecked' }}</span>
+                  <span>Uppercase (A-Z)</span>
+                </div>
+                <div class="flex items-center gap-1.5" [ngClass]="hasLower(signUpPassword) ? 'text-[#10B981]' : 'text-[#908fa0] light:text-[#57606a]'">
+                  <span class="material-symbols-outlined text-[14px]">{{ hasLower(signUpPassword) ? 'check_circle' : 'radio_button_unchecked' }}</span>
+                  <span>Lowercase (a-z)</span>
+                </div>
+                <div class="flex items-center gap-1.5" [ngClass]="hasNumber(signUpPassword) && hasSpecial(signUpPassword) ? 'text-[#10B981]' : 'text-[#908fa0] light:text-[#57606a]'">
+                  <span class="material-symbols-outlined text-[14px]">{{ hasNumber(signUpPassword) && hasSpecial(signUpPassword) ? 'check_circle' : 'radio_button_unchecked' }}</span>
+                  <span>Number & Special Char</span>
+                </div>
+              </div>
+            </div>
+
+            <button type="submit" 
+                    [disabled]="isLoading || !isPasswordStrong(signUpPassword) || signUpPassword !== signUpConfirmPassword"
+                    class="w-full py-2.5 px-4 rounded-lg bg-[#494bd6] hover:bg-[#8083ff] hover:text-[#0d0096] text-white font-semibold text-xs transition-colors flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 mt-1">
+              <span *ngIf="!isLoading" class="material-symbols-outlined text-[16px]">mail</span>
+              <span *ngIf="isLoading" class="material-symbols-outlined text-[16px] animate-spin">autorenew</span>
+              <span>{{ isLoading ? 'Sending Verification Code...' : 'Send Verification Code' }}</span>
+            </button>
+          </form>
+
+          <!-- Step 2: Enter 6-Digit Email OTP Verification -->
+          <form *ngIf="signUpStep === 'verify'" (ngSubmit)="handleVerifySignUpOtp()" autocomplete="off" class="space-y-4">
+            <div class="bg-[#10131a] light:bg-[#f6f8fa] p-3 rounded-lg border border-[#30363D] light:border-[#d0d7de] space-y-1">
+              <div class="flex items-center gap-2 text-[#e1e2eb] light:text-[#1f2328] font-bold">
+                <span class="material-symbols-outlined text-[#8083ff] light:text-[#494bd6] text-[18px]">mark_email_read</span>
+                <span>Verify Your Work Email</span>
+              </div>
+              <p class="text-[11px] text-[#908fa0] light:text-[#57606a]">
+                We sent a 6-digit one-time code to <strong class="text-[#8083ff] light:text-[#494bd6] font-mono">{{ signUpEmail }}</strong>.
+              </p>
+            </div>
+
+            <div *ngIf="devHintMessage" class="bg-[#8083ff]/15 border border-[#8083ff]/40 text-[#c0c1ff] light:text-[#494bd6] p-2.5 rounded-md text-[11px] flex items-start gap-2 animate-fadeIn">
+              <span class="material-symbols-outlined text-[16px] shrink-0 text-[#8083ff]">info</span>
+              <span>{{ devHintMessage }}</span>
+            </div>
+
+            <div>
+              <label class="font-title-sm text-xs text-[#908fa0] light:text-[#57606a] mb-1.5 block font-semibold">Enter 6-Digit Verification Code</label>
+              <input type="text" 
+                     [(ngModel)]="signUpOtp" 
+                     name="signUpOtp"
+                     maxlength="6"
+                     placeholder="XXXXXX" 
+                     required
+                     class="w-full bg-[#10131a] light:bg-white border border-[#30363D] light:border-[#d0d7de] rounded-md px-3 py-2 text-[#e1e2eb] light:text-[#1f2328] text-center font-mono text-lg tracking-widest focus:outline-none focus:border-[#8083ff] light:focus:border-[#494bd6]">
+            </div>
+
+            <div class="flex gap-2">
+              <button type="button" (click)="signUpStep = 'form'" class="flex-1 py-2 px-3 rounded-lg border border-[#30363D] light:border-[#d0d7de] text-[#908fa0] light:text-[#57606a] hover:text-[#e1e2eb] font-semibold text-xs transition-colors">
+                Back
+              </button>
+              <button type="submit" 
+                      [disabled]="isLoading || signUpOtp.length !== 6"
+                      class="flex-1 py-2 px-3 rounded-lg bg-[#494bd6] hover:bg-[#8083ff] hover:text-[#0d0096] text-white font-semibold text-xs flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-50 transition-colors">
+                <span *ngIf="!isLoading" class="material-symbols-outlined text-[16px]">verified</span>
+                <span *ngIf="isLoading" class="material-symbols-outlined text-[16px] animate-spin">autorenew</span>
+                <span>Verify & Activate</span>
+              </button>
+            </div>
+
+            <div class="text-center pt-1">
+              <button type="button" (click)="handleRequestSignUpOtp()" [disabled]="isLoading" class="text-[11px] text-[#8083ff] light:text-[#494bd6] hover:underline font-medium">
+                Didn't receive code? Resend email
+              </button>
+            </div>
+          </form>
+        </div>
 
         <!-- 3. FORGOT PASSWORD (OTP FLOW) -->
         <div *ngIf="authMode === 'forgot'" class="space-y-4 text-xs">
@@ -218,6 +269,11 @@
 
           <!-- Step 2: Verify 6-Digit OTP -->
           <form *ngIf="forgotStep === 'verify'" (ngSubmit)="handleVerifyResetOtp()" autocomplete="off" class="space-y-3.5">
+            <div *ngIf="devHintMessage" class="bg-[#8083ff]/15 border border-[#8083ff]/40 text-[#c0c1ff] light:text-[#494bd6] p-2.5 rounded-md text-[11px] flex items-start gap-2 animate-fadeIn">
+              <span class="material-symbols-outlined text-[16px] shrink-0 text-[#8083ff]">info</span>
+              <span>{{ devHintMessage }}</span>
+            </div>
+
             <div>
               <div class="flex justify-between items-center mb-1">
                 <label class="font-title-sm text-xs text-[#908fa0] light:text-[#57606a]">Enter 6-Digit Code</label>
@@ -227,7 +283,7 @@
                      [(ngModel)]="forgotOtp" 
                      name="forgotOtp"
                      maxlength="6"
-                     placeholder="123456" 
+                     placeholder="XXXXXX" 
                      required
                      class="w-full bg-[#10131a] light:bg-white border border-[#30363D] light:border-[#d0d7de] rounded-md px-3 py-2 text-[#e1e2eb] light:text-[#1f2328] text-center font-mono text-base tracking-widest focus:outline-none focus:border-[#8083ff]">
             </div>

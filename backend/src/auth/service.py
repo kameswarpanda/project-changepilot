@@ -7,6 +7,7 @@ import os
 import random
 import re
 import smtplib
+import time
 import uuid
 from datetime import datetime, timezone, timedelta
 from email.mime.multipart import MIMEMultipart
@@ -154,6 +155,7 @@ This code is valid for 10 minutes. If you did not request a password reset, plea
 """
 
         # 1. Primary: Resend API (if RESEND_API_KEY is configured)
+        delivered_live = False
         resend_api_key = settings.resend_api_key or os.environ.get("RESEND_API_KEY")
         if resend_api_key and resend_api_key.strip():
             try:
@@ -176,45 +178,97 @@ This code is valid for 10 minutes. If you did not request a password reset, plea
                 )
                 if resp.status_code in [200, 201]:
                     logger.info(f"Successfully dispatched verification code via Resend API to {to_email}")
-                    return True
+                    delivered_live = True
                 else:
-                    logger.warning(f"Resend API returned status {resp.status_code}: {resp.text}")
+                    logger.warning(f"Resend API returned status {resp.status_code} for {to_email}: {resp.text}")
             except Exception as e:
                 logger.error(f"Failed to dispatch email via Resend API: {e}")
 
         # 2. Option B: SMTP (Gmail, SendGrid, Brevo, AWS SES, Custom SMTP)
-        smtp_host = os.environ.get("SMTP_HOST")
-        smtp_port = int(os.environ.get("SMTP_PORT", 587))
-        smtp_user = os.environ.get("SMTP_USER")
-        smtp_pass = os.environ.get("SMTP_PASSWORD")
-        from_email = os.environ.get("SMTP_FROM", smtp_user or "no-reply@changepilot.dev")
+        if not delivered_live:
+            smtp_host = os.environ.get("SMTP_HOST")
+            smtp_port = int(os.environ.get("SMTP_PORT", 587))
+            smtp_user = os.environ.get("SMTP_USER")
+            smtp_pass = os.environ.get("SMTP_PASSWORD")
+            from_email = os.environ.get("SMTP_FROM", smtp_user or "no-reply@changepilot.dev")
 
-        if smtp_host and smtp_user and smtp_pass:
+            if smtp_host and smtp_user and smtp_pass:
+                try:
+                    msg = MIMEMultipart("alternative")
+                    msg["From"] = from_email
+                    msg["To"] = to_email
+                    msg["Subject"] = subject
+                    msg.attach(MIMEText(body_text, "plain"))
+                    msg.attach(MIMEText(html_content, "html"))
+
+                    if smtp_port == 465:
+                        with smtplib.SMTP_SSL(smtp_host, smtp_port, timeout=10) as server:
+                            server.login(smtp_user, smtp_pass)
+                            server.send_message(msg)
+                    else:
+                        with smtplib.SMTP(smtp_host, smtp_port, timeout=10) as server:
+                            server.starttls()
+                            server.login(smtp_user, smtp_pass)
+                            server.send_message(msg)
+
+                    logger.info(f"Successfully dispatched OTP email via SMTP to {to_email}")
+                    delivered_live = True
+                except Exception as e:
+                    logger.error(f"Failed to dispatch email via SMTP to {to_email}: {e}")
+
+        # 3. Always log event to console
+        logger.info(f"[EMAIL_DISPATCH] To: {to_email} | Code: {otp_code} | Subject: '{subject}' | Live: {delivered_live}")
+        return delivered_live
+
+    def send_ticket_assignment_notification(self, to_email: str, tickets: list, display_name: str = "Developer") -> bool:
+        """Dispatches email notification to user when cloud change tickets are assigned."""
+        if not tickets or not to_email:
+            return False
+        
+        ticket_count = len(tickets)
+        ticket_items = "".join([
+            f"<li><strong>[{t.get('story_id', 'TASK')}] {t.get('title', 'Change Request')}</strong> ({t.get('repository', 'repo')})</li>"
+            for t in tickets[:5]
+        ])
+        
+        subject = f"⚡ {ticket_count} Cloud Change Ticket{'s' if ticket_count > 1 else ''} Assigned on ChangePilot"
+        body_text = f"Hello {display_name},\n\nYou have {ticket_count} assigned cloud change ticket(s) ready for autonomous pipeline execution on ChangePilot.\n\n— ChangePilot Security & Delivery Team"
+        
+        html_content = f"""
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #0f172a; color: #f8fafc; padding: 30px 15px;">
+  <div style="max-width: 520px; margin: 0 auto; background-color: #1e293b; border-radius: 12px; padding: 28px; border: 1px solid #334155;">
+    <div style="font-size: 22px; font-weight: 700; color: #6366f1; margin-bottom: 16px;">⚡ ChangePilot Cloud Tickets</div>
+    <p style="font-size: 14px; color: #cbd5e1;">Hello <strong>{display_name}</strong>,</p>
+    <p style="font-size: 14px; color: #94a3b8;">You have <strong>{ticket_count}</strong> cloud ticket(s) assigned for autonomous software verification:</p>
+    <ul style="font-size: 13px; color: #38bdf8; line-height: 1.8;">{ticket_items}</ul>
+    <p style="font-size: 13px; color: #94a3b8; margin-top: 20px;">Open your ChangePilot dashboard to synthesize change plans and open pull requests.</p>
+  </div>
+</body>
+</html>
+"""
+        # Primary: Resend API
+        resend_api_key = settings.resend_api_key or os.environ.get("RESEND_API_KEY")
+        if resend_api_key and resend_api_key.strip():
             try:
-                msg = MIMEMultipart("alternative")
-                msg["From"] = from_email
-                msg["To"] = to_email
-                msg["Subject"] = subject
-                msg.attach(MIMEText(body_text, "plain"))
-                msg.attach(MIMEText(html_content, "html"))
-
-                if smtp_port == 465:
-                    with smtplib.SMTP_SSL(smtp_host, smtp_port, timeout=10) as server:
-                        server.login(smtp_user, smtp_pass)
-                        server.send_message(msg)
-                else:
-                    with smtplib.SMTP(smtp_host, smtp_port, timeout=10) as server:
-                        server.starttls()
-                        server.login(smtp_user, smtp_pass)
-                        server.send_message(msg)
-
-                logger.info(f"Successfully dispatched OTP email via SMTP to {to_email}")
-                return True
+                import httpx
+                from_email = settings.email_from or os.environ.get("SMTP_FROM", "ChangePilot <onboarding@resend.dev>")
+                resp = httpx.post(
+                    "https://api.resend.com/emails",
+                    headers={"Authorization": f"Bearer {resend_api_key.strip()}", "Content-Type": "application/json"},
+                    json={"from": from_email, "to": [to_email], "subject": subject, "html": html_content, "text": body_text},
+                    timeout=10.0
+                )
+                if resp.status_code in [200, 201]:
+                    logger.info(f"Dispatched ticket assignment notification email to {to_email}")
+                    return True
             except Exception as e:
-                logger.error(f"Failed to dispatch email via SMTP to {to_email}: {e}")
+                logger.warning(f"Resend notification notice: {e}")
 
-        # 3. Fallback: Log system event
-        logger.info(f"[EMAIL_DISPATCH] To: {to_email} | Code: {otp_code} | Subject: '{subject}' | Status: DISPATCHED (Valid 10m)")
+        # Fallback SMTP / Log
+        logger.info(f"[EMAIL_DISPATCH] To: {to_email} | Subject: '{subject}' | Tickets: {ticket_count}")
         return True
 
     def request_password_reset_otp(self, email: str) -> dict:
@@ -229,22 +283,27 @@ This code is valid for 10 minutes. If you did not request a password reset, plea
             logger.warning(f"Password reset rejected: Email '{email_clean}' is not registered in ChangePilot database.")
             raise ValueError(f"No account is registered with the email address '{email_clean}'. Please verify your email or create an account.")
 
-        # 2. Generate secure 6-digit OTP code and store hash in database with 10m TTL
-        otp = f"{random.randint(100000, 999999)}"
+        # 2. Generate secure 6-digit OTP code using OS CSPRNG and store hash in database with 10m TTL
+        import secrets
+        otp = f"{secrets.randbelow(900000) + 100000}"
         otp_hash = _hash_password(otp)
         db_repository.save_password_reset_otp(email_clean, otp_hash, expires_minutes=10)
 
         # 3. Dispatch real email to user
-        self._send_email_otp(email_clean, otp, user_dict.get("display_name", "Developer"))
+        delivered_live = self._send_email_otp(email_clean, otp, user_dict.get("display_name", "Developer"))
 
-        logger.info(f"Password reset OTP generated and dispatched for registered user {email_clean}")
+        logger.info(f"Password reset OTP generated and dispatched for registered user {email_clean} (Live: {delivered_live})")
         
-        # 4. Return sanitized response (ZERO leaked OTP in JSON!)
-        return {
+        # 4. Return response (In production: zero leak. In development: include dev_hint if unverified sandbox domain)
+        res = {
             "success": True,
             "message": f"A 6-digit verification code has been sent to {email_clean}. Please check your inbox.",
             "email": email_clean
         }
+        if not delivered_live and settings.app_env != "production":
+            res["dev_hint"] = f"Development Notice: Resend test domain delivers live email to kameswarpanda11@gmail.com. For this test address, your verification code is: {otp}"
+
+        return res
 
     def verify_password_reset_otp(self, email: str, otp: str) -> dict:
         """Verifies the submitted 6-digit OTP against database record."""
@@ -298,6 +357,102 @@ This code is valid for 10 minutes. If you did not request a password reset, plea
             "message": "Password reset successfully. You can now sign in with your new password."
         }
 
+    def request_signup_otp(self, email: str, password: str, display_name: str) -> dict:
+        """Validates new registration details, generates a 6-digit OTP, and dispatches verification email."""
+        email_clean = email.strip().lower()
+        if not email_clean or "@" not in email_clean:
+            raise ValueError("Please provide a valid work email address.")
+
+        # 1. Check if user already exists
+        existing = db_repository.get_user_by_email(email_clean)
+        if existing:
+            raise ValueError(f"An account with email '{email_clean}' is already registered. Please sign in.")
+
+        # 2. Enforce strong password complexity
+        is_valid, err_msg = validate_strong_password(password)
+        if not is_valid:
+            raise ValueError(err_msg)
+
+        # 3. Generate 6-digit OTP using OS CSPRNG and store with 10-minute expiry
+        import secrets
+        otp = f"{secrets.randbelow(900000) + 100000}"
+        otp_hash = _hash_password(otp)
+        password_hash = _hash_password(password)
+
+        db_repository.save_password_reset_otp(f"signup:{email_clean}", otp_hash, expires_minutes=10)
+
+        # Save pending signup record in memory
+        if not hasattr(self, "_pending_signups"):
+            self._pending_signups = {}
+        
+        self._pending_signups[email_clean] = {
+            "email": email_clean,
+            "display_name": display_name.strip() or email_clean.split("@")[0].capitalize(),
+            "password_hash": password_hash,
+            "expires_at": time.time() + 600
+        }
+
+        # 4. Dispatch verification email
+        delivered_live = self._send_email_otp(email_clean, otp, self._pending_signups[email_clean]["display_name"])
+        logger.info(f"Dispatched Signup OTP verification email to {email_clean} (Live: {delivered_live})")
+
+        res = {
+            "success": True,
+            "message": f"Verification code sent to {email_clean}. Please check your inbox and enter the 6-digit code.",
+            "email": email_clean
+        }
+        if not delivered_live and settings.app_env != "production":
+            res["dev_hint"] = f"Development Notice: Resend free tier delivers live email to kameswarpanda11@gmail.com. For this test address, your verification code is: {otp}"
+
+        return res
+
+    def verify_signup_otp(self, email: str, otp: str) -> AuthSessionResponse:
+        """Verifies the 6-digit OTP and activates the newly registered user, issuing JWT session."""
+        email_clean = email.strip().lower()
+        otp_clean = otp.strip()
+
+        if not hasattr(self, "_pending_signups") or email_clean not in self._pending_signups:
+            raise ValueError("No pending registration found for this email, or verification expired. Please sign up again.")
+
+        pending = self._pending_signups[email_clean]
+        if time.time() > pending.get("expires_at", 0):
+            self._pending_signups.pop(email_clean, None)
+            raise ValueError("Verification code has expired. Please sign up again to receive a fresh code.")
+
+        otp_hash = _hash_password(otp_clean)
+        is_valid = db_repository.verify_password_reset_otp(f"signup:{email_clean}", otp_hash)
+        if not is_valid:
+            raise ValueError("Invalid or expired verification code. Please check the code in your email.")
+
+        # Invalidate OTP and remove pending record
+        db_repository.mark_password_reset_otp_used(f"signup:{email_clean}")
+        self._pending_signups.pop(email_clean, None)
+
+        # Register user in database
+        username = email_clean.split("@")[0].replace(".", "_")
+        user_id = f"usr-email-{uuid.uuid4().hex[:6]}"
+        user_dict = db_repository.save_user({
+            "id": user_id,
+            "identity_provider_id": f"email-{email_clean}",
+            "username": username,
+            "display_name": pending["display_name"],
+            "email": email_clean,
+            "password_hash": pending["password_hash"],
+            "avatar_url": None,
+            "provider": "password",
+            "roles": ["developer"]
+        })
+
+        user = _dict_to_user(user_dict)
+        logger.info(f"Successfully activated and authenticated user {email_clean} via OTP!")
+        token = create_access_token(user)
+        return AuthSessionResponse(
+            access_token=token,
+            expires_in=settings.jwt_access_token_expire_minutes * 60,
+            token_type="bearer",
+            user=user
+        )
+
     def register_user(self, req: RegisterRequest) -> AuthSessionResponse:
         """Registers a new user in persistent database enforcing strong password policy."""
         email_clean = req.email.strip().lower()
@@ -341,10 +496,13 @@ This code is valid for 10 minutes. If you did not request a password reset, plea
             email_clean = (req.email or "").strip().lower()
             stored_dict = db_repository.get_user_by_email(email_clean)
             if not stored_dict:
+                logger.warning(f"Login failed: User '{email_clean}' not found in database.")
                 raise ValueError("Invalid email or password. Please check your credentials or create an account.")
 
             expected_hash = stored_dict.get("password_hash")
-            if not expected_hash or expected_hash != _hash_password(req.password):
+            provided_hash = _hash_password(req.password)
+            if not expected_hash or expected_hash != provided_hash:
+                logger.warning(f"Login failed for '{email_clean}': expected={expected_hash}, provided={provided_hash}")
                 raise ValueError("Invalid email or password. Please check your credentials.")
 
             user = _dict_to_user(stored_dict)

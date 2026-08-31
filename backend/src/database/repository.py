@@ -18,6 +18,7 @@ from backend.src.database.models import (
 )
 from backend.src.database.session import SessionLocal, engine
 from backend.src.models.workflow_result import WorkflowResult
+from backend.src.config import settings
 
 logger = logging.getLogger("changepilot.database.repository")
 
@@ -45,6 +46,12 @@ class DatabaseRepository:
                         conn.execute(text("ALTER TABLE users ADD COLUMN password_hash VARCHAR(256)"))
                         conn.commit()
                         logger.info("Auto-migrated 'password_hash' column into SQLite users table.")
+
+                    # Ensure existing default users have a valid password hash
+                    import hashlib
+                    default_hash = hashlib.sha256(("cp_salt_2026_" + "changepilot2026").encode("utf-8")).hexdigest()
+                    conn.execute(text("UPDATE users SET password_hash = :ph WHERE password_hash IS NULL"), {"ph": default_hash})
+                    conn.commit()
                 else:
                     # PostgreSQL / Cloud SQL auto-migrations
                     try:
@@ -258,25 +265,33 @@ class DatabaseRepository:
                 else:
                     audit_serialized.append(dict(rec))
 
-                # Also insert into persistent AuditLogModel
+                # Also insert into persistent AuditLogModel with accurate step-level status
                 try:
+                    rec_status = getattr(rec, "status", None)
+                    rec_status_str = rec_status.value if hasattr(rec_status, "value") else str(rec_status or "")
+                    step_passed = ("SUCCESS" in rec_status_str.upper()) or ("PASS" in rec_status_str.upper())
+                    
+                    stage_name = getattr(rec, "stage", str(result.current_stage))
+                    stage_name_str = stage_name.value if hasattr(stage_name, "value") else str(stage_name)
+                    message = getattr(rec, "message", getattr(rec, "action", "SAFETY_GATE_EVALUATION"))
+
                     audit_entry = AuditLogModel(
                         id=f"aud-{uuid.uuid4().hex[:8]}",
                         correlation_id=result.execution_id,
                         story_id=result.story_id,
                         user_id=user_id,
                         user_email="kameswarpanda11@gmail.com",
-                        stage=getattr(rec, "stage", str(result.current_stage)),
-                        action=getattr(rec, "action", "SAFETY_GATE_EVALUATION"),
+                        stage=stage_name_str,
+                        action=message,
                         target_repository=repo_name,
                         target_branch=result.branch_name,
-                        status="PASSED" if result.success else "FAILED",
-                        safety_rule=getattr(rec, "rule", "GATE_POLICY"),
+                        status="PASSED" if step_passed else "FAILED",
+                        safety_rule=getattr(rec, "rule", "Deterministic Safety Gate"),
                         details=audit_serialized[-1]
                     )
                     session.merge(audit_entry)
-                except Exception:
-                    pass
+                except Exception as ex:
+                    logger.debug(f"Audit log record persistence notice: {ex}")
 
             pr_serialized = None
             if result.pull_request:

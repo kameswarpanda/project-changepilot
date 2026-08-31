@@ -399,16 +399,26 @@ export class WorkflowStateService {
   }
 
   public executeWorkflow(): void {
-    const storyId = this.storyIdSubject.value.trim();
-    const title = this.titleSubject.value.trim();
-    const description = this.descriptionSubject.value.trim();
-    const repoLocation = this.repoLocationSubject.value.trim();
-    const baseBranch = this.baseBranchSubject.value.trim();
+    let storyId = this.storyIdSubject.value.trim();
+    let title = this.titleSubject.value.trim();
+    let description = this.descriptionSubject.value.trim();
+    let repoLocation = this.repoLocationSubject.value.trim();
+    let baseBranch = this.baseBranchSubject.value.trim() || 'main';
     const executionMode = this.executionModeSubject.value;
 
     if (!storyId || !title || !description || !repoLocation) {
-      this.errorMessageSubject.next('Please complete all required fields.');
-      return;
+      // Intelligently fallback to default demo change if fields were unpopulated
+      const defaultRepo = this.connectedReposSubject.value[0]?.path || 'kameswarpanda/changepilot-demo-payment';
+      storyId = storyId || 'CP-1042';
+      title = title || 'Add VIP Tier Discount Support';
+      description = description || 'Extend payment calculation with 20% discount for VIP tier users in calculate_total.';
+      repoLocation = repoLocation || defaultRepo;
+
+      this.storyIdSubject.next(storyId);
+      this.titleSubject.next(title);
+      this.descriptionSubject.next(description);
+      this.repoLocationSubject.next(repoLocation);
+      this.baseBranchSubject.next(baseBranch);
     }
 
     if (this.stageTimer) {

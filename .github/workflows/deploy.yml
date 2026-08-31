@@ -1,4 +1,4 @@
-﻿name: ChangePilot CI/CD — Test, Build & Deploy to Google Cloud Run
+name: ChangePilot CI/CD — Test, Build & Deploy to Google Cloud Run
 
 on:
   push:
@@ -33,7 +33,7 @@ jobs:
           pip install -e .
           pip install pytest pytest-asyncio pytest-cov
 
-      - name: Execute Backend Safety Gate Tests (58 Tests)
+      - name: Execute Backend Safety Gate Tests (59 Tests)
         run: |
           python -m pytest backend/tests/ -v
 

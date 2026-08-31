@@ -85,15 +85,6 @@
       <span class="material-symbols-outlined text-[20px] shrink-0" [class.fill-icon]="(state.activeNav$ | async) === 'audit'">assignment</span>
       <span *ngIf="!(state.isSidebarCollapsed$ | async)" class="truncate">Audit Logs</span>
     </a>
-
-    <a (click)="navigate('reports')" 
-       [title]="(state.isSidebarCollapsed$ | async) ? 'Reports' : ''"
-       [class.active]="(state.activeNav$ | async) === 'reports'" 
-       [ngClass]="(state.isSidebarCollapsed$ | async) ? 'justify-center px-0' : 'px-3'"
-       class="nav-link flex items-center gap-3 py-2.5 rounded-lg text-xs font-semibold cursor-pointer transition-all">
-      <span class="material-symbols-outlined text-[20px] shrink-0" [class.fill-icon]="(state.activeNav$ | async) === 'reports'">analytics</span>
-      <span *ngIf="!(state.isSidebarCollapsed$ | async)" class="truncate">Reports</span>
-    </a>
   </nav>
 
   <!-- Authenticated User Profile Section -->
