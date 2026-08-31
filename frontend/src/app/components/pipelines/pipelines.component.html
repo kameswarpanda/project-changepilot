@@ -35,7 +35,7 @@
         </div>
 
         <p class="font-body-md text-xs text-[#908fa0] light:text-[#57606a] mt-1 font-mono">
-          {{ (state.titleSubject | async) || 'Autonomous Change Execution' }} • {{ (state.repoLocationSubject | async) || 'demo_repo' }} [{{ state.baseBranchSubject | async }}]
+          {{ (state.titleSubject | async) || 'Autonomous Change Execution' }} • {{ (state.repoLocationSubject | async) || 'Select repository in Change Requests' }} [{{ (state.baseBranchSubject | async) || 'main' }}]
         </p>
       </div>
 
@@ -210,7 +210,7 @@
             <div class="bg-[#10131a] light:bg-[#f6f8fa] p-3 rounded border border-[#30363D] light:border-[#d0d7de]">
               <dt class="font-label-caps text-[10px] text-[#908fa0] light:text-[#57606a] mb-1">Target Base Repository</dt>
               <dd class="text-[#e1e2eb] light:text-[#1f2328] font-semibold font-mono">
-                {{ (state.repoLocationSubject | async) || 'demo_repo' }}
+                {{ (state.repoLocationSubject | async) || 'No Repository Configured' }}
               </dd>
             </div>
             <div class="bg-[#10131a] light:bg-[#f6f8fa] p-3 rounded border border-[#30363D] light:border-[#d0d7de]">

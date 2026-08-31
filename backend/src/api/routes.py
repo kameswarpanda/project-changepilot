@@ -574,6 +574,15 @@ async def create_change_request(req: CreateChangeRequestPayload, user: User = De
     return saved
 
 
+@router.delete("/api/requests/{request_id}", tags=["Changes"])
+async def delete_change_request(request_id: str, user: User = Depends(get_current_user)):
+    """Deletes a saved change request strictly for the authenticated user."""
+    success = db_repository.delete_change_request(request_id, user_id=user.id)
+    if not success:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Change request not found.")
+    return {"status": "deleted", "id": request_id}
+
+
 @router.get("/api/pipelines", tags=["Changes"])
 async def list_pipelines(limit: int = 20, user: User = Depends(get_current_user)):
     """Retrieves historical pipeline execution runs strictly for the authenticated user."""

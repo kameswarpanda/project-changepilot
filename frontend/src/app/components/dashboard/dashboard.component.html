@@ -113,7 +113,7 @@
         </div>
 
         <p class="font-body-md text-xs text-[#908fa0] light:text-[#57606a] mt-1 font-mono">
-          {{ (state.titleSubject | async) || 'Autonomous Change Execution' }} • {{ (state.repoLocationSubject | async) || 'demo_repo' }} [{{ state.baseBranchSubject | async }}]
+          {{ (state.titleSubject | async) || 'Autonomous Change Execution' }} • {{ (state.repoLocationSubject | async) || 'Select repository in Change Requests' }} [{{ (state.baseBranchSubject | async) || 'main' }}]
         </p>
       </div>
 

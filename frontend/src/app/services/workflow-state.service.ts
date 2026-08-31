@@ -435,14 +435,32 @@ export class WorkflowStateService {
     this.api.createChangeRequest(req).subscribe({
       next: () => {
         this.notif.addNotification(
-          'Change Request Created',
-          `Registered change story ${req.story_id}.`,
+          'Change Request Saved',
+          `Saved change request #${req.story_id}.`,
           'success'
         );
         this.loadChangeRequests();
       },
       error: (err) => {
         this.notif.addNotification('Creation Failed', err.error?.detail || 'Failed to create request.', 'error');
+      }
+    });
+  }
+
+  public deleteChangeRequest(requestId: string): void {
+    this.api.deleteChangeRequest(requestId).subscribe({
+      next: () => {
+        this.notif.addNotification('Change Request Deleted', `Removed change request #${requestId}.`, 'info');
+        this.loadChangeRequests();
+        if (this.storyIdSubject.value === requestId) {
+          this.storyIdSubject.next('');
+          this.titleSubject.next('');
+          this.descriptionSubject.next('');
+          this.repoLocationSubject.next('');
+        }
+      },
+      error: (err) => {
+        this.notif.addNotification('Delete Failed', err.error?.detail || 'Failed to delete change request.', 'error');
       }
     });
   }
@@ -465,12 +483,29 @@ export class WorkflowStateService {
     }
 
     if (customPayload) {
-      if (customPayload.storyId) this.storyIdSubject.next(customPayload.storyId);
-      if (customPayload.title) this.titleSubject.next(customPayload.title);
-      if (customPayload.description) this.descriptionSubject.next(customPayload.description);
-      if (customPayload.repository) this.repoLocationSubject.next(customPayload.repository);
-      if (customPayload.baseBranch) this.baseBranchSubject.next(customPayload.baseBranch);
-      if (customPayload.executionMode) this.executionModeSubject.next(customPayload.executionMode as any);
+      if (customPayload.storyId !== undefined) this.storyIdSubject.next(customPayload.storyId);
+      if (customPayload.title !== undefined) this.titleSubject.next(customPayload.title);
+      if (customPayload.description !== undefined) this.descriptionSubject.next(customPayload.description);
+      if (customPayload.repository !== undefined) this.repoLocationSubject.next(customPayload.repository);
+      if (customPayload.baseBranch !== undefined) this.baseBranchSubject.next(customPayload.baseBranch);
+      if (customPayload.executionMode !== undefined) this.executionModeSubject.next(customPayload.executionMode as any);
+    }
+
+    const storyId = this.storyIdSubject.value?.trim();
+    const title = this.titleSubject.value?.trim();
+    const description = this.descriptionSubject.value?.trim();
+    const repository = this.repoLocationSubject.value?.trim();
+    const baseBranch = this.baseBranchSubject.value?.trim() || 'main';
+    const executionMode = this.executionModeSubject.value || 'BRANCH_COMMIT_PR';
+
+    if (!storyId || !title || !description || !repository) {
+      this.notif.addNotification(
+        'Incomplete Change Request',
+        'Please enter the Story ID, Title, Requirements, and Target Repository before running the pipeline.',
+        'warning'
+      );
+      this.setNav('requests');
+      return;
     }
 
     if (this.isCurrentPipelineCompletedWithPR()) {
@@ -480,17 +515,10 @@ export class WorkflowStateService {
         'Pipeline Already Completed',
         `Pull Request ${prNum} is already raised and open for this change. Rerunning a successfully completed change request is prevented.`,
         'warning',
-        this.storyIdSubject.value
+        storyId
       );
       return;
     }
-
-    const storyId = this.storyIdSubject.value.trim() || 'CP-DEMO-1';
-    const title = this.titleSubject.value.trim() || 'Autonomous Code Change';
-    const description = this.descriptionSubject.value.trim() || 'Synthesize modifications and create Pull Request';
-    const repository = this.repoLocationSubject.value.trim() || (this.connectedReposSubject.value[0]?.path || 'demo_repo');
-    const baseBranch = this.baseBranchSubject.value.trim() || 'main';
-    const executionMode = this.executionModeSubject.value || 'BRANCH_COMMIT_PR';
 
     this.confirmModalDataSubject.next({
       storyId,
@@ -513,26 +541,21 @@ export class WorkflowStateService {
   }
 
   public executeWorkflow(): void {
-    let storyId = this.storyIdSubject.value.trim();
-    let title = this.titleSubject.value.trim();
-    let description = this.descriptionSubject.value.trim();
-    let repoLocation = this.repoLocationSubject.value.trim();
-    let baseBranch = this.baseBranchSubject.value.trim() || 'main';
-    const executionMode = this.executionModeSubject.value;
+    const storyId = this.storyIdSubject.value?.trim();
+    const title = this.titleSubject.value?.trim();
+    const description = this.descriptionSubject.value?.trim();
+    const repoLocation = this.repoLocationSubject.value?.trim();
+    const baseBranch = this.baseBranchSubject.value?.trim() || 'main';
+    const executionMode = this.executionModeSubject.value || 'BRANCH_COMMIT_PR';
 
     if (!storyId || !title || !description || !repoLocation) {
-      // Intelligently fallback to default demo change if fields were unpopulated
-      const defaultRepo = this.connectedReposSubject.value[0]?.path || 'kameswarpanda/changepilot-demo-payment';
-      storyId = storyId || 'CP-1042';
-      title = title || 'Add VIP Tier Discount Support';
-      description = description || 'Extend payment calculation with 20% discount for VIP tier users in calculate_total.';
-      repoLocation = repoLocation || defaultRepo;
-
-      this.storyIdSubject.next(storyId);
-      this.titleSubject.next(title);
-      this.descriptionSubject.next(description);
-      this.repoLocationSubject.next(repoLocation);
-      this.baseBranchSubject.next(baseBranch);
+      this.notif.addNotification(
+        'Incomplete Change Request',
+        'Please specify the Story ID, Title, Requirements, and Repository in the Change Request form.',
+        'warning'
+      );
+      this.setNav('requests');
+      return;
     }
 
     if (this.stageTimer) {

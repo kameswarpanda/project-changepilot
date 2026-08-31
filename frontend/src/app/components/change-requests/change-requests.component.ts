@@ -19,6 +19,11 @@ export class ChangeRequestsComponent implements OnInit {
   repository = '';
   branch = 'main';
   executionMode: ExecutionMode = 'BRANCH_COMMIT_PR';
+  selectedStoryId: string | null = null;
+
+  // Delete Confirmation State
+  deletingRequest: any = null;
+  showDeleteConfirm = false;
 
   constructor(
     public state: WorkflowStateService,
@@ -49,8 +54,50 @@ export class ChangeRequestsComponent implements OnInit {
     this.state.executionModeSubject.next(this.executionMode);
   }
 
+  selectStory(req: any): void {
+    this.selectedStoryId = req.story_id;
+    this.ticketId = req.story_id || '';
+    this.changeTitle = req.title || '';
+    this.requirements = req.description || '';
+    this.repository = req.repository || '';
+    this.branch = req.base_branch || 'main';
+    this.onFormSync();
+
+    this.notifService.addNotification(
+      'Story Loaded',
+      `Loaded details for #${req.story_id} into form.`,
+      'info',
+      req.story_id
+    );
+
+    // Smooth scroll to form
+    const formElement = document.getElementById('change-request-form-card');
+    if (formElement) {
+      formElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
+
+  clearForm(): void {
+    this.selectedStoryId = null;
+    this.ticketId = '';
+    this.changeTitle = '';
+    this.requirements = '';
+    this.repository = '';
+    this.branch = 'main';
+    this.onFormSync();
+  }
+
   runChangePilot(): void {
     this.onFormSync();
+    if (!this.ticketId.trim() || !this.changeTitle.trim() || !this.requirements.trim() || !this.repository.trim()) {
+      this.notifService.addNotification(
+        'Incomplete Change Request',
+        'Please enter Ticket ID, Change Title, Requirements, and Target Repository before running the pipeline.',
+        'warning'
+      );
+      return;
+    }
+
     if (this.state.isCurrentPipelineCompletedWithPR()) {
       this.notifService.addNotification(
         'Pipeline Already Completed',
@@ -72,13 +119,45 @@ export class ChangeRequestsComponent implements OnInit {
 
   saveDraft(): void {
     this.onFormSync();
+    if (!this.ticketId.trim() || !this.changeTitle.trim() || !this.requirements.trim() || !this.repository.trim()) {
+      this.notifService.addNotification(
+        'Missing Fields',
+        'Please fill in Ticket ID, Change Title, Requirements, and Target Repository to save.',
+        'warning'
+      );
+      return;
+    }
+
     this.state.createChangeRequest({
-      story_id: this.ticketId,
-      title: this.changeTitle,
-      description: this.requirements,
-      repository: this.repository,
-      base_branch: this.branch,
+      story_id: this.ticketId.trim(),
+      title: this.changeTitle.trim(),
+      description: this.requirements.trim(),
+      repository: this.repository.trim(),
+      base_branch: this.branch.trim() || 'main',
       priority: 'HIGH'
     });
+  }
+
+  promptDeleteStory(req: any, event: Event): void {
+    event.stopPropagation();
+    this.deletingRequest = req;
+    this.showDeleteConfirm = true;
+  }
+
+  confirmDelete(): void {
+    if (this.deletingRequest) {
+      const idToDelete = this.deletingRequest.id || this.deletingRequest.story_id;
+      this.state.deleteChangeRequest(idToDelete);
+      if (this.selectedStoryId === this.deletingRequest.story_id) {
+        this.clearForm();
+      }
+    }
+    this.showDeleteConfirm = false;
+    this.deletingRequest = null;
+  }
+
+  cancelDelete(): void {
+    this.showDeleteConfirm = false;
+    this.deletingRequest = null;
   }
 }

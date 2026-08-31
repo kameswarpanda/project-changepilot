@@ -1,10 +1,19 @@
-<div class="p-6 max-w-[1200px] mx-auto space-y-6">
+<div class="p-6 max-w-[1400px] mx-auto space-y-8">
   <!-- Page Header -->
-  <div class="mb-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+  <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-[#30363D] light:border-[#d0d7de]">
     <div>
-      <h1 class="font-display-lg text-2xl font-bold text-[#e1e2eb] light:text-[#1f2328]">Create New Change Request</h1>
-      <p class="font-body-md text-xs text-[#908fa0] light:text-[#57606a] mt-1">Define parameters for your autonomous code change.</p>
+      <div class="flex items-center gap-2">
+        <span class="material-symbols-outlined text-[#8083ff] light:text-[#494bd6] text-[26px]">edit_document</span>
+        <h1 class="font-display-lg text-2xl font-bold text-[#e1e2eb] light:text-[#1f2328]">Create & Manage Change Requests</h1>
+      </div>
+      <p class="font-body-md text-xs text-[#908fa0] light:text-[#57606a] mt-1">
+        Define change requirements, save reusable story drafts, and execute verified AI patch pipelines.
+      </p>
     </div>
+    <button *ngIf="selectedStoryId" (click)="clearForm()" class="px-3 py-1.5 rounded-lg border border-[#30363D] text-[#908fa0] hover:text-[#e1e2eb] hover:bg-[#272a31] text-xs font-semibold transition-colors flex items-center gap-1.5 self-start md:self-auto cursor-pointer">
+      <span class="material-symbols-outlined text-[16px]">add</span>
+      <span>New Blank Story</span>
+    </button>
   </div>
 
   <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -12,99 +21,106 @@
     <div class="lg:col-span-8 space-y-6">
 
       <!-- Primary Form Card -->
-      <div class="bg-[#161B22] light:bg-white border border-[#30363D] light:border-[#d0d7de] rounded-lg p-6 space-y-5">
-        <h2 class="font-title-sm text-sm font-semibold text-[#e1e2eb] light:text-[#1f2328] pb-3 border-b border-[#30363D] light:border-[#d0d7de]">
-          Request Details
-        </h2>
+      <div id="change-request-form-card" class="bg-[#161B22] light:bg-white border border-[#30363D] light:border-[#d0d7de] rounded-xl p-6 space-y-5 shadow-sm">
+        <div class="flex items-center justify-between pb-3 border-b border-[#30363D] light:border-[#d0d7de]">
+          <h2 class="font-title-sm text-sm font-semibold text-[#e1e2eb] light:text-[#1f2328] flex items-center gap-2">
+            <span class="material-symbols-outlined text-[#8083ff] text-[18px]">assignment</span>
+            <span>Request Details</span>
+          </h2>
+          <span *ngIf="selectedStoryId" class="text-[11px] font-mono text-[#8083ff] bg-[#494bd6]/15 px-2 py-0.5 rounded border border-[#8083ff]/30">
+            Editing #{{ selectedStoryId }}
+          </span>
+        </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label class="font-title-sm text-xs text-[#908fa0] mb-1.5 block">Ticket ID</label>
+            <label class="font-title-sm text-xs text-[#908fa0] light:text-[#57606a] mb-1.5 block">Ticket / Story ID <span class="text-[#ff7b72]">*</span></label>
             <input type="text" 
                    [(ngModel)]="ticketId" 
                    (ngModelChange)="onFormSync()"
-                   placeholder="e.g. CP-DEMO-1" 
-                   class="w-full bg-[#10131a] border border-[#30363D] rounded-md px-3 py-2 text-[#e1e2eb] font-mono text-xs focus:outline-none focus:border-[#8083ff]">
+                   placeholder="e.g. CP-101 or JIRA-204" 
+                   class="w-full bg-[#10131a] light:bg-white border border-[#30363D] light:border-[#d0d7de] rounded-md px-3 py-2 text-[#e1e2eb] light:text-[#1f2328] font-mono text-xs focus:outline-none focus:border-[#8083ff]">
           </div>
 
           <div>
-            <label class="font-title-sm text-xs text-[#908fa0] mb-1.5 block">Change Title</label>
+            <label class="font-title-sm text-xs text-[#908fa0] light:text-[#57606a] mb-1.5 block">Change Title <span class="text-[#ff7b72]">*</span></label>
             <input type="text" 
                    [(ngModel)]="changeTitle" 
                    (ngModelChange)="onFormSync()"
-                   placeholder="Brief description of the change" 
-                   class="w-full bg-[#10131a] border border-[#30363D] rounded-md px-3 py-2 text-[#e1e2eb] text-xs focus:outline-none focus:border-[#8083ff]">
+                   placeholder="e.g. Add webhook retry mechanism" 
+                   class="w-full bg-[#10131a] light:bg-white border border-[#30363D] light:border-[#d0d7de] rounded-md px-3 py-2 text-[#e1e2eb] light:text-[#1f2328] text-xs focus:outline-none focus:border-[#8083ff]">
           </div>
         </div>
 
         <div>
           <div class="flex justify-between items-center mb-1.5">
-            <label class="font-title-sm text-xs text-[#908fa0]">Detailed Requirements</label>
+            <label class="font-title-sm text-xs text-[#908fa0] light:text-[#57606a]">Detailed Requirements <span class="text-[#ff7b72]">*</span></label>
             <span class="font-code-sm text-[10px] text-[#908fa0]">Markdown supported</span>
           </div>
           <textarea [(ngModel)]="requirements" 
                     (ngModelChange)="onFormSync()"
                     rows="6" 
-                    placeholder="Describe the structural modifications, dependencies, and expected outcomes..."
-                    class="w-full bg-[#10131a] border border-[#30363D] rounded-md px-3 py-2 text-[#e1e2eb] font-mono text-xs focus:outline-none focus:border-[#8083ff] resize-y leading-relaxed"></textarea>
+                    placeholder="Describe the structural modifications, specific functions or files to update, dependencies, and test conditions..."
+                    class="w-full bg-[#10131a] light:bg-white border border-[#30363D] light:border-[#d0d7de] rounded-md px-3 py-2 text-[#e1e2eb] light:text-[#1f2328] font-mono text-xs focus:outline-none focus:border-[#8083ff] resize-y leading-relaxed"></textarea>
         </div>
       </div>
 
       <!-- Target Environment Card -->
-      <div class="bg-[#161B22] border border-[#30363D] rounded-lg p-6 space-y-5">
-        <h2 class="font-title-sm text-sm font-semibold text-[#e1e2eb] pb-3 border-b border-[#30363D]">
-          Target Environment & Execution Mode
+      <div class="bg-[#161B22] light:bg-white border border-[#30363D] light:border-[#d0d7de] rounded-xl p-6 space-y-5 shadow-sm">
+        <h2 class="font-title-sm text-sm font-semibold text-[#e1e2eb] light:text-[#1f2328] pb-3 border-b border-[#30363D] light:border-[#d0d7de] flex items-center gap-2">
+          <span class="material-symbols-outlined text-[#4edea3] text-[18px]">account_tree</span>
+          <span>Target Environment & Execution Mode</span>
         </h2>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label class="font-title-sm text-xs text-[#908fa0] mb-1.5 block">Repository Location</label>
+            <label class="font-title-sm text-xs text-[#908fa0] light:text-[#57606a] mb-1.5 block">Repository Location <span class="text-[#ff7b72]">*</span></label>
             <input type="text" 
                    [(ngModel)]="repository" 
                    (ngModelChange)="onFormSync()"
                    list="connectedRepoOptions"
-                   placeholder="demo_repo or Git URL" 
-                   class="w-full bg-[#10131a] border border-[#30363D] rounded-md px-3 py-2 text-[#e1e2eb] font-mono text-xs focus:outline-none focus:border-[#8083ff]">
+                   placeholder="e.g. kameswarpanda/Portfolio" 
+                   class="w-full bg-[#10131a] light:bg-white border border-[#30363D] light:border-[#d0d7de] rounded-md px-3 py-2 text-[#e1e2eb] light:text-[#1f2328] font-mono text-xs focus:outline-none focus:border-[#8083ff]">
             <datalist id="connectedRepoOptions">
-              <option *ngFor="let r of (state.connectedRepos$ | async)" [value]="r.name">{{ r.name }} ({{ r.provider || 'Git' }})</option>
+              <option *ngFor="let r of (state.connectedRepos$ | async)" [value]="r.path || r.name">{{ r.name }} ({{ r.provider || 'Git' }})</option>
             </datalist>
           </div>
 
           <div>
-            <label class="font-title-sm text-xs text-[#908fa0] mb-1.5 block">Target Base Branch</label>
+            <label class="font-title-sm text-xs text-[#908fa0] light:text-[#57606a] mb-1.5 block">Target Base Branch <span class="text-[#ff7b72]">*</span></label>
             <input type="text" 
                    [(ngModel)]="branch" 
                    (ngModelChange)="onFormSync()"
                    placeholder="main" 
-                   class="w-full bg-[#10131a] border border-[#30363D] rounded-md px-3 py-2 text-[#e1e2eb] font-mono text-xs focus:outline-none focus:border-[#8083ff]">
+                   class="w-full bg-[#10131a] light:bg-white border border-[#30363D] light:border-[#d0d7de] rounded-md px-3 py-2 text-[#e1e2eb] light:text-[#1f2328] font-mono text-xs focus:outline-none focus:border-[#8083ff]">
           </div>
         </div>
 
         <div>
-          <label class="font-title-sm text-xs text-[#908fa0] block mb-1">Execution Mode</label>
-          <p class="font-body-sm text-[11px] text-[#908fa0] mb-3">Determine how changes should be applied and published.</p>
+          <label class="font-title-sm text-xs text-[#908fa0] light:text-[#57606a] block mb-1">Execution Mode</label>
+          <p class="font-body-sm text-[11px] text-[#908fa0] light:text-[#57606a] mb-3">Determine how changes should be verified and delivered.</p>
 
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
             <button type="button" 
                     (click)="setExecutionMode('ANALYZE_ONLY')"
-                    [ngClass]="executionMode === 'ANALYZE_ONLY' ? 'bg-[#494bd6] text-white font-semibold border-[#8083ff]' : 'bg-[#10131a] text-[#908fa0] border-[#30363D] hover:text-[#e1e2eb]'"
-                    class="py-2 px-3 rounded-md border text-xs text-left transition-all">
+                    [ngClass]="executionMode === 'ANALYZE_ONLY' ? 'bg-[#494bd6] text-white font-semibold border-[#8083ff]' : 'bg-[#10131a] light:bg-[#f6f8fa] text-[#908fa0] light:text-[#57606a] border-[#30363D] light:border-[#d0d7de] hover:text-[#e1e2eb] light:hover:text-[#1f2328]'"
+                    class="py-2 px-3 rounded-md border text-xs text-left transition-all cursor-pointer">
               <div class="font-semibold">Analyze Only</div>
               <div class="text-[10px] opacity-80 mt-0.5">Plan & context only</div>
             </button>
 
             <button type="button" 
                     (click)="setExecutionMode('LOCAL_WORKSPACE')"
-                    [ngClass]="executionMode === 'LOCAL_WORKSPACE' ? 'bg-[#494bd6] text-white font-semibold border-[#8083ff]' : 'bg-[#10131a] text-[#908fa0] border-[#30363D] hover:text-[#e1e2eb]'"
-                    class="py-2 px-3 rounded-md border text-xs text-left transition-all">
-              <div class="font-semibold">Create Changes Locally</div>
-              <div class="text-[10px] opacity-80 mt-0.5">Test in sandbox workspace</div>
+                    [ngClass]="executionMode === 'LOCAL_WORKSPACE' ? 'bg-[#494bd6] text-white font-semibold border-[#8083ff]' : 'bg-[#10131a] light:bg-[#f6f8fa] text-[#908fa0] light:text-[#57606a] border-[#30363D] light:border-[#d0d7de] hover:text-[#e1e2eb] light:hover:text-[#1f2328]'"
+                    class="py-2 px-3 rounded-md border text-xs text-left transition-all cursor-pointer">
+              <div class="font-semibold">Local Sandbox</div>
+              <div class="text-[10px] opacity-80 mt-0.5">Synthesize in workspace</div>
             </button>
 
             <button type="button" 
                     (click)="setExecutionMode('BRANCH_COMMIT_PR')"
-                    [ngClass]="executionMode === 'BRANCH_COMMIT_PR' ? 'bg-[#494bd6] text-white font-semibold border-[#8083ff]' : 'bg-[#10131a] text-[#908fa0] border-[#30363D] hover:text-[#e1e2eb]'"
-                    class="py-2 px-3 rounded-md border text-xs text-left transition-all">
+                    [ngClass]="executionMode === 'BRANCH_COMMIT_PR' ? 'bg-[#494bd6] text-white font-semibold border-[#8083ff]' : 'bg-[#10131a] light:bg-[#f6f8fa] text-[#908fa0] light:text-[#57606a] border-[#30363D] light:border-[#d0d7de] hover:text-[#e1e2eb] light:hover:text-[#1f2328]'"
+                    class="py-2 px-3 rounded-md border text-xs text-left transition-all cursor-pointer">
               <div class="font-semibold">Branch + Commit + PR</div>
               <div class="text-[10px] opacity-80 mt-0.5">Full GitHub App Flow</div>
             </button>
@@ -117,7 +133,7 @@
         <button (click)="runChangePilot()" 
                 [disabled]="(state.isRunning$ | async) || state.isCurrentPipelineCompletedWithPR()"
                 [class.opacity-60]="state.isCurrentPipelineCompletedWithPR()"
-                class="bg-[#494bd6] text-white font-semibold text-xs px-6 py-3 rounded-md hover:bg-[#8083ff] hover:text-[#0d0096] transition-colors flex items-center justify-center gap-2 shadow-sm disabled:opacity-60">
+                class="bg-[#494bd6] text-white font-semibold text-xs px-6 py-3 rounded-md hover:bg-[#8083ff] hover:text-[#0d0096] transition-colors flex items-center justify-center gap-2 shadow-sm disabled:opacity-60 cursor-pointer disabled:cursor-not-allowed">
           <span *ngIf="!(state.isRunning$ | async) && !state.isCurrentPipelineCompletedWithPR()" class="material-symbols-outlined text-[18px]">play_arrow</span>
           <span *ngIf="(state.isRunning$ | async)" class="material-symbols-outlined text-[18px] animate-spin">autorenew</span>
           <span *ngIf="state.isCurrentPipelineCompletedWithPR()" class="material-symbols-outlined text-[18px] text-[#4edea3]">check_circle</span>
@@ -127,47 +143,169 @@
 
         <button (click)="saveDraft()" 
                 type="button" 
-                class="bg-transparent border border-[#30363D] text-[#e1e2eb] font-semibold text-xs px-6 py-3 rounded-md hover:bg-[#272a31] transition-colors flex items-center justify-center gap-2">
+                class="bg-transparent border border-[#30363D] light:border-[#d0d7de] text-[#e1e2eb] light:text-[#1f2328] font-semibold text-xs px-6 py-3 rounded-md hover:bg-[#272a31] light:hover:bg-[#f6f8fa] transition-colors flex items-center justify-center gap-2 cursor-pointer">
           <span class="material-symbols-outlined text-[18px]">save</span>
           <span>Save Draft</span>
+        </button>
+
+        <button *ngIf="ticketId || changeTitle || requirements" (click)="clearForm()" 
+                type="button" 
+                class="bg-transparent text-[#908fa0] hover:text-[#e1e2eb] font-semibold text-xs px-4 py-3 rounded-md transition-colors flex items-center justify-center gap-1.5 cursor-pointer">
+          <span class="material-symbols-outlined text-[16px]">clear_all</span>
+          <span>Clear Form</span>
         </button>
       </div>
     </div>
 
     <!-- Summary Sidebar (Right 4 Cols) -->
-    <div class="lg:col-span-4 sticky top-24">
-      <div class="bg-[#161B22] border border-[#30363D] rounded-lg overflow-hidden flex flex-col">
-        <div class="bg-[#1d2026] px-4 py-3 border-b border-[#30363D] flex items-center gap-2">
-          <span class="material-symbols-outlined text-[#908fa0] text-[18px]">visibility</span>
-          <h3 class="font-title-sm text-xs font-semibold text-[#e1e2eb]">Change Preview</h3>
+    <div class="lg:col-span-4 sticky top-24 space-y-4">
+      <div class="bg-[#161B22] light:bg-white border border-[#30363D] light:border-[#d0d7de] rounded-xl overflow-hidden flex flex-col shadow-sm">
+        <div class="bg-[#1d2026] light:bg-[#f6f8fa] px-4 py-3 border-b border-[#30363D] light:border-[#d0d7de] flex items-center gap-2">
+          <span class="material-symbols-outlined text-[#908fa0] light:text-[#57606a] text-[18px]">visibility</span>
+          <h3 class="font-title-sm text-xs font-semibold text-[#e1e2eb] light:text-[#1f2328]">Live Change Preview</h3>
         </div>
 
         <div class="p-4 space-y-4">
           <div>
-            <span class="font-label-caps text-[10px] text-[#908fa0] uppercase tracking-wider block mb-1">Target</span>
-            <div class="font-mono text-xs text-[#e1e2eb] flex items-center gap-1.5">
-              <span class="text-[#4edea3]">{{ repository }}</span>
+            <span class="font-label-caps text-[10px] text-[#908fa0] light:text-[#57606a] uppercase tracking-wider block mb-1">Target Repository</span>
+            <div class="font-mono text-xs text-[#e1e2eb] light:text-[#1f2328] flex items-center gap-1.5 truncate">
+              <span class="text-[#4edea3] font-semibold">{{ repository || 'Not specified' }}</span>
               <span class="text-[#908fa0]">/</span>
-              <span class="text-[#ffb783]">{{ branch }}</span>
+              <span class="text-[#ffb783]">{{ branch || 'main' }}</span>
             </div>
           </div>
 
           <div>
-            <span class="font-label-caps text-[10px] text-[#908fa0] uppercase tracking-wider block mb-2">Autonomous Stages</span>
+            <span class="font-label-caps text-[10px] text-[#908fa0] light:text-[#57606a] uppercase tracking-wider block mb-2">Autonomous Verification Gates</span>
             <ul class="space-y-2 text-xs">
-              <li *ngFor="let s of state.stages" class="flex items-center gap-2 text-[#908fa0]">
-                <div class="w-2.5 h-2.5 rounded-full border border-[#464554]"></div>
-                <span>{{ s.label }}</span>
+              <li *ngFor="let s of state.stages" class="flex items-center gap-2 text-[#908fa0] light:text-[#57606a]">
+                <div class="w-2 h-2 rounded-full border border-[#464554] shrink-0"></div>
+                <span class="truncate">{{ s.label }}</span>
               </li>
             </ul>
           </div>
         </div>
 
-        <div class="bg-[#10131a] border-t border-[#30363D] p-4 flex items-center justify-between text-xs">
-          <span class="text-[#908fa0]">Estimated Duration</span>
-          <span class="font-mono text-[#e1e2eb] font-bold">~2m 15s</span>
+        <div class="bg-[#10131a] light:bg-[#f6f8fa] border-t border-[#30363D] light:border-[#d0d7de] p-3.5 flex items-center justify-between text-xs">
+          <span class="text-[#908fa0] light:text-[#57606a]">Estimated Runtime</span>
+          <span class="font-mono text-[#e1e2eb] light:text-[#1f2328] font-bold">~2m 15s</span>
         </div>
       </div>
     </div>
   </div>
+
+  <!-- Saved Stories & Change Requests Section -->
+  <div class="pt-6 border-t border-[#30363D] light:border-[#d0d7de] space-y-4">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <span class="material-symbols-outlined text-[#8083ff] text-[22px]">folder_special</span>
+        <h2 class="font-display-lg text-lg font-bold text-[#e1e2eb] light:text-[#1f2328]">Saved Stories & Change Requests</h2>
+        <span class="px-2 py-0.5 rounded-full bg-[#30363D]/60 light:bg-[#eaeef2] text-xs font-mono text-[#8083ff] font-semibold">
+          {{ (state.changeRequests$ | async)?.length || 0 }}
+        </span>
+      </div>
+      <p class="font-body-md text-xs text-[#908fa0] light:text-[#57606a] hidden sm:block">
+        Click any card to load its parameters into the execution form.
+      </p>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="!(state.changeRequests$ | async)?.length" 
+         class="bg-[#161B22]/50 light:bg-white border border-dashed border-[#30363D] light:border-[#d0d7de] rounded-xl p-8 text-center space-y-2">
+      <span class="material-symbols-outlined text-3xl text-[#908fa0] opacity-40">post_add</span>
+      <h4 class="text-sm font-semibold text-[#e1e2eb] light:text-[#1f2328]">No Saved Stories Yet</h4>
+      <p class="text-xs text-[#908fa0] light:text-[#57606a] max-w-md mx-auto">
+        Fill out the Ticket ID, Change Title, Requirements, and Target Repository above and click <strong>"Save Draft"</strong> to create a reusable story card.
+      </p>
+    </div>
+
+    <!-- Stories Grid -->
+    <div *ngIf="(state.changeRequests$ | async) as requests" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div *ngFor="let req of requests" 
+           (click)="selectStory(req)"
+           [attr.data-story-id]="req.story_id"
+           [class.border-[#8083ff]]="selectedStoryId === req.story_id"
+           [class.ring-1]="selectedStoryId === req.story_id"
+           [class.ring-[#8083ff]]="selectedStoryId === req.story_id"
+           class="story-card bg-[#161B22] light:bg-white border border-[#30363D] light:border-[#d0d7de] rounded-xl p-4.5 space-y-3 shadow-sm hover:border-[#8083ff]/60 hover:shadow-md transition-all cursor-pointer relative group flex flex-col justify-between">
+        
+        <div class="space-y-2.5">
+          <!-- Card Header -->
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-0.5 rounded bg-[#494bd6]/20 border border-[#8083ff]/30 text-[#8083ff] font-mono font-bold text-xs">
+                #{{ req.story_id }}
+              </span>
+              <span class="px-1.5 py-0.5 rounded bg-[#272a31] light:bg-[#eaeef2] text-[#908fa0] light:text-[#57606a] text-[10px] font-semibold uppercase">
+                {{ req.priority || 'HIGH' }}
+              </span>
+            </div>
+
+            <!-- Delete Button -->
+            <button (click)="promptDeleteStory(req, $event)" 
+                    title="Delete change request"
+                    class="p-1 rounded text-[#908fa0] hover:text-[#ff7b72] hover:bg-[#ff7b72]/10 transition-colors cursor-pointer">
+              <span class="material-symbols-outlined text-[18px]">delete</span>
+            </button>
+          </div>
+
+          <!-- Card Title -->
+          <h3 class="font-title-sm text-sm font-semibold text-[#e1e2eb] light:text-[#1f2328] line-clamp-1 group-hover:text-[#8083ff] transition-colors" [title]="req.title">
+            {{ req.title }}
+          </h3>
+
+          <!-- Card Requirements snippet -->
+          <p class="font-body-md text-xs text-[#908fa0] light:text-[#57606a] line-clamp-2 leading-relaxed">
+            {{ req.description || 'No detailed requirements specified.' }}
+          </p>
+        </div>
+
+        <!-- Card Footer -->
+        <div class="pt-3 border-t border-[#30363D]/60 light:border-[#d0d7de] flex items-center justify-between text-[11px]">
+          <div class="flex items-center gap-1.5 text-[#4edea3] font-mono truncate max-w-[180px]" [title]="req.repository">
+            <span class="material-symbols-outlined text-[14px]">folder_open</span>
+            <span class="truncate">{{ req.repository }}</span>
+          </div>
+          <div class="flex items-center gap-1 text-[#8083ff] font-semibold text-[11px] group-hover:translate-x-0.5 transition-transform">
+            <span>Load</span>
+            <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal Popup -->
+  <div *ngIf="showDeleteConfirm" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in" (click)="cancelDelete()">
+    <div class="bg-[#161B22] light:bg-white border border-[#30363D] light:border-[#d0d7de] rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 text-[#e1e2eb] light:text-[#1f2328] animate-scale-up" (click)="$event.stopPropagation()">
+      
+      <div class="flex items-center gap-3 text-[#ff7b72]">
+        <div class="w-10 h-10 rounded-xl bg-[#ff7b72]/15 border border-[#ff7b72]/30 flex items-center justify-center">
+          <span class="material-symbols-outlined text-[24px]">delete_forever</span>
+        </div>
+        <div>
+          <h3 class="font-display-lg text-base font-bold text-[#e1e2eb] light:text-[#1f2328]">Delete Change Request</h3>
+          <p class="text-xs text-[#908fa0]">Confirm deletion</p>
+        </div>
+      </div>
+
+      <p class="text-xs text-[#908fa0] light:text-[#57606a] leading-relaxed">
+        Are you sure you want to delete change request <strong class="text-[#e1e2eb] light:text-[#1f2328]">#{{ deletingRequest?.story_id }}</strong> (<em>{{ deletingRequest?.title }}</em>)?
+        This story card will be permanently removed.
+      </p>
+
+      <div class="flex items-center justify-end gap-3 pt-3 border-t border-[#30363D] light:border-[#d0d7de]">
+        <button (click)="cancelDelete()" type="button" class="px-4 py-2 rounded-lg border border-[#30363D] light:border-[#d0d7de] text-[#908fa0] light:text-[#57606a] hover:text-[#e1e2eb] light:hover:text-[#1f2328] hover:bg-[#272a31] text-xs font-semibold transition-colors cursor-pointer">
+          Cancel
+        </button>
+        <button (click)="confirmDelete()" type="button" class="px-4 py-2 rounded-lg bg-[#ff7b72] hover:bg-[#ff948c] text-[#490002] text-xs font-bold transition-all shadow-md flex items-center gap-1.5 cursor-pointer">
+          <span class="material-symbols-outlined text-[16px]">delete</span>
+          <span>Delete Story</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
 </div>

@@ -469,6 +469,29 @@ class DatabaseRepository:
         finally:
             session.close()
 
+    def delete_change_request(self, request_id: str, user_id: Optional[str] = None) -> bool:
+        """Deletes a change request from database strictly for the user."""
+        session: Session = SessionLocal()
+        try:
+            q = session.query(ChangeRequestModel).filter(
+                (ChangeRequestModel.id == request_id) | (ChangeRequestModel.story_id == request_id)
+            )
+            if user_id:
+                q = q.filter(ChangeRequestModel.user_id == user_id)
+            req = q.first()
+            if req:
+                session.delete(req)
+                session.commit()
+                logger.info(f"Deleted change request {request_id} for user {user_id}")
+                return True
+            return False
+        except Exception as e:
+            session.rollback()
+            logger.warning(f"Error deleting change request {request_id}: {e}")
+            return False
+        finally:
+            session.close()
+
     def list_connected_repositories(self, user_id: Optional[str] = None) -> List[dict]:
         """Lists connected repositories from database strictly filtered by owner user_id."""
         session: Session = SessionLocal()

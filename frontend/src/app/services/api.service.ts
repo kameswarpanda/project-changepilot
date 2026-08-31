@@ -51,6 +51,10 @@ export class ApiService {
     return this.http.post<any>(`${this.baseUrl}/api/requests`, payload, { headers: this.getHeaders() });
   }
 
+  deleteChangeRequest(requestId: string): Observable<any> {
+    return this.http.delete<any>(`${this.baseUrl}/api/requests/${encodeURIComponent(requestId)}`, { headers: this.getHeaders() });
+  }
+
   listRepositories(): Observable<any> {
     return this.http.get<any>(`${this.baseUrl}/api/repositories`, { headers: this.getHeaders() });
   }
