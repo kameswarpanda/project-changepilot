@@ -153,68 +153,66 @@ This code is valid for 10 minutes. If you did not request a password reset, plea
 </body>
 </html>
 """
-
-        # 1. Primary: Resend API (if RESEND_API_KEY is configured)
+        # 1. Primary: SMTP (Gmail, SendGrid, Brevo, AWS SES, Custom SMTP) if host/user/pass configured
         delivered_live = False
-        resend_api_key = settings.resend_api_key or os.environ.get("RESEND_API_KEY")
-        if resend_api_key and resend_api_key.strip():
+        smtp_host = settings.smtp_host or os.environ.get("SMTP_HOST")
+        smtp_port = int(settings.smtp_port or os.environ.get("SMTP_PORT", 587))
+        smtp_user = settings.smtp_user or os.environ.get("SMTP_USER")
+        smtp_pass = settings.smtp_password or os.environ.get("SMTP_PASSWORD")
+        from_email = settings.email_from or os.environ.get("SMTP_FROM", smtp_user or "ChangePilot <onboarding@resend.dev>")
+
+        if smtp_host and smtp_user and smtp_pass:
             try:
-                import httpx
-                from_email = settings.email_from or os.environ.get("SMTP_FROM", "ChangePilot <onboarding@resend.dev>")
-                resp = httpx.post(
-                    "https://api.resend.com/emails",
-                    headers={
-                        "Authorization": f"Bearer {resend_api_key.strip()}",
-                        "Content-Type": "application/json"
-                    },
-                    json={
-                        "from": from_email,
-                        "to": [to_email],
-                        "subject": subject,
-                        "html": html_content,
-                        "text": body_text
-                    },
-                    timeout=10.0
-                )
-                if resp.status_code in [200, 201]:
-                    logger.info(f"Successfully dispatched verification code via Resend API to {to_email}")
-                    delivered_live = True
+                msg = MIMEMultipart("alternative")
+                msg["From"] = from_email
+                msg["To"] = to_email
+                msg["Subject"] = subject
+                msg.attach(MIMEText(body_text, "plain"))
+                msg.attach(MIMEText(html_content, "html"))
+
+                if smtp_port == 465:
+                    with smtplib.SMTP_SSL(smtp_host, smtp_port, timeout=10) as server:
+                        server.login(smtp_user, smtp_pass)
+                        server.send_message(msg)
                 else:
-                    logger.warning(f"Resend API returned status {resp.status_code} for {to_email}: {resp.text}")
+                    with smtplib.SMTP(smtp_host, smtp_port, timeout=10) as server:
+                        server.starttls()
+                        server.login(smtp_user, smtp_pass)
+                        server.send_message(msg)
+
+                logger.info(f"Successfully dispatched verification code via SMTP ({smtp_host}) to {to_email}")
+                delivered_live = True
             except Exception as e:
-                logger.error(f"Failed to dispatch email via Resend API: {e}")
+                logger.error(f"Failed to dispatch email via SMTP ({smtp_host}) to {to_email}: {e}")
 
-        # 2. Option B: SMTP (Gmail, SendGrid, Brevo, AWS SES, Custom SMTP)
+        # 2. Resend API (if SMTP not delivered and RESEND_API_KEY is configured)
         if not delivered_live:
-            smtp_host = os.environ.get("SMTP_HOST")
-            smtp_port = int(os.environ.get("SMTP_PORT", 587))
-            smtp_user = os.environ.get("SMTP_USER")
-            smtp_pass = os.environ.get("SMTP_PASSWORD")
-            from_email = os.environ.get("SMTP_FROM", smtp_user or "no-reply@changepilot.dev")
-
-            if smtp_host and smtp_user and smtp_pass:
+            resend_api_key = settings.resend_api_key or os.environ.get("RESEND_API_KEY")
+            if resend_api_key and resend_api_key.strip():
                 try:
-                    msg = MIMEMultipart("alternative")
-                    msg["From"] = from_email
-                    msg["To"] = to_email
-                    msg["Subject"] = subject
-                    msg.attach(MIMEText(body_text, "plain"))
-                    msg.attach(MIMEText(html_content, "html"))
-
-                    if smtp_port == 465:
-                        with smtplib.SMTP_SSL(smtp_host, smtp_port, timeout=10) as server:
-                            server.login(smtp_user, smtp_pass)
-                            server.send_message(msg)
+                    import httpx
+                    resp = httpx.post(
+                        "https://api.resend.com/emails",
+                        headers={
+                            "Authorization": f"Bearer {resend_api_key.strip()}",
+                            "Content-Type": "application/json"
+                        },
+                        json={
+                            "from": from_email,
+                            "to": [to_email],
+                            "subject": subject,
+                            "html": html_content,
+                            "text": body_text
+                        },
+                        timeout=10.0
+                    )
+                    if resp.status_code in [200, 201]:
+                        logger.info(f"Successfully dispatched verification code via Resend API to {to_email}")
+                        delivered_live = True
                     else:
-                        with smtplib.SMTP(smtp_host, smtp_port, timeout=10) as server:
-                            server.starttls()
-                            server.login(smtp_user, smtp_pass)
-                            server.send_message(msg)
-
-                    logger.info(f"Successfully dispatched OTP email via SMTP to {to_email}")
-                    delivered_live = True
+                        logger.warning(f"Resend API returned status {resp.status_code} for {to_email}: {resp.text}")
                 except Exception as e:
-                    logger.error(f"Failed to dispatch email via SMTP to {to_email}: {e}")
+                    logger.error(f"Failed to dispatch email via Resend API: {e}")
 
         # 3. Always log event to console
         logger.info(f"[EMAIL_DISPATCH] To: {to_email} | Code: {otp_code} | Subject: '{subject}' | Live: {delivered_live}")
@@ -226,13 +224,9 @@ This code is valid for 10 minutes. If you did not request a password reset, plea
             return False
         
         ticket_count = len(tickets)
-        ticket_items = "".join([
-            f"<li><strong>[{t.get('story_id', 'TASK')}] {t.get('title', 'Change Request')}</strong> ({t.get('repository', 'repo')})</li>"
-            for t in tickets[:5]
-        ])
-        
-        subject = f"⚡ {ticket_count} Cloud Change Ticket{'s' if ticket_count > 1 else ''} Assigned on ChangePilot"
-        body_text = f"Hello {display_name},\n\nYou have {ticket_count} assigned cloud change ticket(s) ready for autonomous pipeline execution on ChangePilot.\n\n— ChangePilot Security & Delivery Team"
+        subject = f"⚡ ChangePilot: {ticket_count} New Cloud Ticket(s) Assigned"
+        ticket_items = "".join([f"<li><strong>{t.get('key', 'CP-TICKET')}</strong>: {t.get('title', 'Change Request')} ({t.get('status', 'OPEN')})</li>" for t in tickets])
+        body_text = f"Hello {display_name},\n\nYou have {ticket_count} new cloud ticket(s) assigned for autonomous software verification in ChangePilot.\n\nPlease open your ChangePilot dashboard to view change plans and open pull requests.\n\n— ChangePilot Team"
         
         html_content = f"""
 <!DOCTYPE html>
@@ -249,12 +243,42 @@ This code is valid for 10 minutes. If you did not request a password reset, plea
 </body>
 </html>
 """
-        # Primary: Resend API
+        smtp_host = settings.smtp_host or os.environ.get("SMTP_HOST")
+        smtp_port = int(settings.smtp_port or os.environ.get("SMTP_PORT", 587))
+        smtp_user = settings.smtp_user or os.environ.get("SMTP_USER")
+        smtp_pass = settings.smtp_password or os.environ.get("SMTP_PASSWORD")
+        from_email = settings.email_from or os.environ.get("SMTP_FROM", smtp_user or "ChangePilot <onboarding@resend.dev>")
+
+        # 1. Primary: SMTP
+        if smtp_host and smtp_user and smtp_pass:
+            try:
+                msg = MIMEMultipart("alternative")
+                msg["From"] = from_email
+                msg["To"] = to_email
+                msg["Subject"] = subject
+                msg.attach(MIMEText(body_text, "plain"))
+                msg.attach(MIMEText(html_content, "html"))
+
+                if smtp_port == 465:
+                    with smtplib.SMTP_SSL(smtp_host, smtp_port, timeout=10) as server:
+                        server.login(smtp_user, smtp_pass)
+                        server.send_message(msg)
+                else:
+                    with smtplib.SMTP(smtp_host, smtp_port, timeout=10) as server:
+                        server.starttls()
+                        server.login(smtp_user, smtp_pass)
+                        server.send_message(msg)
+
+                logger.info(f"Dispatched ticket assignment notification email via SMTP to {to_email}")
+                return True
+            except Exception as e:
+                logger.error(f"Failed to dispatch ticket email via SMTP: {e}")
+
+        # 2. Resend API
         resend_api_key = settings.resend_api_key or os.environ.get("RESEND_API_KEY")
         if resend_api_key and resend_api_key.strip():
             try:
                 import httpx
-                from_email = settings.email_from or os.environ.get("SMTP_FROM", "ChangePilot <onboarding@resend.dev>")
                 resp = httpx.post(
                     "https://api.resend.com/emails",
                     headers={"Authorization": f"Bearer {resend_api_key.strip()}", "Content-Type": "application/json"},
@@ -262,12 +286,12 @@ This code is valid for 10 minutes. If you did not request a password reset, plea
                     timeout=10.0
                 )
                 if resp.status_code in [200, 201]:
-                    logger.info(f"Dispatched ticket assignment notification email to {to_email}")
+                    logger.info(f"Dispatched ticket assignment notification email via Resend to {to_email}")
                     return True
             except Exception as e:
                 logger.warning(f"Resend notification notice: {e}")
 
-        # Fallback SMTP / Log
+        # Fallback Log
         logger.info(f"[EMAIL_DISPATCH] To: {to_email} | Subject: '{subject}' | Tickets: {ticket_count}")
         return True
 
