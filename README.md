@@ -81,9 +81,37 @@ Unlike brittle prompt-only agents, ChangePilot enforces **non-negotiable determi
 4. Click **"Run ChangePilot"**.
 5. Watch all **9 stages illuminate in real-time**, view the side-by-side **Unified Diff**, and inspect the created **GitHub Pull Request**!
 
+## 🧪 Reproducible Testing Instructions
+
+Judges and evaluators can verify the entire test suite and pipeline reproducibility locally or against the live cloud instance:
+
+### 1. Run Complete Automated Test Suite (58/58 Passing Tests)
+Execute the comprehensive test suite covering security gates, repository topology analyzers, AST parsers, and workflow orchestrators:
+```bash
+python -m pytest backend/tests/ -v
+```
+
+### 2. Run Security Boundary & Path Confinement Tests
+Verify that path traversals, secret file access (`.env`, `id_rsa`), and shell injections are deterministically rejected:
+```bash
+python -m pytest backend/tests/test_security_validator.py backend/tests/test_validators.py -v
+```
+
+### 3. Run Headless End-to-End Pipeline Verification
+Execute the complete 9-stage autonomous change lifecycle in CLI mode against `demo_repo/`:
+```bash
+python run_demo.py
+```
+
+### 4. Verify Live Google Cloud Production Health
+Test the live Cloud Run deployment and database connectivity:
+```bash
+curl https://changepilot-189200132893.us-central1.run.app/api/health
+```
+
 ---
 
-## 💻 Local Quickstart & Reproduction
+## 💻 Local Quickstart & Setup
 
 ### Prerequisites
 - Python 3.11+
@@ -103,12 +131,7 @@ source .venv/bin/activate  # Or .venv\Scripts\activate on Windows
 pip install -r backend/requirements.txt
 ```
 
-### 2. Run Automated Verification Tests (58/58 Passing)
-```bash
-python -m pytest backend/tests/ -v
-```
-
-### 3. Run FastAPI Backend Server
+### 2. Run FastAPI Backend Server
 ```bash
 python -m uvicorn backend.src.api.server:app --host 0.0.0.0 --port 8000 --reload
 ```
