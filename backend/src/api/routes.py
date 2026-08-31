@@ -256,18 +256,8 @@ async def reset_password_with_otp(req: ResetPasswordPayload):
 # -----------------------------------------------------------------------------
 @router.get("/api/integrations/assigned-tickets", tags=["Integrations"])
 async def get_assigned_tickets(notify: bool = False, user: User = Depends(get_current_user)):
-    """Fetches assigned cloud tickets from the persistent database and notifies user if assigned."""
-    tickets = db_repository.list_assigned_tickets(user_id=user.id)
-    if tickets and user.email:
-        try:
-            auth_service.send_ticket_assignment_notification(
-                to_email=user.email,
-                tickets=tickets,
-                display_name=user.display_name or user.username
-            )
-        except Exception as ex:
-            logger.debug(f"Assigned tickets email notification notice: {ex}")
-    return tickets
+    """Fetches assigned cloud tickets from the persistent database."""
+    return db_repository.list_assigned_tickets(user_id=user.id)
 
 
 @router.post("/api/integrations/assigned-tickets", tags=["Integrations"])
