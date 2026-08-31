@@ -261,9 +261,11 @@ export class WorkflowStateService {
 
   public disconnectGitHub(): void {
     this.api.disconnectGitHub().subscribe({
-      next: () => {
+      next: (res) => {
         this.githubStatusSubject.next({ connected: false });
-        this.notif.addNotification('GitHub Disconnected', 'Disconnected GitHub account credentials.', 'info');
+        this.connectedReposSubject.next([]);
+        this.loadRepositories();
+        this.notif.addNotification('GitHub Disconnected', res.message || 'Disconnected GitHub account and cleared all connected repositories.', 'info');
       },
       error: () => {}
     });

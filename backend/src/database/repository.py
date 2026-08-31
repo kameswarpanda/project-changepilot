@@ -579,6 +579,24 @@ class DatabaseRepository:
         finally:
             session.close()
 
+    def delete_user_repositories(self, user_id: str, provider: Optional[str] = None) -> int:
+        """Deletes all repositories connected by a specific user (optionally filtered by provider)."""
+        session: Session = SessionLocal()
+        try:
+            q = session.query(RepositoryModel).filter(RepositoryModel.owner_user_id == user_id)
+            if provider:
+                q = q.filter(RepositoryModel.provider == provider)
+            deleted_count = q.delete(synchronize_session=False)
+            session.commit()
+            logger.info(f"Deleted {deleted_count} connected repositories for user {user_id} (provider={provider})")
+            return deleted_count
+        except Exception as e:
+            session.rollback()
+            logger.warning(f"Error deleting repositories for user {user_id}: {e}")
+            return 0
+        finally:
+            session.close()
+
     def save_repository(self, repo_dict: dict) -> dict:
         """Persists a new connected repository strictly linked to owner_user_id."""
         session: Session = SessionLocal()

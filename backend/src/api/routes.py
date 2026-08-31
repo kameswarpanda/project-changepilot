@@ -420,9 +420,11 @@ async def connect_github_token(req: GitHubConnectRequest, user: User = Depends(g
 
 @router.delete("/api/integrations/github/disconnect", tags=["Integrations"])
 async def disconnect_github(user: User = Depends(get_current_user)):
-    """Disconnects and clears the stored GitHub token for the authenticated user."""
+    """Disconnects GitHub token and immediately clears all connected GitHub repositories for the user."""
     db_repository.delete_user_github_token(user.id)
-    return {"success": True, "message": "Disconnected from GitHub."}
+    deleted_count = db_repository.delete_user_repositories(user_id=user.id, provider="github")
+    logger.info(f"User {user.username} ({user.id}) disconnected GitHub and removed {deleted_count} repositories.")
+    return {"success": True, "message": f"Disconnected from GitHub and removed {deleted_count} connected repositories."}
 
 
 # -----------------------------------------------------------------------------
@@ -433,12 +435,10 @@ async def list_repositories(user: User = Depends(get_current_user)):
     """Lists connected repositories from the database for the authenticated user."""
     repos = db_repository.list_connected_repositories(user_id=user.id)
     
-    # If no repos stored yet but user has GitHub token, automatically sync and populate
+    # If no repos stored yet but user currently has a linked GitHub token, auto-sync
     if not repos:
         user_ints = db_repository.get_user_integrations(user.id)
         user_token = user_ints.get("github_token")
-        if not user_token and (user.username == "kameswar" or "admin" in user.roles):
-            user_token = settings.github_token or os.environ.get("GITHUB_TOKEN")
         
         if user_token:
             client = GitHubAppClient(token=user_token)
@@ -470,8 +470,6 @@ async def sync_repositories(user: User = Depends(get_current_user)):
     """Force re-syncs and updates all remote repositories from connected GitHub account."""
     user_ints = db_repository.get_user_integrations(user.id)
     user_token = user_ints.get("github_token")
-    if not user_token and (user.username == "kameswar" or "admin" in user.roles):
-        user_token = settings.github_token or os.environ.get("GITHUB_TOKEN")
 
     if not user_token:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No GitHub account connected. Please connect your GitHub token first.")
@@ -507,8 +505,6 @@ async def list_user_platform_repos(user: User = Depends(get_current_user)):
     """Queries user's connected GitHub / Azure account directly for 1-click repository import."""
     user_ints = db_repository.get_user_integrations(user.id)
     user_token = user_ints.get("github_token")
-    if not user_token and (user.username == "kameswar" or "admin" in user.roles):
-        user_token = settings.github_token or os.environ.get("GITHUB_TOKEN")
     
     if not user_token:
         return []

@@ -179,8 +179,11 @@ export class RepositoriesComponent implements OnInit {
   }
 
   disconnectGitHub(): void {
-    if (confirm('Are you sure you want to disconnect your GitHub account? Automated remote push will be disabled.')) {
+    if (confirm('Are you sure you want to disconnect your GitHub account? All connected GitHub repositories will be unlinked and removed.')) {
       this.state.disconnectGitHub();
+      this.userPlatformRepos = [];
+      this.selectedPlatformRepo = null;
+      this.githubConnectMessage = null;
     }
   }
 
