@@ -33,6 +33,14 @@ export class TopbarComponent {
     }
   }
 
+  handleMenuClick(): void {
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      this.state.toggleMobileSidebar();
+    } else {
+      this.state.toggleSidebar();
+    }
+  }
+
   getUserInitials(user: any): string {
     if (!user || !user.display_name) return 'CP';
     const name = user.display_name.trim();

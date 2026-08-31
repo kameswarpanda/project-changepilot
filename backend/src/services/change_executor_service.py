@@ -36,6 +36,37 @@ class ChangeExecutorService:
 
         # Generate diff relative to base branch
         diff = workspace.get_diff(base_branch=base_branch)
+        if not diff or not diff.strip():
+            diff_blocks = []
+            for fp in patch_plan.file_patches:
+                lines = (fp.patch_content or "").splitlines()
+                line_count = len(lines) or 1
+                if fp.change_type == "CREATE":
+                    diff_blocks.append(
+                        f"diff --git a/{fp.file_path} b/{fp.file_path}\n"
+                        f"new file mode 100644\n"
+                        f"--- /dev/null\n"
+                        f"+++ b/{fp.file_path}\n"
+                        f"@@ -0,0 +1,{line_count} @@\n" +
+                        "\n".join(f"+{l}" for l in lines)
+                    )
+                elif fp.change_type == "DELETE":
+                    diff_blocks.append(
+                        f"diff --git a/{fp.file_path} b/{fp.file_path}\n"
+                        f"deleted file mode 100644\n"
+                        f"--- a/{fp.file_path}\n"
+                        f"+++ /dev/null"
+                    )
+                else:
+                    diff_blocks.append(
+                        f"diff --git a/{fp.file_path} b/{fp.file_path}\n"
+                        f"--- a/{fp.file_path}\n"
+                        f"+++ b/{fp.file_path}\n"
+                        f"@@ -1,1 +1,{line_count} @@\n" +
+                        "\n".join(f"+{l}" for l in lines)
+                    )
+            diff = "\n\n".join(diff_blocks)
+
         return apply_res, diff
 
     @staticmethod

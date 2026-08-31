@@ -25,8 +25,11 @@
     </main>
   </div>
 
-  <!-- Mobile Navigation -->
-  <app-mobile-nav></app-mobile-nav>
+  <!-- Mobile Navigation Drawer Overlay Backdrop -->
+  <div *ngIf="(state.isMobileSidebarOpen$ | async)" 
+       (click)="state.closeMobileSidebar()" 
+       class="md:hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-40 transition-opacity">
+  </div>
 
   <!-- Modals (if triggered) -->
   <app-report-modal></app-report-modal>

@@ -144,12 +144,14 @@ class GitHubAppClient:
         # 1. If GitHub token is present, attempt live Pull Request creation via GitHub REST API
         if self.token:
             try:
-                with httpx.Client(timeout=10.0) as client:
+                auth_header = f"Bearer {self.token.strip()}"
+                with httpx.Client(timeout=12.0) as client:
                     resp = client.post(
                         f"https://api.github.com/repos/{clean_repo}/pulls",
                         headers={
-                            "Authorization": f"Bearer {self.token}",
-                            "Accept": "application/vnd.github.v3+json"
+                            "Authorization": auth_header,
+                            "Accept": "application/vnd.github.v3+json",
+                            "X-GitHub-Api-Version": "2022-11-28"
                         },
                         json={
                             "title": title,
@@ -170,6 +172,31 @@ class GitHubAppClient:
                             head_branch=head_branch,
                             status="OPEN"
                         )
+                    elif resp.status_code == 422:
+                        # Check if PR already exists for this branch
+                        logger.info(f"PR creation returned 422, checking if PR already exists on {clean_repo}...")
+                        owner = clean_repo.split('/')[0] if '/' in clean_repo else "kameswarpanda"
+                        list_resp = client.get(
+                            f"https://api.github.com/repos/{clean_repo}/pulls?state=all&head={owner}:{head_branch}",
+                            headers={
+                                "Authorization": auth_header,
+                                "Accept": "application/vnd.github.v3+json"
+                            }
+                        )
+                        if list_resp.status_code == 200 and len(list_resp.json()) > 0:
+                            existing_pr = list_resp.json()[0]
+                            logger.info(f"Found existing GitHub PR #{existing_pr['number']}: {existing_pr['html_url']}")
+                            return PullRequestInfo(
+                                pr_number=existing_pr["number"],
+                                pr_url=existing_pr["html_url"],
+                                title=existing_pr.get("title", title),
+                                body=existing_pr.get("body", body),
+                                base_branch=base_branch,
+                                head_branch=head_branch,
+                                status=existing_pr.get("state", "OPEN").upper()
+                            )
+                        else:
+                            logger.info(f"GitHub API Pulls response 422: {resp.text}")
                     else:
                         logger.info(f"GitHub API Pulls response {resp.status_code}: {resp.text}")
             except Exception as e:

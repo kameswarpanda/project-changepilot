@@ -2,7 +2,6 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SidebarComponent } from './components/layout/sidebar/sidebar.component';
 import { TopbarComponent } from './components/layout/topbar/topbar.component';
-import { MobileNavComponent } from './components/layout/mobile-nav/mobile-nav.component';
 import { DashboardComponent } from './components/dashboard/dashboard.component';
 import { ChangeRequestsComponent } from './components/change-requests/change-requests.component';
 import { PipelinesComponent } from './components/pipelines/pipelines.component';
@@ -25,7 +24,6 @@ import { AuthService } from './services/auth.service';
     ToastContainerComponent,
     SidebarComponent,
     TopbarComponent,
-    MobileNavComponent,
     DashboardComponent,
     ChangeRequestsComponent,
     PipelinesComponent,

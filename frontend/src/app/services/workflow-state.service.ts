@@ -57,12 +57,23 @@ export class WorkflowStateService {
   public isSidebarCollapsedSubject = new BehaviorSubject<boolean>(false);
   public isSidebarCollapsed$: Observable<boolean> = this.isSidebarCollapsedSubject.asObservable();
 
+  public isMobileSidebarOpenSubject = new BehaviorSubject<boolean>(false);
+  public isMobileSidebarOpen$: Observable<boolean> = this.isMobileSidebarOpenSubject.asObservable();
+
   public toggleSidebar(): void {
     this.isSidebarCollapsedSubject.next(!this.isSidebarCollapsedSubject.value);
   }
 
   public setSidebarCollapsed(collapsed: boolean): void {
     this.isSidebarCollapsedSubject.next(collapsed);
+  }
+
+  public toggleMobileSidebar(): void {
+    this.isMobileSidebarOpenSubject.next(!this.isMobileSidebarOpenSubject.value);
+  }
+
+  public closeMobileSidebar(): void {
+    this.isMobileSidebarOpenSubject.next(false);
   }
 
   // Selected / Active View Detail
@@ -223,6 +234,7 @@ export class WorkflowStateService {
 
   public setNav(nav: string): void {
     this.activeNavSubject.next(nav);
+    this.closeMobileSidebar();
   }
 
   public setSearchQuery(q: string): void {

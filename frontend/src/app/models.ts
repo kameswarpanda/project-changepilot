@@ -69,6 +69,7 @@ export interface FilePatch {
   file_path: string;
   change_type: ChangeType;
   content?: string;
+  patch_content?: string;
   explanation?: string;
 }
 

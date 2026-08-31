@@ -1,24 +1,24 @@
-<header class="h-16 px-6 w-full bg-[#10131a] light:bg-[#ffffff] border-b border-[#30363D] light:border-[#d0d7de] flex items-center justify-between sticky top-0 z-30 shrink-0">
+<header class="h-16 px-4 sm:px-6 w-full bg-[#10131a] light:bg-[#ffffff] border-b border-[#30363D] light:border-[#d0d7de] flex items-center justify-between sticky top-0 z-30 shrink-0">
   <!-- Left: Sidebar Toggle & Breadcrumb Navigation -->
-  <div class="flex items-center gap-3">
-    <button (click)="state.toggleSidebar()" 
+  <div class="flex items-center gap-2 sm:gap-3 min-w-0">
+    <button (click)="handleMenuClick()" 
             title="Toggle Sidebar" 
-            class="w-8 h-8 rounded-lg hover:bg-[#272a31] light:hover:bg-[#f3f4f6] text-[#908fa0] light:text-[#57606a] hover:text-[#e1e2eb] light:hover:text-[#1f2328] flex items-center justify-center transition-colors">
+            class="w-8 h-8 rounded-lg hover:bg-[#272a31] light:hover:bg-[#f3f4f6] text-[#908fa0] light:text-[#57606a] hover:text-[#e1e2eb] light:hover:text-[#1f2328] flex items-center justify-center transition-colors shrink-0">
       <span class="material-symbols-outlined text-[20px]">menu</span>
     </button>
-    <div class="flex items-center gap-2 text-[#908fa0] light:text-[#57606a] text-xs">
-      <span class="font-semibold text-[#e1e2eb] light:text-[#1f2328]">ChangePilot</span>
-      <span class="material-symbols-outlined text-[14px]">chevron_right</span>
-      <span class="text-[#c0c1ff] light:text-[#494bd6] font-medium capitalize">{{ (state.activeNav$ | async) }}</span>
+    <div class="flex items-center gap-1.5 sm:gap-2 text-[#908fa0] light:text-[#57606a] text-xs truncate">
+      <span class="font-semibold text-[#e1e2eb] light:text-[#1f2328] truncate">ChangePilot</span>
+      <span class="material-symbols-outlined text-[14px] shrink-0">chevron_right</span>
+      <span class="text-[#c0c1ff] light:text-[#494bd6] font-medium capitalize truncate">{{ (state.activeNav$ | async) }}</span>
     </div>
   </div>
 
   <!-- Right: Live Cloud Health Badges & Actions -->
-  <div class="flex items-center gap-3 text-[#c7c4d7] light:text-[#57606a]">
+  <div class="flex items-center gap-1.5 sm:gap-3 text-[#c7c4d7] light:text-[#57606a] shrink-0">
     
     <!-- 1. FastAPI Backend Health Status -->
     <button (click)="state.refreshHealth()" 
-            class="h-8 px-2.5 rounded-md bg-[#161B22] light:bg-[#f6f8fa] border border-[#30363D] light:border-[#d0d7de] hover:bg-[#272a31] light:hover:bg-[#e1e4e8] transition-colors flex items-center gap-1.5 text-xs text-[#e1e2eb] light:text-[#1f2328]" 
+            class="hidden sm:flex h-8 px-2.5 rounded-md bg-[#161B22] light:bg-[#f6f8fa] border border-[#30363D] light:border-[#d0d7de] hover:bg-[#272a31] light:hover:bg-[#e1e4e8] transition-colors items-center gap-1.5 text-xs text-[#e1e2eb] light:text-[#1f2328]" 
             [title]="(state.health$ | async)?.status === 'healthy' ? 'FastAPI Backend Online' : 'Backend Server Offline'">
       <span *ngIf="(state.health$ | async)?.status === 'healthy'" 
             class="material-symbols-outlined text-[16px] text-[#10B981]">check_circle</span>
@@ -28,7 +28,7 @@
     </button>
 
     <!-- 2. Vertex AI Engine Status -->
-    <button class="h-8 px-2.5 rounded-md bg-[#161B22] light:bg-[#f6f8fa] border border-[#30363D] light:border-[#d0d7de] hover:bg-[#272a31] light:hover:bg-[#e1e4e8] transition-colors flex items-center gap-1.5 text-xs text-[#e1e2eb] light:text-[#1f2328]" 
+    <button class="hidden md:flex h-8 px-2.5 rounded-md bg-[#161B22] light:bg-[#f6f8fa] border border-[#30363D] light:border-[#d0d7de] hover:bg-[#272a31] light:hover:bg-[#e1e4e8] transition-colors items-center gap-1.5 text-xs text-[#e1e2eb] light:text-[#1f2328]" 
             title="Vertex AI Gemini 3.5 Flash Engine Active">
       <span class="material-symbols-outlined text-[16px] text-[#10B981]">check_circle</span>
       <span class="text-[11px] font-mono font-medium">Vertex AI</span>
@@ -36,13 +36,13 @@
 
     <!-- 3. Repository Platform Integration Status -->
     <button (click)="state.setNav('repositories')" 
-            class="h-8 px-2.5 rounded-md bg-[#161B22] light:bg-[#f6f8fa] border border-[#30363D] light:border-[#d0d7de] hover:bg-[#272a31] light:hover:bg-[#e1e4e8] transition-colors flex items-center gap-1.5 text-xs text-[#e1e2eb] light:text-[#1f2328]" 
+            class="hidden sm:flex h-8 px-2.5 rounded-md bg-[#161B22] light:bg-[#f6f8fa] border border-[#30363D] light:border-[#d0d7de] hover:bg-[#272a31] light:hover:bg-[#e1e4e8] transition-colors items-center gap-1.5 text-xs text-[#e1e2eb] light:text-[#1f2328]" 
             [title]="(state.githubStatus$ | async)?.connected ? 'GitHub Connected (@' + (state.githubStatus$ | async)?.username + ')' : 'Click to Configure GitHub Token'">
       <span *ngIf="(state.githubStatus$ | async)?.connected" 
             class="material-symbols-outlined text-[16px] text-[#10B981]">check_circle</span>
       <span *ngIf="!(state.githubStatus$ | async)?.connected" 
             class="material-symbols-outlined text-[16px] text-[#F59E0B]">link_off</span>
-      <span class="text-[11px] font-mono font-medium">
+      <span class="text-[11px] font-mono font-medium truncate max-w-[100px]">
         {{ (state.githubStatus$ | async)?.connected ? '@' + (state.githubStatus$ | async)?.username : 'GitHub' }}
       </span>
     </button>

@@ -91,23 +91,30 @@ class IsolatedWorkspace:
         if not self.repo:
             return False
         try:
+            import re
             branch = target_branch or self.branch_name
-            # If explicit remote_url and token provided
+            
+            def format_auth_url(raw_url: str, tok: str) -> str:
+                clean_url = re.sub(r'https?://[^@]+@', 'https://', raw_url)
+                clean_tok = tok.strip()
+                if clean_tok.startswith("ghs_"):
+                    return clean_url.replace("https://", f"https://x-access-token:{clean_tok}@")
+                return clean_url.replace("https://", f"https://oauth2:{clean_tok}@")
+
+            # 1. If explicit remote_url and token provided
             if remote_url and token:
-                auth_url = remote_url
-                if "@" not in remote_url and "https://" in remote_url:
-                    auth_url = remote_url.replace("https://", f"https://x-access-token:{token}@")
+                auth_url = format_auth_url(remote_url, token)
                 self.repo.git.push(auth_url, f"{branch}:{branch}", force=True)
                 logger.info(f"Successfully pushed branch {branch} to {remote_url}")
                 return True
 
-            # If origin remote exists on the repository
+            # 2. If origin remote exists on the repository
             remotes = [r.name for r in self.repo.remotes]
             if "origin" in remotes:
                 origin = self.repo.remote("origin")
                 origin_url = origin.url
-                if token and "https://" in origin_url and "@" not in origin_url:
-                    auth_url = origin_url.replace("https://", f"https://x-access-token:{token}@")
+                if token and "https://" in origin_url:
+                    auth_url = format_auth_url(origin_url, token)
                     self.repo.git.push(auth_url, f"{branch}:{branch}", force=True)
                 else:
                     self.repo.git.push("origin", f"{branch}:{branch}", force=True)

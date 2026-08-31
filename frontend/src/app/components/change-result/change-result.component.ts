@@ -20,20 +20,25 @@ export class ChangeResultComponent implements OnInit {
 
   getActiveDiff(): string {
     const res = this.state.resultSubject.value;
-    if (res?.applied_diff) return res.applied_diff;
+    if (res?.applied_diff && res.applied_diff.trim()) return res.applied_diff;
+    if (res?.patch_plan?.file_patches?.length) {
+      return res.patch_plan.file_patches.map((fp: any) => {
+        const rawContent = fp.patch_content || fp.content || '';
+        const lines: string[] = rawContent.split('\n');
+        const count = lines.length || 1;
+        if (fp.change_type === 'CREATE') {
+          return `diff --git a/${fp.file_path} b/${fp.file_path}\nnew file mode 100644\n--- /dev/null\n+++ b/${fp.file_path}\n@@ -0,0 +1,${count} @@\n` +
+                 lines.map((l: string) => '+' + l).join('\n');
+        } else if (fp.change_type === 'DELETE') {
+          return `diff --git a/${fp.file_path} b/${fp.file_path}\ndeleted file mode 100644\n--- a/${fp.file_path}\n+++ /dev/null`;
+        }
+        return `diff --git a/${fp.file_path} b/${fp.file_path}\n--- a/${fp.file_path}\n+++ b/${fp.file_path}\n@@ -1,1 +1,${count} @@\n` +
+               lines.map((l: string) => '+' + l).join('\n');
+      }).join('\n\n');
+    }
     const runs = this.state.recentRunsSubject.value;
     if (runs.length > 0 && runs[0].appliedDiff) return runs[0].appliedDiff;
-    return `--- a/services/calculator.py
-+++ b/services/calculator.py
-@@ -12,6 +12,14 @@ def calculate_total(items, tax_rate=0.05, discount=None):
-     total = subtotal * (1.0 + tax_rate)
-+    if discount is not None:
-+        if discount < 0:
-+            raise ValueError("Discount cannot be negative")
-+        if discount > total:
-+            raise ValueError("Discount cannot exceed total")
-+        total -= discount
-     return round(total, 2)`;
+    return '';
   }
 
   getFormattedDuration(): string {

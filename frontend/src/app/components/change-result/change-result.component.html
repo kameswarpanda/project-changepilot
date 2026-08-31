@@ -191,8 +191,8 @@
 
     <!-- Diff Code Rows -->
     <div class="font-mono text-xs overflow-x-auto bg-[#0B0E14] text-[#e1e2eb] py-3 leading-relaxed">
-      <div *ngIf="(state.result$ | async)?.applied_diff">
-        <div *ngFor="let line of formatDiffLines((state.result$ | async)?.applied_diff)" 
+      <div *ngIf="getActiveDiff()">
+        <div *ngFor="let line of formatDiffLines(getActiveDiff())" 
              class="px-4 py-0.5 whitespace-pre flex gap-3 hover:bg-[#161B22] transition-colors"
              [ngClass]="{
                'bg-[#4edea3]/10 text-[#4edea3]': line.type === 'add',
@@ -206,7 +206,7 @@
         </div>
       </div>
 
-      <div *ngIf="!((state.result$ | async)?.applied_diff)" class="p-8 text-center text-xs text-[#908fa0] italic">
+      <div *ngIf="!getActiveDiff()" class="p-8 text-center text-xs text-[#908fa0] italic">
         No diff generated yet. Run the autonomous pipeline to generate and apply code patches.
       </div>
     </div>
