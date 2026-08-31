@@ -58,6 +58,15 @@ export class PipelinesComponent implements OnInit {
     return rec?.message || null;
   }
 
+  getStageDuration(stageId: string, result: WorkflowResult | null): string | null {
+    if (!result || !result.audit_trail) return null;
+    const rec = result.audit_trail.find((a: any) => a.stage === stageId);
+    if (rec && rec.duration_ms !== undefined && rec.duration_ms !== null) {
+      return `${(rec.duration_ms / 1000).toFixed(1)}s`;
+    }
+    return null;
+  }
+
   openReport(tab: 'diff' | 'plan' | 'logs' | 'audit'): void {
     this.state.openReportModal(tab);
   }

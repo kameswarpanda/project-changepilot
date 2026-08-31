@@ -13,18 +13,43 @@ import { WorkflowStage, WorkflowResult } from '../../../models';
 export class PipelineStepperComponent {
   constructor(public state: WorkflowStateService) {}
 
-  getStageStatus(stageKey: WorkflowStage, result: WorkflowResult | null, isRunning: boolean): 'completed' | 'current' | 'failed' | 'pending' {
-    if (!result) {
-      return isRunning ? 'current' : 'completed';
+  getStageStatus(
+    stageKey: string,
+    index: number,
+    result: WorkflowResult | null,
+    isRunning: boolean,
+    activeStageIndex: number
+  ): 'completed' | 'current' | 'failed' | 'pending' {
+    if (isRunning) {
+      if (index < activeStageIndex) return 'completed';
+      if (index === activeStageIndex) return 'current';
+      return 'pending';
     }
 
-    const rec = result.audit_trail?.find((a: any) => a.stage === stageKey);
-    if (!rec) return 'pending';
+    if (!result) {
+      return 'pending';
+    }
 
-    if (rec.status === 'SUCCESS') return 'completed';
-    if (rec.status === 'FAILED' || rec.status === 'REJECTED') return 'failed';
-    if (rec.status === 'IN_PROGRESS') return 'current';
+    if (result.success) {
+      return 'completed';
+    }
+
+    const failedStage = result.error_stage || result.current_stage || '';
+    const failedIdx = this.state.stages.findIndex(s => s.id === failedStage);
+    const resolvedFailedIdx = failedIdx !== -1 ? failedIdx : activeStageIndex;
+
+    if (index < resolvedFailedIdx) return 'completed';
+    if (index === resolvedFailedIdx) return 'failed';
     return 'pending';
+  }
+
+  getStageDuration(stageKey: string, result: WorkflowResult | null): string | null {
+    if (!result || !result.audit_trail) return null;
+    const rec = result.audit_trail.find((a: any) => a.stage === stageKey);
+    if (rec && rec.duration_ms !== undefined && rec.duration_ms !== null) {
+      return `${(rec.duration_ms / 1000).toFixed(1)}s`;
+    }
+    return null;
   }
 
   viewDetails(): void {

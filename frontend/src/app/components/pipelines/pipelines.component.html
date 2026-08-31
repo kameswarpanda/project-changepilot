@@ -99,6 +99,28 @@
                   }">
               {{ s.label }}
             </span>
+
+            <!-- Duration / Status Badge -->
+            <span class="text-[10px] font-mono leading-none"
+                  [ngClass]="{
+                    'text-[#10B981]': getStageStatus(s.id, i, (state.result$ | async), !!(state.isRunning$ | async), (state.activeStageIndex$ | async) || 0) === 'success',
+                    'text-[#8083ff] animate-pulse': getStageStatus(s.id, i, (state.result$ | async), !!(state.isRunning$ | async), (state.activeStageIndex$ | async) || 0) === 'running',
+                    'text-[#EF4444]': getStageStatus(s.id, i, (state.result$ | async), !!(state.isRunning$ | async), (state.activeStageIndex$ | async) || 0) === 'failed',
+                    'text-[#64748b]': getStageStatus(s.id, i, (state.result$ | async), !!(state.isRunning$ | async), (state.activeStageIndex$ | async) || 0) === 'pending'
+                  }">
+              <ng-container *ngIf="getStageStatus(s.id, i, (state.result$ | async), !!(state.isRunning$ | async), (state.activeStageIndex$ | async) || 0) === 'success'">
+                {{ getStageDuration(s.id, (state.result$ | async)) || 'Passed' }}
+              </ng-container>
+              <ng-container *ngIf="getStageStatus(s.id, i, (state.result$ | async), !!(state.isRunning$ | async), (state.activeStageIndex$ | async) || 0) === 'running'">
+                Active
+              </ng-container>
+              <ng-container *ngIf="getStageStatus(s.id, i, (state.result$ | async), !!(state.isRunning$ | async), (state.activeStageIndex$ | async) || 0) === 'failed'">
+                Failed
+              </ng-container>
+              <ng-container *ngIf="getStageStatus(s.id, i, (state.result$ | async), !!(state.isRunning$ | async), (state.activeStageIndex$ | async) || 0) === 'pending'">
+                Queued
+              </ng-container>
+            </span>
           </div>
 
           <!-- Connecting Track Line (between node i and i+1) -->

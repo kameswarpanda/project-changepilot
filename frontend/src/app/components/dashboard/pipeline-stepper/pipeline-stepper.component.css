@@ -70,19 +70,43 @@
   width: 28px;
   height: 28px;
   border-radius: 9999px;
-  background-color: var(--color-bg-root);
-  border: 2px solid var(--color-primary);
   display: flex;
   align-items: center;
   justify-content: center;
   margin-bottom: 0.5rem;
-  box-shadow: 0 0 12px var(--color-primary-glow);
+  transition: all 0.25s ease;
+}
+
+.circle-completed {
+  background-color: #10B981;
+  color: #ffffff;
+  border: 2px solid #10B981;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+}
+
+.circle-active {
+  background-color: #8083ff;
+  color: #0d0096;
+  border: 2px solid #8083ff;
+  box-shadow: 0 0 14px rgba(128, 131, 255, 0.6);
+}
+
+.circle-failed {
+  background-color: #EF4444;
+  color: #ffffff;
+  border: 2px solid #EF4444;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.5);
+}
+
+.circle-pending {
+  background-color: #10131a;
+  color: #64748b;
+  border: 2px solid #30363D;
 }
 
 .step-number {
   font-size: 0.7rem;
   font-weight: 700;
-  color: var(--color-text-primary);
 }
 
 .step-label {
@@ -95,11 +119,8 @@
 
 .step-sublabel {
   font-size: 0.65rem;
-  font-weight: 500;
+  font-weight: 600;
 }
-
-.text-green { color: var(--color-success); }
-.text-red { color: var(--color-danger); }
 
 @media (max-width: 768px) {
   .stepper-nodes {

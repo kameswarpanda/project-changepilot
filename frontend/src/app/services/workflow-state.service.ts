@@ -155,17 +155,17 @@ export class WorkflowStateService {
   public activeReportTabSubject = new BehaviorSubject<'diff' | 'plan' | 'logs' | 'audit'>('diff');
   public activeReportTab$: Observable<'diff' | 'plan' | 'logs' | 'audit'> = this.activeReportTabSubject.asObservable();
 
-  // 9 Deterministic Safety Gate Stages
+  // 9 Deterministic Safety Gate Stages with Clear, Intuitive Action Titles
   public stages: PipelineStageItem[] = [
-    { id: 'INITIALIZED', key: 'INITIALIZED', stage: 'INITIALIZED', number: 1, label: 'Intake & Boundaries', description: 'Parameter verification', color: '#8083ff' },
-    { id: 'WORKSPACE_READY', key: 'WORKSPACE_READY', stage: 'WORKSPACE_READY', number: 2, label: 'Sandbox Isolation', description: 'Disposable clone setup', color: '#8083ff' },
-    { id: 'REPO_ANALYZED', key: 'REPO_ANALYZED', stage: 'REPO_ANALYZED', number: 3, label: 'Repository Topology', description: 'AST & test runner inspection', color: '#8083ff' },
-    { id: 'PLAN_GENERATED', key: 'PLAN_GENERATED', stage: 'PLAN_GENERATED', number: 4, label: 'Deterministic Plan', description: 'Impact analysis & safety check', color: '#8083ff' },
-    { id: 'PLAN_VALIDATED', key: 'PLAN_VALIDATED', stage: 'PLAN_VALIDATED', number: 5, label: 'Safety Gate Pass', description: 'Non-negotiable policy checks', color: '#4edea3' },
-    { id: 'PATCH_GENERATED', key: 'PATCH_GENERATED', stage: 'PATCH_GENERATED', number: 6, label: 'Patch Synthesis', description: 'Exact unified diff creation', color: '#4edea3' },
-    { id: 'PATCH_APPLIED', key: 'PATCH_APPLIED', stage: 'PATCH_APPLIED', number: 7, label: 'Isolated Apply', description: 'Sandboxed modification', color: '#4edea3' },
-    { id: 'TESTS_EXECUTED', key: 'TESTS_EXECUTED', stage: 'TESTS_EXECUTED', number: 8, label: 'Automated Tests', description: 'Test runner execution', color: '#4edea3' },
-    { id: 'COMPLETED', key: 'COMPLETED', stage: 'COMPLETED', number: 9, label: 'Branch & PR Sync', description: 'GitHub App pull request', color: '#4edea3' }
+    { id: 'INITIALIZED', key: 'INITIALIZED', stage: 'INITIALIZED', number: 1, label: 'Requirement Intake', description: 'Validate story & boundaries', color: '#8083ff' },
+    { id: 'WORKSPACE_READY', key: 'WORKSPACE_READY', stage: 'WORKSPACE_READY', number: 2, label: 'Sandbox Setup', description: 'Prepare isolated Git workspace', color: '#8083ff' },
+    { id: 'REPO_ANALYZED', key: 'REPO_ANALYZED', stage: 'REPO_ANALYZED', number: 3, label: 'Stack & Topology', description: 'Analyze AST, files & toolchains', color: '#8083ff' },
+    { id: 'PLAN_GENERATED', key: 'PLAN_GENERATED', stage: 'PLAN_GENERATED', number: 4, label: 'Architecture Plan', description: 'Synthesize change plan & impact', color: '#8083ff' },
+    { id: 'PLAN_VALIDATED', key: 'PLAN_VALIDATED', stage: 'PLAN_VALIDATED', number: 5, label: 'Safety Policy Gate', description: 'Verify security & path rules', color: '#4edea3' },
+    { id: 'PATCH_GENERATED', key: 'PATCH_GENERATED', stage: 'PATCH_GENERATED', number: 6, label: 'AI Code Synthesis', description: 'Generate code & unified diff', color: '#4edea3' },
+    { id: 'PATCH_APPLIED', key: 'PATCH_APPLIED', stage: 'PATCH_APPLIED', number: 7, label: 'Patch Application', description: 'Apply atomic changes to workspace', color: '#4edea3' },
+    { id: 'TESTS_EXECUTED', key: 'TESTS_EXECUTED', stage: 'TESTS_EXECUTED', number: 8, label: 'Test Verification', description: 'Run test suite & syntax checks', color: '#4edea3' },
+    { id: 'COMPLETED', key: 'COMPLETED', stage: 'COMPLETED', number: 9, label: 'Branch & PR Sync', description: 'Push branch & create GitHub PR', color: '#4edea3' }
   ];
 
   public storyTemplates: StoryTemplate[] = [
@@ -412,6 +412,7 @@ export class WorkflowStateService {
     }
 
     if (this.stageTimer) {
+      clearTimeout(this.stageTimer);
       clearInterval(this.stageTimer);
       this.stageTimer = null;
     }
@@ -421,13 +422,23 @@ export class WorkflowStateService {
     this.errorMessageSubject.next(null);
     this.resultSubject.next(null);
 
-    // Increment stage stepper progressively while running
-    this.stageTimer = setInterval(() => {
-      const cur = this.activeStageIndexSubject.value;
-      if (cur < 7) {
-        this.activeStageIndexSubject.next(cur + 1);
+    // Realistic stage-aware progression matching actual AI agent execution time
+    const stageDurations = [1200, 1800, 2200, 9500, 1400, 13500, 1800, 4000];
+    let currentStageIdx = 0;
+    
+    const scheduleNextStage = () => {
+      if (currentStageIdx < 7 && this.isRunningSubject.value) {
+        const delay = stageDurations[currentStageIdx] || 3000;
+        this.stageTimer = setTimeout(() => {
+          if (this.isRunningSubject.value) {
+            currentStageIdx++;
+            this.activeStageIndexSubject.next(currentStageIdx);
+            scheduleNextStage();
+          }
+        }, delay);
       }
-    }, 1800);
+    };
+    scheduleNextStage();
 
     const payload: ChangeRequestPayload = {
       request_id: 'req-' + Math.random().toString(36).substring(2, 9),
@@ -442,6 +453,7 @@ export class WorkflowStateService {
     this.api.executeChange(payload).subscribe({
       next: (res) => {
         if (this.stageTimer) {
+          clearTimeout(this.stageTimer);
           clearInterval(this.stageTimer);
           this.stageTimer = null;
         }

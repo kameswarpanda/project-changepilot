@@ -1,7 +1,18 @@
 <section class="glass-card pipeline-stepper-card">
   <div class="pipeline-card-header">
-    <h2 class="pipeline-card-title">Autonomous Execution Stages</h2>
-    <button (click)="viewDetails()" class="view-details-link">View Details</button>
+    <div class="flex items-center gap-3">
+      <h2 class="pipeline-card-title">Autonomous Execution Stages (9 Gates)</h2>
+      <span *ngIf="(state.isRunning$ | async)" class="px-2 py-0.5 rounded text-[10px] font-bold bg-[#8083ff]/15 text-[#8083ff] border border-[#8083ff]/30 animate-pulse">
+        Stage {{ ((state.activeStageIndex$ | async) || 0) + 1 }}/9 In Progress
+      </span>
+      <span *ngIf="!(state.isRunning$ | async) && (state.result$ | async)?.success" class="px-2 py-0.5 rounded text-[10px] font-bold bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/30">
+        9/9 Gates Passed
+      </span>
+      <span *ngIf="!(state.isRunning$ | async) && (state.result$ | async)?.success === false" class="px-2 py-0.5 rounded text-[10px] font-bold bg-[#EF4444]/15 text-[#EF4444] border border-[#EF4444]/30">
+        Halted: {{ (state.result$ | async)?.error_stage || (state.result$ | async)?.current_stage }}
+      </span>
+    </div>
+    <button (click)="viewDetails()" class="view-details-link">View Audit Logs</button>
   </div>
 
   <div class="stepper-container">
@@ -10,15 +21,43 @@
       <div *ngFor="let s of state.stages; let i = index" class="step-node-col" (click)="viewDetails()">
         <div class="step-circle"
              [ngClass]="{
-               'circle-active animate-pulse': (state.isRunning$ | async) && i === 1,
-               'circle-completed': !(state.isRunning$ | async) || i < 9
-             }"
-             [style.border-color]="s.color">
-          <span class="step-number">{{ s.number }}</span>
+               'circle-completed': getStageStatus(s.id, i, (state.result$ | async), !!(state.isRunning$ | async), (state.activeStageIndex$ | async) || 0) === 'completed',
+               'circle-active animate-pulse': getStageStatus(s.id, i, (state.result$ | async), !!(state.isRunning$ | async), (state.activeStageIndex$ | async) || 0) === 'current',
+               'circle-failed': getStageStatus(s.id, i, (state.result$ | async), !!(state.isRunning$ | async), (state.activeStageIndex$ | async) || 0) === 'failed',
+               'circle-pending': getStageStatus(s.id, i, (state.result$ | async), !!(state.isRunning$ | async), (state.activeStageIndex$ | async) || 0) === 'pending'
+             }">
+          <ng-container [ngSwitch]="getStageStatus(s.id, i, (state.result$ | async), !!(state.isRunning$ | async), (state.activeStageIndex$ | async) || 0)">
+            <span *ngSwitchCase="'completed'" class="material-symbols-outlined text-[15px] font-bold">check</span>
+            <span *ngSwitchCase="'failed'" class="material-symbols-outlined text-[15px] font-bold">close</span>
+            <span *ngSwitchCase="'current'" class="material-symbols-outlined text-[15px] animate-spin">sync</span>
+            <span *ngSwitchDefault class="step-number">{{ s.number }}</span>
+          </ng-container>
         </div>
-        <span class="step-label">{{ s.label }}</span>
-        <span class="step-sublabel" [ngClass]="getStageStatus(s.key, state.result$ | async, (state.isRunning$ | async) ?? false) === 'failed' ? 'text-red' : 'text-green'">
-          ● {{ getStageStatus(s.key, state.result$ | async, (state.isRunning$ | async) ?? false) === 'failed' ? 'Failed' : 'Passed' }}
+        <span class="step-label" [ngClass]="{
+          'text-[#10B981] font-semibold': getStageStatus(s.id, i, (state.result$ | async), !!(state.isRunning$ | async), (state.activeStageIndex$ | async) || 0) === 'completed',
+          'text-[#8083ff] font-bold': getStageStatus(s.id, i, (state.result$ | async), !!(state.isRunning$ | async), (state.activeStageIndex$ | async) || 0) === 'current',
+          'text-[#EF4444] font-bold': getStageStatus(s.id, i, (state.result$ | async), !!(state.isRunning$ | async), (state.activeStageIndex$ | async) || 0) === 'failed'
+        }">{{ s.label }}</span>
+        
+        <!-- Duration / Status Subtitle -->
+        <span class="step-sublabel" [ngClass]="{
+          'text-[#10B981]': getStageStatus(s.id, i, (state.result$ | async), !!(state.isRunning$ | async), (state.activeStageIndex$ | async) || 0) === 'completed',
+          'text-[#8083ff]': getStageStatus(s.id, i, (state.result$ | async), !!(state.isRunning$ | async), (state.activeStageIndex$ | async) || 0) === 'current',
+          'text-[#EF4444]': getStageStatus(s.id, i, (state.result$ | async), !!(state.isRunning$ | async), (state.activeStageIndex$ | async) || 0) === 'failed',
+          'text-[#64748b]': getStageStatus(s.id, i, (state.result$ | async), !!(state.isRunning$ | async), (state.activeStageIndex$ | async) || 0) === 'pending'
+        }">
+          <ng-container *ngIf="getStageStatus(s.id, i, (state.result$ | async), !!(state.isRunning$ | async), (state.activeStageIndex$ | async) || 0) === 'completed'">
+            {{ getStageDuration(s.id, (state.result$ | async)) || 'Passed' }}
+          </ng-container>
+          <ng-container *ngIf="getStageStatus(s.id, i, (state.result$ | async), !!(state.isRunning$ | async), (state.activeStageIndex$ | async) || 0) === 'current'">
+            Running...
+          </ng-container>
+          <ng-container *ngIf="getStageStatus(s.id, i, (state.result$ | async), !!(state.isRunning$ | async), (state.activeStageIndex$ | async) || 0) === 'failed'">
+            Failed
+          </ng-container>
+          <ng-container *ngIf="getStageStatus(s.id, i, (state.result$ | async), !!(state.isRunning$ | async), (state.activeStageIndex$ | async) || 0) === 'pending'">
+            Queued
+          </ng-container>
         </span>
       </div>
     </div>
