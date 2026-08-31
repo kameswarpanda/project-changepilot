@@ -13,6 +13,7 @@ from backend.src.database.models import (
     PasswordResetOtpModel,
     PipelineRunModel,
     RepositoryModel,
+    UserIntegrationModel,
     UserModel,
     Base
 )
@@ -343,11 +344,14 @@ class DatabaseRepository:
         finally:
             session.close()
 
-    def list_recent_pipeline_runs(self, limit: int = 20) -> List[dict]:
-        """Lists recent pipeline runs from database."""
+    def list_recent_pipeline_runs(self, user_id: Optional[str] = None, limit: int = 20) -> List[dict]:
+        """Lists recent pipeline runs from database filtered by user_id."""
         session: Session = SessionLocal()
         try:
-            runs = session.query(PipelineRunModel).order_by(PipelineRunModel.started_at.desc()).limit(limit).all()
+            query = session.query(PipelineRunModel)
+            if user_id:
+                query = query.filter(PipelineRunModel.user_id == user_id)
+            runs = query.order_by(PipelineRunModel.started_at.desc()).limit(limit).all()
             return [
                 {
                     "id": r.id,
@@ -372,46 +376,18 @@ class DatabaseRepository:
         finally:
             session.close()
 
-    def list_audit_logs(self, limit: int = 50, story_id: Optional[str] = None, repository: Optional[str] = None) -> List[dict]:
-        """Queries persistent audit logs with optional filters."""
+    def list_audit_logs(self, user_id: Optional[str] = None, limit: int = 50, story_id: Optional[str] = None, repository: Optional[str] = None) -> List[dict]:
+        """Queries persistent audit logs filtered strictly by user_id."""
         session: Session = SessionLocal()
         try:
             q = session.query(AuditLogModel)
+            if user_id:
+                q = q.filter(AuditLogModel.user_id == user_id)
             if story_id:
                 q = q.filter(AuditLogModel.story_id == story_id)
             if repository:
                 q = q.filter(AuditLogModel.target_repository == repository)
             logs = q.order_by(AuditLogModel.timestamp.desc()).limit(limit).all()
-            if not logs:
-                # Seed fallback mock logs if clean db
-                return [
-                    {
-                        "id": "aud-init-01",
-                        "timestamp": datetime.now(timezone.utc).isoformat(),
-                        "correlation_id": "corr-init-8921",
-                        "story_id": "CP-1042",
-                        "user_email": "kameswarpanda11@gmail.com",
-                        "stage": "SAFETY_GATE_VERIFICATION",
-                        "action": "AST_SYNTAX_PARSING_CHECK",
-                        "target_repository": "project-changepilot",
-                        "target_branch": "changepilot/CP-1042-discount",
-                        "status": "PASSED",
-                        "safety_rule": "Deterministic Path Confinement"
-                    },
-                    {
-                        "id": "aud-init-02",
-                        "timestamp": datetime.now(timezone.utc).isoformat(),
-                        "correlation_id": "corr-init-8921",
-                        "story_id": "CP-1042",
-                        "user_email": "kameswarpanda11@gmail.com",
-                        "stage": "BRANCH_ISOLATION",
-                        "action": "GIT_CHECKOUT_SANDBOX",
-                        "target_repository": "project-changepilot",
-                        "target_branch": "changepilot/CP-1042-discount",
-                        "status": "PASSED",
-                        "safety_rule": "Protected Branch Policy"
-                    }
-                ]
             return [
                 {
                     "id": l.id,
@@ -434,11 +410,14 @@ class DatabaseRepository:
         finally:
             session.close()
 
-    def list_change_requests(self) -> List[dict]:
-        """Lists change requests from database."""
+    def list_change_requests(self, user_id: Optional[str] = None) -> List[dict]:
+        """Lists change requests from database strictly filtered by user_id."""
         session: Session = SessionLocal()
         try:
-            requests = session.query(ChangeRequestModel).order_by(ChangeRequestModel.created_at.desc()).all()
+            query = session.query(ChangeRequestModel)
+            if user_id:
+                query = query.filter(ChangeRequestModel.user_id == user_id)
+            requests = query.order_by(ChangeRequestModel.created_at.desc()).all()
             return [
                 {
                     "id": req.id,
@@ -491,12 +470,12 @@ class DatabaseRepository:
             session.close()
 
     def list_connected_repositories(self, user_id: Optional[str] = None) -> List[dict]:
-        """Lists connected repositories from database filtered by owner user_id."""
+        """Lists connected repositories from database strictly filtered by owner user_id."""
         session: Session = SessionLocal()
         try:
             query = session.query(RepositoryModel)
             if user_id:
-                query = query.filter((RepositoryModel.owner_user_id == user_id) | (RepositoryModel.is_private == False))
+                query = query.filter(RepositoryModel.owner_user_id == user_id)
             repos = query.all()
             return [
                 {
@@ -577,36 +556,23 @@ class DatabaseRepository:
         finally:
             session.close()
 
-    def save_repository(self, repo: dict) -> dict:
-        """Persists or updates a connected repository avoiding duplicates."""
+    def save_repository(self, repo_dict: dict) -> dict:
+        """Persists a new connected repository strictly linked to owner_user_id."""
         session: Session = SessionLocal()
         try:
-            full_name = repo.get("full_name") or repo.get("name", "custom-repo")
-            clone_url = repo.get("clone_url")
-            
-            # Check for existing repository to avoid duplicates
-            existing = None
-            if repo.get("id"):
-                existing = session.query(RepositoryModel).filter(RepositoryModel.id == repo["id"]).first()
-            if not existing and full_name:
-                existing = session.query(RepositoryModel).filter(RepositoryModel.full_name == full_name).first()
-            if not existing and clone_url:
-                existing = session.query(RepositoryModel).filter(RepositoryModel.clone_url == clone_url).first()
-
-            repo_id = existing.id if existing else (repo.get("id") or f"repo-{uuid.uuid4().hex[:6]}")
-            
+            repo_id = repo_dict.get("id") or f"repo-{uuid.uuid4().hex[:6]}"
             model = RepositoryModel(
                 id=repo_id,
-                name=repo.get("name", full_name.split("/")[-1]),
-                full_name=full_name,
-                clone_url=clone_url or (existing.clone_url if existing else None),
-                owner_user_id=repo.get("owner_user_id", "usr-kameswar-01"),
-                provider=repo.get("provider", "github"),
-                default_branch=repo.get("default_branch", "main"),
-                branches=repo.get("branches", ["main"]),
-                language=repo.get("language", "Python"),
-                test_runner=repo.get("test_runner", "pytest"),
-                is_private=repo.get("is_private", False)
+                name=repo_dict.get("name", "repo"),
+                full_name=repo_dict.get("full_name", "repo"),
+                clone_url=repo_dict.get("clone_url"),
+                owner_user_id=repo_dict.get("owner_user_id", "usr-kameswar-01"),
+                provider=repo_dict.get("provider", "github"),
+                default_branch=repo_dict.get("default_branch", "main"),
+                branches=repo_dict.get("branches", ["main"]),
+                language=repo_dict.get("language", "Python"),
+                test_runner=repo_dict.get("test_runner", "pytest"),
+                is_private=repo_dict.get("is_private", True)
             )
             session.merge(model)
             session.commit()
@@ -627,39 +593,47 @@ class DatabaseRepository:
         finally:
             session.close()
 
-    def get_analytics_summary(self) -> dict:
-        """Computes live aggregated change analytics and metrics dynamically from database."""
+    def get_analytics_summary(self, user_id: Optional[str] = None) -> dict:
+        """Computes live aggregated change analytics strictly filtered by user_id."""
         session: Session = SessionLocal()
         try:
-            total_runs = session.query(PipelineRunModel).count()
-            success_runs = session.query(PipelineRunModel).filter(PipelineRunModel.success == True).count()
+            run_query = session.query(PipelineRunModel)
+            repo_query = session.query(RepositoryModel)
+            req_query = session.query(ChangeRequestModel)
+            if user_id:
+                run_query = run_query.filter(PipelineRunModel.user_id == user_id)
+                repo_query = repo_query.filter(RepositoryModel.owner_user_id == user_id)
+                req_query = req_query.filter(ChangeRequestModel.user_id == user_id)
+
+            total_runs = run_query.count()
+            success_runs = run_query.filter(PipelineRunModel.success == True).count()
             failed_runs = total_runs - success_runs
             pass_rate = round((success_runs / total_runs * 100), 1) if total_runs > 0 else 100.0
 
-            total_repos = session.query(RepositoryModel).count()
-            total_requests = session.query(ChangeRequestModel).count()
+            total_repos = repo_query.count()
+            total_requests = req_query.count()
 
             # Dynamic mean duration calculation from runs
-            runs = session.query(PipelineRunModel).all()
+            runs = run_query.all()
             durations = [r.total_duration_ms for r in runs if r.total_duration_ms and r.total_duration_ms > 0]
             mean_duration = round(sum(durations) / len(durations), 1) if durations else 2500.0
 
             # Dynamic language breakdown from connected repositories
-            repos = session.query(RepositoryModel).all()
+            repos = repo_query.all()
             lang_counts: Dict[str, int] = {}
             for repo in repos:
                 lang = (repo.language or "Unknown").capitalize()
                 lang_counts[lang] = lang_counts.get(lang, 0) + 1
 
             if not lang_counts:
-                lang_counts = {"Java": 1, "TypeScript": 1, "Python": 1}
+                lang_counts = {"Python": 1}
 
             total_lang_count = sum(lang_counts.values())
             languages_breakdown = {
                 lang: round((cnt / total_lang_count) * 100)
                 for lang, cnt in sorted(lang_counts.items(), key=lambda x: x[1], reverse=True)
             }
-            primary_language = list(languages_breakdown.keys())[0] if languages_breakdown else "Java"
+            primary_language = list(languages_breakdown.keys())[0] if languages_breakdown else "Python"
 
             languages_list = [
                 {"name": lang, "percentage": pct}
@@ -701,9 +675,9 @@ class DatabaseRepository:
                 "total_change_requests": 0,
                 "mean_duration_ms": 2500.0,
                 "gate_evaluations_count": 0,
-                "primary_language": "Java",
-                "languages_breakdown": {"Java": 50, "TypeScript": 50},
-                "languages": [{"name": "Java", "percentage": 50}, {"name": "TypeScript", "percentage": 50}],
+                "primary_language": "Python",
+                "languages_breakdown": {"Python": 100},
+                "languages": [{"name": "Python", "percentage": 100}],
                 "summary": {
                     "total_runs": 0,
                     "successful_runs": 0,
@@ -714,6 +688,67 @@ class DatabaseRepository:
                     "mean_duration_ms": 2500.0
                 }
             }
+        finally:
+            session.close()
+
+    def get_user_integrations(self, user_id: str) -> dict:
+        """Gets user-specific integrations (e.g. GitHub token)."""
+        session: Session = SessionLocal()
+        try:
+            integ = session.query(UserIntegrationModel).filter(UserIntegrationModel.user_id == user_id).first()
+            if integ:
+                return {
+                    "github_token": integ.github_token,
+                    "azure_token": integ.azure_token,
+                    "jira_token": integ.jira_token
+                }
+            return {}
+        except Exception as e:
+            logger.warning(f"Error querying user integrations: {e}")
+            return {}
+        finally:
+            session.close()
+
+    def save_user_github_token(self, user_id: str, token: str) -> dict:
+        """Saves a GitHub Personal Access Token strictly for a specific user."""
+        session: Session = SessionLocal()
+        try:
+            integ = session.query(UserIntegrationModel).filter(UserIntegrationModel.user_id == user_id).first()
+            if not integ:
+                integ = UserIntegrationModel(
+                    id=f"int-{uuid.uuid4().hex[:8]}",
+                    user_id=user_id,
+                    github_token=token
+                )
+                session.add(integ)
+            else:
+                integ.github_token = token
+                integ.updated_at = datetime.now(timezone.utc)
+            session.commit()
+            return {"user_id": user_id, "github_token": token}
+        except Exception as e:
+            session.rollback()
+            logger.error(f"Error saving user GitHub token: {e}")
+            raise
+        finally:
+            session.close()
+
+    def delete_user_github_token(self, user_id: str) -> bool:
+        """Clears the GitHub token strictly for a specific user."""
+        session: Session = SessionLocal()
+        try:
+            integ = session.query(UserIntegrationModel).filter(UserIntegrationModel.user_id == user_id).first()
+            if integ:
+                integ.github_token = None
+                session.commit()
+            return True
+        except Exception as e:
+            session.rollback()
+            logger.warning(f"Error deleting user GitHub token: {e}")
+            return False
+        finally:
+            session.close()
+
     def list_assigned_tickets(self, user_id: Optional[str] = None) -> List[dict]:
         """Queries assigned cloud tickets directly from persistent database."""
         session: Session = SessionLocal()

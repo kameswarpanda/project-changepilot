@@ -356,11 +356,13 @@ class WorkflowOrchestrator:
             if request.execution_mode == ExecutionMode.BRANCH_COMMIT_PR:
                 stage_rec = record_stage_start(WorkflowStage.PULL_REQUEST_CREATED, "Publishing branch & creating GitHub Pull Request")
                 
-                # 1. Resolve active GitHub token (user integrations, settings, or env)
-                token = settings.github_token or os.environ.get("GITHUB_TOKEN") or github_app_client.token
-                if user_id and not token:
+                # 1. Resolve active GitHub token (prioritize user integration token)
+                token = None
+                if user_id:
                     user_ints = db_repository.get_user_integrations(user_id)
                     token = user_ints.get("github_token")
+                if not token:
+                    token = settings.github_token or os.environ.get("GITHUB_TOKEN") or github_app_client.token
                 
                 if token:
                     github_app_client.token = token.strip()

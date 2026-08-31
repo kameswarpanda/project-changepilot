@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { ApiService } from './api.service';
 import { NotificationService } from './notification.service';
+import { AuthService } from './auth.service';
 import {
   ChangeRequestPayload,
   ConnectedRepo,
@@ -194,10 +195,33 @@ export class WorkflowStateService {
 
   constructor(
     private api: ApiService,
-    private notif: NotificationService
+    private notif: NotificationService,
+    private auth: AuthService
   ) {
     this.refreshHealth();
-    this.refreshAllData();
+    this.auth.currentUser$.subscribe(user => {
+      if (user) {
+        this.clearAllUserData();
+        this.refreshAllData();
+      } else {
+        this.clearAllUserData();
+      }
+    });
+  }
+
+  public clearAllUserData(): void {
+    this.connectedReposSubject.next([]);
+    this.changeRequestsSubject.next([]);
+    this.assignedTicketsSubject.next([]);
+    this.recentRunsSubject.next([]);
+    this.reportsSubject.next(null);
+    this.auditLogsSubject.next([]);
+    this.githubStatusSubject.next({ connected: false, username: null, avatar_url: null, message: null });
+    this.resultSubject.next(null);
+    this.storyIdSubject.next('');
+    this.titleSubject.next('');
+    this.descriptionSubject.next('');
+    this.repoLocationSubject.next('');
   }
 
   public refreshAllData(): void {

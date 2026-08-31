@@ -131,3 +131,17 @@ class PasswordResetOtpModel(Base):
     verified = Column(Boolean, default=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
+
+class UserIntegrationModel(Base):
+    """Stores user-specific cloud provider tokens (e.g. GitHub PAT)."""
+    __tablename__ = "user_integrations"
+
+    id = Column(String(64), primary_key=True, index=True)
+    user_id = Column(String(64), unique=True, index=True)
+    github_token = Column(String(512), nullable=True)
+    azure_token = Column(String(512), nullable=True)
+    jira_token = Column(String(512), nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+

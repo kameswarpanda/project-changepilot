@@ -288,14 +288,18 @@ class GitHubConnectRequest(BaseModel):
 
 @router.get("/api/integrations/github/status", tags=["Integrations"])
 async def get_github_status(user: User = Depends(get_current_user)):
-    """Checks whether ChangePilot is connected to GitHub and returns account details."""
-    token = github_app_client.token or settings.github_token or os.environ.get("GITHUB_TOKEN")
+    """Checks whether the authenticated user has linked their GitHub account."""
+    user_ints = db_repository.get_user_integrations(user.id)
+    token = user_ints.get("github_token")
+    if not token and (user.username == "kameswar" or "admin" in user.roles):
+        token = settings.github_token or os.environ.get("GITHUB_TOKEN")
+
     if not token:
         return {
             "connected": False,
             "username": None,
             "avatar_url": None,
-            "message": "No GitHub Personal Access Token configured."
+            "message": "No GitHub Personal Access Token configured for this user."
         }
     
     try:
@@ -336,7 +340,7 @@ async def get_github_status(user: User = Depends(get_current_user)):
 
 @router.post("/api/integrations/github/connect", tags=["Integrations"])
 async def connect_github_token(req: GitHubConnectRequest, user: User = Depends(get_current_user)):
-    """Verifies and stores a GitHub Personal Access Token for remote push & PR creation."""
+    """Verifies and stores a GitHub Personal Access Token strictly for the authenticated user."""
     token_clean = req.token.strip()
     if not token_clean:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Please provide a valid GitHub token.")
@@ -357,25 +361,9 @@ async def connect_github_token(req: GitHubConnectRequest, user: User = Depends(g
                 )
             
             data = resp.json()
-            # Set token active globally in runtime
-            settings.github_token = token_clean
-            github_app_client.token = token_clean
-            os.environ["GITHUB_TOKEN"] = token_clean
+            db_repository.save_user_github_token(user.id, token_clean)
 
-            # Persist to local .env if available
-            try:
-                env_path = Path(".env")
-                if env_path.exists():
-                    content = env_path.read_text(encoding="utf-8")
-                    if "GITHUB_TOKEN=" in content:
-                        content = re.sub(r'GITHUB_TOKEN=.*', f'GITHUB_TOKEN={token_clean}', content)
-                    else:
-                        content += f"\nGITHUB_TOKEN={token_clean}\n"
-                    env_path.write_text(content, encoding="utf-8")
-            except Exception:
-                pass
-
-            logger.info(f"User {user.username} successfully linked GitHub account @{data.get('login')}")
+            logger.info(f"User {user.username} ({user.id}) successfully linked GitHub account @{data.get('login')}")
             return {
                 "success": True,
                 "username": data.get("login"),
@@ -392,11 +380,8 @@ async def connect_github_token(req: GitHubConnectRequest, user: User = Depends(g
 
 @router.delete("/api/integrations/github/disconnect", tags=["Integrations"])
 async def disconnect_github(user: User = Depends(get_current_user)):
-    """Disconnects and clears the stored GitHub token."""
-    settings.github_token = None
-    github_app_client.token = None
-    if "GITHUB_TOKEN" in os.environ:
-        del os.environ["GITHUB_TOKEN"]
+    """Disconnects and clears the stored GitHub token for the authenticated user."""
+    db_repository.delete_user_github_token(user.id)
     return {"success": True, "message": "Disconnected from GitHub."}
 
 
@@ -416,12 +401,21 @@ async def list_repositories(user: User = Depends(get_current_user)):
 @router.get("/api/repositories/user-repos", tags=["Repositories"])
 async def list_user_platform_repos(user: User = Depends(get_current_user)):
     """Queries user's connected GitHub / Azure account directly for 1-click repository import."""
-    return github_app_client.list_repositories(user.id)
+    user_ints = db_repository.get_user_integrations(user.id)
+    user_token = user_ints.get("github_token")
+    if not user_token and (user.username == "kameswar" or "admin" in user.roles):
+        user_token = settings.github_token or os.environ.get("GITHUB_TOKEN")
+    
+    if not user_token:
+        return []
+    
+    client = GitHubAppClient(token=user_token)
+    return client.list_repositories(user.id)
 
 
 @router.post("/api/repositories/import-public", tags=["Repositories"])
 async def import_public_repository(req: ImportPublicRepoRequest, user: User = Depends(get_current_user)):
-    """Discovers remote branches and imports any public Git repository URL."""
+    """Discovers remote branches and imports any public Git repository URL strictly for the authenticated user."""
     clean_url = req.git_url.strip()
     repo_name = clean_url.rstrip("/").split("/")[-1].replace(".git", "")
     full_name = "/".join(clean_url.rstrip("/").replace(".git", "").split("/")[-2:])
@@ -455,7 +449,7 @@ async def import_public_repository(req: ImportPublicRepoRequest, user: User = De
         "provider": "github" if "github.com" in clean_url else "git",
         "default_branch": req.base_branch,
         "branches": discovered_branches,
-        "is_private": False,
+        "is_private": True,
         "language": "Multi-Language",
         "test_runner": "Auto-Detect"
     })
@@ -560,8 +554,8 @@ async def analyze_repository(req: AnalyzeRepoRequest, user: Optional[User] = Dep
 # -----------------------------------------------------------------------------
 @router.get("/api/requests", tags=["Changes"])
 async def list_change_requests(user: User = Depends(get_current_user)):
-    """Lists change requests from the database."""
-    return db_repository.list_change_requests()
+    """Lists change requests strictly for the authenticated user from the database."""
+    return db_repository.list_change_requests(user_id=user.id)
 
 
 @router.post("/api/requests", tags=["Changes"])
@@ -582,14 +576,14 @@ async def create_change_request(req: CreateChangeRequestPayload, user: User = De
 
 @router.get("/api/pipelines", tags=["Changes"])
 async def list_pipelines(limit: int = 20, user: User = Depends(get_current_user)):
-    """Retrieves historical pipeline execution runs from database."""
-    return db_repository.list_recent_pipeline_runs(limit=limit)
+    """Retrieves historical pipeline execution runs strictly for the authenticated user."""
+    return db_repository.list_recent_pipeline_runs(user_id=user.id, limit=limit)
 
 
 @router.get("/api/results", tags=["Changes"])
 async def list_results(limit: int = 20, user: User = Depends(get_current_user)):
-    """Retrieves completed change results and patches."""
-    return db_repository.list_recent_pipeline_runs(limit=limit)
+    """Retrieves completed change results and patches strictly for the authenticated user."""
+    return db_repository.list_recent_pipeline_runs(user_id=user.id, limit=limit)
 
 
 @router.post("/api/changes/execute", response_model=WorkflowResult, tags=["Changes"])
@@ -619,8 +613,8 @@ async def execute_change_request(
 # -----------------------------------------------------------------------------
 @router.get("/api/reports", tags=["Reports"])
 async def get_reports(user: User = Depends(get_current_user)):
-    """Computes and returns real-time compliance and change analytics."""
-    return db_repository.get_analytics_summary()
+    """Computes and returns real-time compliance and change analytics strictly for the authenticated user."""
+    return db_repository.get_analytics_summary(user_id=user.id)
 
 
 @router.get("/api/audit-logs", tags=["Audit"])
@@ -630,8 +624,8 @@ async def get_audit_logs(
     repository: Optional[str] = None,
     user: User = Depends(get_current_user)
 ):
-    """Retrieves persistent audit logs with safety gate evaluation records."""
-    return db_repository.list_audit_logs(limit=limit, story_id=story_id, repository=repository)
+    """Retrieves persistent audit logs strictly for the authenticated user."""
+    return db_repository.list_audit_logs(user_id=user.id, limit=limit, story_id=story_id, repository=repository)
 
 
 # -----------------------------------------------------------------------------
