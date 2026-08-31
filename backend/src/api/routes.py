@@ -391,7 +391,7 @@ async def connect_github_token(req: GitHubConnectRequest, user: User = Depends(g
                             "full_name": full_name,
                             "clone_url": clone_url,
                             "owner_user_id": user.id,
-                            "provider": "github",
+                            "provider": "github_account",
                             "default_branch": default_branch,
                             "branches": [default_branch],
                             "language": lang,
@@ -420,11 +420,11 @@ async def connect_github_token(req: GitHubConnectRequest, user: User = Depends(g
 
 @router.delete("/api/integrations/github/disconnect", tags=["Integrations"])
 async def disconnect_github(user: User = Depends(get_current_user)):
-    """Disconnects GitHub token and immediately clears all connected GitHub repositories for the user."""
+    """Disconnects GitHub token and clears only token-synced GitHub repositories, preserving public URL imports."""
     db_repository.delete_user_github_token(user.id)
-    deleted_count = db_repository.delete_user_repositories(user_id=user.id, provider="github")
-    logger.info(f"User {user.username} ({user.id}) disconnected GitHub and removed {deleted_count} repositories.")
-    return {"success": True, "message": f"Disconnected from GitHub and removed {deleted_count} connected repositories."}
+    deleted_count = db_repository.delete_user_github_account_repositories(user.id)
+    logger.info(f"User {user.username} ({user.id}) disconnected GitHub and removed {deleted_count} account repositories.")
+    return {"success": True, "message": f"Disconnected from GitHub. Cleared {deleted_count} account repositories (public Git URL repositories preserved)."}
 
 
 # -----------------------------------------------------------------------------
@@ -450,7 +450,7 @@ async def list_repositories(user: User = Depends(get_current_user)):
                     "full_name": r["full_name"],
                     "clone_url": r["clone_url"],
                     "owner_user_id": user.id,
-                    "provider": "github",
+                    "provider": "github_account",
                     "default_branch": r["default_branch"],
                     "branches": r.get("branches", [r["default_branch"]]),
                     "language": r.get("language", "Python"),
@@ -484,7 +484,7 @@ async def sync_repositories(user: User = Depends(get_current_user)):
             "full_name": r["full_name"],
             "clone_url": r["clone_url"],
             "owner_user_id": user.id,
-            "provider": "github",
+            "provider": "github_account",
             "default_branch": r["default_branch"],
             "branches": r.get("branches", [r["default_branch"]]),
             "language": r.get("language", "Python"),
@@ -542,14 +542,15 @@ async def import_public_repository(req: ImportPublicRepoRequest, user: User = De
         logger.warning(f"git ls-remote notice for {clean_url}: {ex}")
 
     saved = db_repository.save_repository({
+        "id": f"repo-public-{user.id[:6]}-{repo_name}",
         "name": repo_name,
         "full_name": full_name,
         "clone_url": clean_url,
         "owner_user_id": user.id,
-        "provider": "github" if "github.com" in clean_url else "git",
-        "default_branch": req.base_branch,
+        "provider": "public_git",
+        "default_branch": req.base_branch or "main",
         "branches": discovered_branches,
-        "is_private": True,
+        "is_private": False,
         "language": "Multi-Language",
         "test_runner": "Auto-Detect"
     })

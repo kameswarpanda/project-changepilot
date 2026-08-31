@@ -597,6 +597,25 @@ class DatabaseRepository:
         finally:
             session.close()
 
+    def delete_user_github_account_repositories(self, user_id: str) -> int:
+        """Deletes only repositories imported via GitHub account token for the user, preserving public URL imports."""
+        session: Session = SessionLocal()
+        try:
+            q = session.query(RepositoryModel).filter(
+                RepositoryModel.owner_user_id == user_id,
+                RepositoryModel.provider.in_(["github_account", "github"])
+            )
+            deleted_count = q.delete(synchronize_session=False)
+            session.commit()
+            logger.info(f"Deleted {deleted_count} GitHub account repositories for user {user_id} (public URL repositories preserved)")
+            return deleted_count
+        except Exception as e:
+            session.rollback()
+            logger.warning(f"Error deleting GitHub account repositories for user {user_id}: {e}")
+            return 0
+        finally:
+            session.close()
+
     def save_repository(self, repo_dict: dict) -> dict:
         """Persists a new connected repository strictly linked to owner_user_id."""
         session: Session = SessionLocal()
