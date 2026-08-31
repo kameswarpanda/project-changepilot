@@ -142,9 +142,14 @@ class GitHubAppClient:
             clean_repo = f"kameswarpanda/{clean_repo}"
 
         # 1. If GitHub token is present, attempt live Pull Request creation via GitHub REST API
-        if self.token:
+        active_token = self.token or settings.github_token or os.environ.get("GITHUB_TOKEN")
+        target_base = base_branch or "main"
+        if target_base == head_branch:
+            target_base = "main"
+
+        if active_token:
             try:
-                auth_header = f"Bearer {self.token.strip()}"
+                auth_header = f"Bearer {active_token.strip()}"
                 with httpx.Client(timeout=12.0) as client:
                     resp = client.post(
                         f"https://api.github.com/repos/{clean_repo}/pulls",
@@ -157,7 +162,7 @@ class GitHubAppClient:
                             "title": title,
                             "body": body,
                             "head": head_branch,
-                            "base": base_branch
+                            "base": target_base
                         }
                     )
                     if resp.status_code in (200, 201):
@@ -168,7 +173,7 @@ class GitHubAppClient:
                             pr_url=pr_data["html_url"],
                             title=title,
                             body=body,
-                            base_branch=base_branch,
+                            base_branch=target_base,
                             head_branch=head_branch,
                             status="OPEN"
                         )
@@ -191,7 +196,7 @@ class GitHubAppClient:
                                 pr_url=existing_pr["html_url"],
                                 title=existing_pr.get("title", title),
                                 body=existing_pr.get("body", body),
-                                base_branch=base_branch,
+                                base_branch=target_base,
                                 head_branch=head_branch,
                                 status=existing_pr.get("state", "OPEN").upper()
                             )
@@ -206,7 +211,7 @@ class GitHubAppClient:
         pr_number = (abs(hash(f"{clean_repo}:{head_branch}")) % 900) + 100
         quoted_title = urllib.parse.quote(title)
         quoted_body = urllib.parse.quote(body)
-        pr_url = f"https://github.com/{clean_repo}/compare/{base_branch}...{head_branch}?expand=1&title={quoted_title}&body={quoted_body}"
+        pr_url = f"https://github.com/{clean_repo}/compare/{target_base}...{head_branch}?expand=1&title={quoted_title}&body={quoted_body}"
         logger.info(f"Generated official GitHub PR link for {clean_repo}: {pr_url}")
 
         return PullRequestInfo(
@@ -214,7 +219,7 @@ class GitHubAppClient:
             pr_url=pr_url,
             title=title,
             body=body,
-            base_branch=base_branch,
+            base_branch=target_base,
             head_branch=head_branch,
             status="READY"
         )
