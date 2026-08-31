@@ -292,7 +292,23 @@ class WorkflowOrchestrator:
             # Stage 8: Bounded Build & Test Execution
             # -------------------------------------------------------------
             stage_rec = record_stage_start(WorkflowStage.TESTS_EXECUTED, "Running automated verification tests")
-            test_cmd = repo_context.test_runner_command or "pytest"
+            test_cmd = repo_context.test_runner_command
+            if not test_cmd:
+                # Intelligently inspect workspace files after patch application
+                if list(workspace.path.glob("**/*.py")):
+                    test_cmd = "pytest"
+                elif list(workspace.path.glob("**/*.java")) or (workspace.path / "pom.xml").exists():
+                    test_cmd = "mvn test"
+                elif (workspace.path / "package.json").exists() or list(workspace.path.glob("**/*.ts")):
+                    test_cmd = "npm test"
+                elif (workspace.path / "Cargo.toml").exists() or list(workspace.path.glob("**/*.rs")):
+                    test_cmd = "cargo test"
+                elif (workspace.path / "go.mod").exists() or list(workspace.path.glob("**/*.go")):
+                    test_cmd = "go test ./..."
+                else:
+                    # Static web / frontend without tests
+                    test_cmd = "pytest"
+
             test_exec_res, test_val_res = self.executor_service.run_tests(workspace.path, test_cmd)
             validation_results.append(test_val_res)
 

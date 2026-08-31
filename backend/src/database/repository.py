@@ -49,10 +49,18 @@ class DatabaseRepository:
                     # PostgreSQL / Cloud SQL auto-migrations
                     try:
                         conn.execute(text("ALTER TABLE pipeline_runs ALTER COLUMN title TYPE TEXT;"))
+                        conn.execute(text("ALTER TABLE pipeline_runs ALTER COLUMN repository TYPE TEXT;"))
+                        conn.execute(text("ALTER TABLE pipeline_runs ALTER COLUMN branch_name TYPE TEXT;"))
+                        conn.execute(text("ALTER TABLE pipeline_runs ALTER COLUMN current_stage TYPE TEXT;"))
                         conn.execute(text("ALTER TABLE change_requests ALTER COLUMN title TYPE TEXT;"))
+                        conn.execute(text("ALTER TABLE change_requests ALTER COLUMN repository TYPE TEXT;"))
                         conn.execute(text("ALTER TABLE assigned_tickets ALTER COLUMN title TYPE TEXT;"))
+                        conn.execute(text("ALTER TABLE assigned_tickets ALTER COLUMN repository TYPE TEXT;"))
+                        conn.execute(text("ALTER TABLE audit_logs ALTER COLUMN action TYPE TEXT;"))
+                        conn.execute(text("ALTER TABLE audit_logs ALTER COLUMN safety_rule TYPE TEXT;"))
+                        conn.execute(text("ALTER TABLE audit_logs ALTER COLUMN target_repository TYPE TEXT;"))
                         conn.commit()
-                        logger.info("Auto-migrated columns to TEXT in PostgreSQL Cloud SQL.")
+                        logger.info("Auto-migrated all PostgreSQL Cloud SQL text columns to TEXT.")
                     except Exception as pg_err:
                         logger.debug(f"PostgreSQL column migration notice: {pg_err}")
         except Exception as e:
@@ -296,14 +304,27 @@ class DatabaseRepository:
                 pull_request=pr_serialized,
                 audit_trail=audit_serialized
             )
-            session.merge(run)
-            session.commit()
-            logger.info(f"Persisted pipeline run {result.execution_id} to database.")
-            return run
+            try:
+                session.merge(run)
+                session.commit()
+                logger.info(f"Persisted pipeline run {result.execution_id} to database.")
+                return run
+            except Exception as initial_err:
+                session.rollback()
+                logger.warning(f"Initial run persistence warning: {initial_err}. Retrying with defensive field normalization.")
+                # Defensively normalize strings in case DB still has strict VARCHAR column constraints
+                run.title = (run.title or "")[:250] if run.title else None
+                run.repository = (run.repository or "")[:250] if run.repository else None
+                run.branch_name = (run.branch_name or "")[:120] if run.branch_name else None
+                run.current_stage = (run.current_stage or "")[:60] if run.current_stage else None
+                session.merge(run)
+                session.commit()
+                logger.info(f"Persisted pipeline run {result.execution_id} with defensive field limits.")
+                return run
         except Exception as e:
             session.rollback()
-            logger.warning(f"Error persisting pipeline run: {e}")
-            raise
+            logger.error(f"Error persisting pipeline run: {e}")
+            return None
         finally:
             session.close()
 
