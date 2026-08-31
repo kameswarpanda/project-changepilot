@@ -91,6 +91,19 @@ export class WorkflowStateService {
   public showInspectionModalSubject = new BehaviorSubject<boolean>(false);
   public showInspectionModal$: Observable<boolean> = this.showInspectionModalSubject.asObservable();
 
+  // Pipeline Execution Confirmation Modal
+  public showConfirmModalSubject = new BehaviorSubject<boolean>(false);
+  public showConfirmModal$: Observable<boolean> = this.showConfirmModalSubject.asObservable();
+  public confirmModalDataSubject = new BehaviorSubject<{
+    storyId: string;
+    title: string;
+    description: string;
+    repository: string;
+    baseBranch: string;
+    executionMode: string;
+  } | null>(null);
+  public confirmModalData$: Observable<any> = this.confirmModalDataSubject.asObservable();
+
   // Current Working Change Request State
   public storyIdSubject = new BehaviorSubject<string>('');
   public storyId$: Observable<string> = this.storyIdSubject.asObservable();
@@ -432,6 +445,71 @@ export class WorkflowStateService {
         this.notif.addNotification('Creation Failed', err.error?.detail || 'Failed to create request.', 'error');
       }
     });
+  }
+
+  public isCurrentPipelineCompletedWithPR(): boolean {
+    const result = this.resultSubject.value;
+    const currentStory = this.storyIdSubject.value?.trim();
+    if (!result || !currentStory) return false;
+
+    const isMatchingStory = (result.story_id === currentStory);
+    const isSuccessful = result.success === true || result.status === 'SUCCESS';
+    const hasPR = !!(result.pull_request?.pr_url || result.pull_request?.pr_number);
+
+    return isMatchingStory && isSuccessful && hasPR;
+  }
+
+  public promptRunPipeline(customPayload?: Partial<{ storyId: string; title: string; description: string; repository: string; baseBranch: string; executionMode: string }>): void {
+    if (this.isRunningSubject.value) {
+      return;
+    }
+
+    if (customPayload) {
+      if (customPayload.storyId) this.storyIdSubject.next(customPayload.storyId);
+      if (customPayload.title) this.titleSubject.next(customPayload.title);
+      if (customPayload.description) this.descriptionSubject.next(customPayload.description);
+      if (customPayload.repository) this.repoLocationSubject.next(customPayload.repository);
+      if (customPayload.baseBranch) this.baseBranchSubject.next(customPayload.baseBranch);
+      if (customPayload.executionMode) this.executionModeSubject.next(customPayload.executionMode as any);
+    }
+
+    if (this.isCurrentPipelineCompletedWithPR()) {
+      const res = this.resultSubject.value;
+      const prNum = res?.pull_request?.pr_number ? `#${res.pull_request.pr_number}` : '';
+      this.notif.addNotification(
+        'Pipeline Already Completed',
+        `Pull Request ${prNum} is already raised and open for this change. Rerunning a successfully completed change request is prevented.`,
+        'warning',
+        this.storyIdSubject.value
+      );
+      return;
+    }
+
+    const storyId = this.storyIdSubject.value.trim() || 'CP-DEMO-1';
+    const title = this.titleSubject.value.trim() || 'Autonomous Code Change';
+    const description = this.descriptionSubject.value.trim() || 'Synthesize modifications and create Pull Request';
+    const repository = this.repoLocationSubject.value.trim() || (this.connectedReposSubject.value[0]?.path || 'demo_repo');
+    const baseBranch = this.baseBranchSubject.value.trim() || 'main';
+    const executionMode = this.executionModeSubject.value || 'BRANCH_COMMIT_PR';
+
+    this.confirmModalDataSubject.next({
+      storyId,
+      title,
+      description,
+      repository,
+      baseBranch,
+      executionMode
+    });
+    this.showConfirmModalSubject.next(true);
+  }
+
+  public confirmAndExecutePipeline(): void {
+    this.showConfirmModalSubject.next(false);
+    this.executeWorkflow();
+  }
+
+  public cancelConfirmModal(): void {
+    this.showConfirmModalSubject.next(false);
   }
 
   public executeWorkflow(): void {

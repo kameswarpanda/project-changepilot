@@ -51,8 +51,23 @@ export class ChangeRequestsComponent implements OnInit {
 
   runChangePilot(): void {
     this.onFormSync();
-    this.state.executeWorkflow();
-    this.state.setNav('pipelines');
+    if (this.state.isCurrentPipelineCompletedWithPR()) {
+      this.notifService.addNotification(
+        'Pipeline Already Completed',
+        'This change request has already completed successfully with a Pull Request open on GitHub. Rerunning a completed change request is disabled.',
+        'warning',
+        this.ticketId
+      );
+      return;
+    }
+    this.state.promptRunPipeline({
+      storyId: this.ticketId,
+      title: this.changeTitle,
+      description: this.requirements,
+      repository: this.repository,
+      baseBranch: this.branch,
+      executionMode: this.executionMode
+    });
   }
 
   saveDraft(): void {

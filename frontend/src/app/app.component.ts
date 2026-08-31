@@ -10,6 +10,7 @@ import { RepositoriesComponent } from './components/repositories/repositories.co
 import { AuditLogsComponent } from './components/audit-logs/audit-logs.component';
 import { ReportModalComponent } from './components/modals/report-modal/report-modal.component';
 import { NewRequestModalComponent } from './components/modals/new-request-modal/new-request-modal.component';
+import { ConfirmPipelineModalComponent } from './components/modals/confirm-pipeline-modal/confirm-pipeline-modal.component';
 import { AuthPageComponent } from './components/auth/auth-page.component';
 import { ToastContainerComponent } from './components/layout/toast-container/toast-container.component';
 import { WorkflowStateService } from './services/workflow-state.service';
@@ -31,7 +32,8 @@ import { AuthService } from './services/auth.service';
     RepositoriesComponent,
     AuditLogsComponent,
     ReportModalComponent,
-    NewRequestModalComponent
+    NewRequestModalComponent,
+    ConfirmPipelineModalComponent
   ],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']

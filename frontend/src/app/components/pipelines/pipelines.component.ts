@@ -18,7 +18,7 @@ export class PipelinesComponent implements OnInit {
   }
 
   trigger(): void {
-    this.state.executeWorkflow();
+    this.state.promptRunPipeline();
   }
 
   getStageStatus(

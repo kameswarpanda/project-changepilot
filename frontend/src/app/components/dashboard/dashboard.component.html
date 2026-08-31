@@ -11,14 +11,9 @@
       </p>
     </div>
     <div class="flex items-center gap-3">
-      <button (click)="runPipeline()" [disabled]="(state.isRunning$ | async)" class="px-4 py-2 rounded-lg bg-[#494bd6] hover:bg-[#8083ff] hover:text-[#0d0096] text-white font-semibold text-xs transition-colors flex items-center gap-2 shadow-sm disabled:opacity-60">
-        <span *ngIf="!(state.isRunning$ | async)" class="material-symbols-outlined text-[16px]">play_arrow</span>
-        <span *ngIf="(state.isRunning$ | async)" class="material-symbols-outlined text-[16px] animate-spin">autorenew</span>
-        <span>{{ (state.isRunning$ | async) ? 'Running Pipeline...' : 'Run Pipeline' }}</span>
-      </button>
-      <button (click)="state.setNav('requests')" class="px-4 py-2 rounded-lg bg-[#161B22] light:bg-white border border-[#30363D] light:border-[#d0d7de] text-[#e1e2eb] light:text-[#1f2328] font-semibold text-xs hover:bg-[#272a31] light:hover:bg-[#f6f8fa] transition-colors flex items-center gap-2 shadow-sm">
+      <button (click)="state.setNav('requests')" class="px-4 py-2 rounded-lg bg-[#494bd6] hover:bg-[#8083ff] hover:text-[#0d0096] text-white font-semibold text-xs transition-colors flex items-center gap-2 shadow-sm">
         <span class="material-symbols-outlined text-[16px]">add_circle</span>
-        <span>New Request</span>
+        <span>Create Change Request</span>
       </button>
     </div>
   </div>
@@ -123,10 +118,9 @@
       </div>
 
       <div class="flex items-center gap-3">
-        <button (click)="runPipeline()" [disabled]="(state.isRunning$ | async)" class="px-4 py-2 rounded-md bg-[#494bd6] hover:bg-[#8083ff] text-white hover:text-[#0d0096] text-xs font-semibold transition-colors flex items-center gap-2 disabled:opacity-60 shadow-sm">
-          <span *ngIf="!(state.isRunning$ | async)" class="material-symbols-outlined text-[16px]">play_arrow</span>
-          <span *ngIf="(state.isRunning$ | async)" class="material-symbols-outlined text-[16px] animate-spin">autorenew</span>
-          <span>{{ (state.isRunning$ | async) ? 'Running Pipeline...' : 'Run Pipeline' }}</span>
+        <button (click)="state.setNav('pipelines')" class="px-4 py-2 rounded-md bg-[#494bd6] hover:bg-[#8083ff] text-white hover:text-[#0d0096] text-xs font-semibold transition-colors flex items-center gap-2 shadow-sm">
+          <span class="material-symbols-outlined text-[16px]">account_tree</span>
+          <span>Open Pipeline Stepper</span>
         </button>
         <button (click)="state.setNav('results')" class="px-4 py-2 rounded-md border border-[#30363D] light:border-[#d0d7de] text-[#e1e2eb] light:text-[#1f2328] hover:bg-[#272a31] light:hover:bg-[#f3f4f6] text-xs font-semibold transition-colors flex items-center gap-2">
           <span class="material-symbols-outlined text-[16px]">task_alt</span>

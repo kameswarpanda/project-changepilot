@@ -115,11 +115,14 @@
       <!-- Action Buttons -->
       <div class="flex flex-col sm:flex-row gap-3 pt-2">
         <button (click)="runChangePilot()" 
-                [disabled]="(state.isRunning$ | async)"
+                [disabled]="(state.isRunning$ | async) || state.isCurrentPipelineCompletedWithPR()"
+                [class.opacity-60]="state.isCurrentPipelineCompletedWithPR()"
                 class="bg-[#494bd6] text-white font-semibold text-xs px-6 py-3 rounded-md hover:bg-[#8083ff] hover:text-[#0d0096] transition-colors flex items-center justify-center gap-2 shadow-sm disabled:opacity-60">
-          <span *ngIf="!(state.isRunning$ | async)" class="material-symbols-outlined text-[18px]">play_arrow</span>
+          <span *ngIf="!(state.isRunning$ | async) && !state.isCurrentPipelineCompletedWithPR()" class="material-symbols-outlined text-[18px]">play_arrow</span>
           <span *ngIf="(state.isRunning$ | async)" class="material-symbols-outlined text-[18px] animate-spin">autorenew</span>
-          <span>{{ (state.isRunning$ | async) ? 'Executing Autonomous Pipeline...' : 'Run ChangePilot' }}</span>
+          <span *ngIf="state.isCurrentPipelineCompletedWithPR()" class="material-symbols-outlined text-[18px] text-[#4edea3]">check_circle</span>
+          <span *ngIf="state.isCurrentPipelineCompletedWithPR()">Pull Request Raised (Completed)</span>
+          <span *ngIf="!state.isCurrentPipelineCompletedWithPR()">{{ (state.isRunning$ | async) ? 'Executing Autonomous Pipeline...' : 'Run ChangePilot' }}</span>
         </button>
 
         <button (click)="saveDraft()" 
