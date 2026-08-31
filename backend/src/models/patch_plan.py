@@ -9,6 +9,7 @@ class FilePatch(BaseModel):
     file_path: str = Field(..., description="Relative file path to create, modify, or delete")
     change_type: ChangeType = Field(..., description="Action to perform: CREATE, MODIFY, or DELETE")
     content: Optional[str] = Field(default=None, description="Complete new file content for CREATE or MODIFY (None for DELETE)")
+    patch_content: Optional[str] = Field(default=None, description="Alias for content")
     explanation: Optional[str] = Field(default=None, description="Specific reasoning for the code in this patch")
 
 

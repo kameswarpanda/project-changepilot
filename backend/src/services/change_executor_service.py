@@ -39,7 +39,8 @@ class ChangeExecutorService:
         if not diff or not diff.strip():
             diff_blocks = []
             for fp in patch_plan.file_patches:
-                lines = (fp.patch_content or "").splitlines()
+                raw_content = getattr(fp, "content", None) or getattr(fp, "patch_content", None) or ""
+                lines = raw_content.splitlines()
                 line_count = len(lines) or 1
                 if fp.change_type == "CREATE":
                     diff_blocks.append(
