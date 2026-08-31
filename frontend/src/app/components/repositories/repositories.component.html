@@ -6,7 +6,13 @@
       <p class="font-body-md text-xs text-[#908fa0] mt-1">Manage connected codebases monitored by ChangePilot via GitHub App and Azure DevOps integrations.</p>
     </div>
     <div class="flex items-center gap-3">
-      <button (click)="openConnectModal()" class="bg-[#494bd6] text-white font-semibold text-xs px-4 py-2 rounded-md hover:bg-[#8083ff] hover:text-[#0d0096] transition-colors flex items-center gap-2 shadow-sm">
+      <button *ngIf="(state.githubStatus$ | async)?.connected" 
+              (click)="state.syncRepositories()" 
+              class="bg-[#272a31] light:bg-[#f6f8fa] border border-[#30363D] light:border-[#d0d7de] text-[#e1e2eb] light:text-[#1f2328] font-semibold text-xs px-3.5 py-2 rounded-md hover:bg-[#32353c] light:hover:bg-[#eaeef2] transition-colors flex items-center gap-1.5 shadow-sm cursor-pointer">
+        <span class="material-symbols-outlined text-[16px]">sync</span>
+        <span>Sync GitHub Repos</span>
+      </button>
+      <button (click)="openConnectModal()" class="bg-[#494bd6] text-white font-semibold text-xs px-4 py-2 rounded-md hover:bg-[#8083ff] hover:text-[#0d0096] transition-colors flex items-center gap-2 shadow-sm cursor-pointer">
         <span class="material-symbols-outlined text-[16px]">add_link</span>
         <span>+ Connect Repository</span>
       </button>

@@ -59,6 +59,10 @@ export class ApiService {
     return this.http.get<any>(`${this.baseUrl}/api/repositories`, { headers: this.getHeaders() });
   }
 
+  syncRepositories(): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/api/repositories/sync`, {}, { headers: this.getHeaders() });
+  }
+
   listUserPlatformRepos(): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}/api/repositories/user-repos`, { headers: this.getHeaders() });
   }

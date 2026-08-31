@@ -31,68 +31,48 @@ class GitHubAppClient:
         self.installation_id = installation_id or settings.github_app_installation_id
 
     def list_repositories(self, user_id: Optional[str] = None) -> List[dict]:
-        """Lists connected GitHub repositories accessible via GitHub App / Token or workspace cache."""
-        # 1. If GitHub Token is configured in .env, fetch real remote repositories
+        """Lists connected GitHub repositories accessible via GitHub App / Token."""
         if self.token:
             try:
-                with httpx.Client(timeout=8.0) as client:
+                auth_val = f"Bearer {self.token.strip()}"
+                with httpx.Client(timeout=12.0) as client:
                     resp = client.get(
-                        "https://api.github.com/user/repos?sort=updated&per_page=20",
+                        "https://api.github.com/user/repos?sort=updated&per_page=100&affiliation=owner,collaborator,organization_member",
                         headers={
-                            "Authorization": f"Bearer {self.token}",
-                            "Accept": "application/vnd.github.v3+json"
+                            "Authorization": auth_val,
+                            "Accept": "application/vnd.github.v3+json",
+                            "User-Agent": "ChangePilot-App",
+                            "X-GitHub-Api-Version": "2022-11-28"
                         }
                     )
                     if resp.status_code == 200:
                         repos = resp.json()
-                        return [
-                            {
-                                "id": r.get("name") or str(r.get("id", "repo")),
-                                "name": r.get("name", "repo"),
-                                "full_name": r.get("full_name", f"kameswarpanda/{r.get('name', 'repo')}"),
-                                "clone_url": r.get("clone_url", f"https://github.com/{r.get('full_name', '')}.git"),
+                        result = []
+                        for r in repos:
+                            full_name = r.get("full_name") or r.get("name", "repo")
+                            name = r.get("name") or full_name.split("/")[-1]
+                            lang = r.get("language") or "Python"
+                            test_runner = "npm test" if lang in ("TypeScript", "JavaScript") else ("mvn test" if lang == "Java" else "pytest")
+                            result.append({
+                                "id": full_name.replace("/", "-"),
+                                "name": name,
+                                "full_name": full_name,
+                                "clone_url": r.get("clone_url") or f"https://github.com/{full_name}.git",
                                 "provider": "github",
-                                "default_branch": r.get("default_branch", "main"),
-                                "branches": [r.get("default_branch", "main")],
-                                "language": r.get("language") or "TypeScript",
-                                "test_runner": "npm test" if (r.get("language") == "TypeScript" or r.get("language") == "JavaScript") else "pytest",
+                                "default_branch": r.get("default_branch") or "main",
+                                "branches": [r.get("default_branch") or "main"],
+                                "language": lang,
+                                "test_runner": test_runner,
                                 "is_private": r.get("private", False),
-                                "path": r.get("full_name", r.get("name", "repo"))
-                            }
-                            for r in repos
-                        ]
+                                "path": full_name
+                            })
+                        return result
+                    else:
+                        logger.warning(f"GitHub API listing returned {resp.status_code}: {resp.text}")
             except Exception as e:
-                logger.warning(f"GitHub API listing error, falling back to local registry: {e}")
+                logger.warning(f"GitHub API repository listing error: {e}")
 
-        # 2. Database/Default connected repositories
-        return [
-            {
-                "id": "repo-changepilot",
-                "name": "project-changepilot",
-                "full_name": "kameswarpanda/project-changepilot",
-                "clone_url": "https://github.com/kameswarpanda/project-changepilot.git",
-                "provider": "github",
-                "default_branch": "main",
-                "branches": ["main", "develop", "feature/auth-gates"],
-                "language": "Python / TypeScript",
-                "test_runner": "pytest / npm test",
-                "is_private": True,
-                "path": "kameswarpanda/project-changepilot"
-            },
-            {
-                "id": "repo-payment-demo",
-                "name": "changepilot-demo-payment",
-                "full_name": "kameswarpanda/changepilot-demo-payment",
-                "clone_url": "https://github.com/kameswarpanda/changepilot-demo-payment.git",
-                "provider": "github",
-                "default_branch": "main",
-                "branches": ["main", "develop", "release/v1.0"],
-                "language": "Java",
-                "test_runner": "mvn test",
-                "is_private": False,
-                "path": "kameswarpanda/changepilot-demo-payment"
-            }
-        ]
+        return []
 
     def list_branches(self, repository_name: str) -> List[str]:
         """Discovers branches for a given repository via live GitHub API or workspace topology."""

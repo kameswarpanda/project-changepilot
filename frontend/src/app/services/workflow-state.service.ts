@@ -411,6 +411,26 @@ export class WorkflowStateService {
     });
   }
 
+  public syncRepositories(): void {
+    this.api.syncRepositories().subscribe({
+      next: (res) => {
+        this.notif.addNotification(
+          'Repositories Synced',
+          `Discovered and synced ${res.synced_count || 0} repositories from GitHub.`,
+          'success'
+        );
+        this.loadRepositories();
+      },
+      error: (err) => {
+        this.notif.addNotification(
+          'Sync Failed',
+          err.error?.detail || 'Could not sync repositories from GitHub.',
+          'error'
+        );
+      }
+    });
+  }
+
   public importPublicRepository(gitUrl: string, baseBranch: string = 'main'): void {
     this.api.importPublicRepository(gitUrl, baseBranch).subscribe({
       next: (res) => {

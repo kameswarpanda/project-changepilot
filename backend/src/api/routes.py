@@ -340,19 +340,22 @@ async def get_github_status(user: User = Depends(get_current_user)):
 
 @router.post("/api/integrations/github/connect", tags=["Integrations"])
 async def connect_github_token(req: GitHubConnectRequest, user: User = Depends(get_current_user)):
-    """Verifies and stores a GitHub Personal Access Token strictly for the authenticated user."""
+    """Verifies and stores a GitHub Personal Access Token, then automatically imports accessible repositories."""
     token_clean = req.token.strip()
     if not token_clean:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Please provide a valid GitHub token.")
 
     try:
-        async with httpx.AsyncClient(timeout=8.0) as client:
+        headers = {
+            "Authorization": f"Bearer {token_clean}",
+            "Accept": "application/vnd.github.v3+json",
+            "User-Agent": "ChangePilot-App",
+            "X-GitHub-Api-Version": "2022-11-28"
+        }
+        async with httpx.AsyncClient(timeout=12.0) as client:
             resp = await client.get(
                 "https://api.github.com/user",
-                headers={
-                    "Authorization": f"Bearer {token_clean}",
-                    "Accept": "application/vnd.github.v3+json"
-                }
+                headers=headers
             )
             if resp.status_code != 200:
                 raise HTTPException(
@@ -361,15 +364,52 @@ async def connect_github_token(req: GitHubConnectRequest, user: User = Depends(g
                 )
             
             data = resp.json()
+            username = data.get("login")
             db_repository.save_user_github_token(user.id, token_clean)
 
-            logger.info(f"User {user.username} ({user.id}) successfully linked GitHub account @{data.get('login')}")
+            # Auto-import all accessible remote repositories into user's database
+            imported_count = 0
+            try:
+                repo_resp = await client.get(
+                    "https://api.github.com/user/repos?sort=updated&per_page=100&affiliation=owner,collaborator,organization_member",
+                    headers=headers
+                )
+                if repo_resp.status_code == 200:
+                    repos_data = repo_resp.json()
+                    for r in repos_data:
+                        repo_name = r.get("name")
+                        full_name = r.get("full_name") or f"{username}/{repo_name}"
+                        clone_url = r.get("clone_url") or f"https://github.com/{full_name}.git"
+                        default_branch = r.get("default_branch") or "main"
+                        is_private = r.get("private", False)
+                        lang = r.get("language") or "Python"
+                        test_runner = "npm test" if lang in ("TypeScript", "JavaScript") else ("mvn test" if lang == "Java" else "pytest")
+
+                        db_repository.save_repository({
+                            "id": f"repo-{user.id[:6]}-{repo_name}",
+                            "name": repo_name,
+                            "full_name": full_name,
+                            "clone_url": clone_url,
+                            "owner_user_id": user.id,
+                            "provider": "github",
+                            "default_branch": default_branch,
+                            "branches": [default_branch],
+                            "language": lang,
+                            "test_runner": test_runner,
+                            "is_private": is_private
+                        })
+                        imported_count += 1
+            except Exception as e_repo:
+                logger.warning(f"Failed to auto-import GitHub repositories during connect: {e_repo}")
+
+            logger.info(f"User {user.username} ({user.id}) successfully linked GitHub account @{username} with {imported_count} repositories imported.")
             return {
                 "success": True,
-                "username": data.get("login"),
+                "username": username,
                 "name": data.get("name"),
                 "avatar_url": data.get("avatar_url"),
-                "message": f"Successfully connected to GitHub as @{data.get('login')}! Remote push and Pull Request creation are active."
+                "imported_count": imported_count,
+                "message": f"Successfully connected to GitHub as @{username}! Discovered and linked {imported_count} repositories."
             }
     except HTTPException:
         raise
@@ -392,9 +432,73 @@ async def disconnect_github(user: User = Depends(get_current_user)):
 async def list_repositories(user: User = Depends(get_current_user)):
     """Lists connected repositories from the database for the authenticated user."""
     repos = db_repository.list_connected_repositories(user_id=user.id)
+    
+    # If no repos stored yet but user has GitHub token, automatically sync and populate
+    if not repos:
+        user_ints = db_repository.get_user_integrations(user.id)
+        user_token = user_ints.get("github_token")
+        if not user_token and (user.username == "kameswar" or "admin" in user.roles):
+            user_token = settings.github_token or os.environ.get("GITHUB_TOKEN")
+        
+        if user_token:
+            client = GitHubAppClient(token=user_token)
+            remote_repos = client.list_repositories(user.id)
+            for r in remote_repos:
+                db_repository.save_repository({
+                    "id": f"repo-{user.id[:6]}-{r['name']}",
+                    "name": r["name"],
+                    "full_name": r["full_name"],
+                    "clone_url": r["clone_url"],
+                    "owner_user_id": user.id,
+                    "provider": "github",
+                    "default_branch": r["default_branch"],
+                    "branches": r.get("branches", [r["default_branch"]]),
+                    "language": r.get("language", "Python"),
+                    "test_runner": r.get("test_runner", "pytest"),
+                    "is_private": r.get("is_private", False)
+                })
+            repos = db_repository.list_connected_repositories(user_id=user.id)
+
     return {
         "user": user.username,
         "repositories": repos
+    }
+
+
+@router.post("/api/repositories/sync", tags=["Repositories"])
+async def sync_repositories(user: User = Depends(get_current_user)):
+    """Force re-syncs and updates all remote repositories from connected GitHub account."""
+    user_ints = db_repository.get_user_integrations(user.id)
+    user_token = user_ints.get("github_token")
+    if not user_token and (user.username == "kameswar" or "admin" in user.roles):
+        user_token = settings.github_token or os.environ.get("GITHUB_TOKEN")
+
+    if not user_token:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No GitHub account connected. Please connect your GitHub token first.")
+
+    client = GitHubAppClient(token=user_token)
+    remote_repos = client.list_repositories(user.id)
+    synced_count = 0
+    for r in remote_repos:
+        db_repository.save_repository({
+            "id": f"repo-{user.id[:6]}-{r['name']}",
+            "name": r["name"],
+            "full_name": r["full_name"],
+            "clone_url": r["clone_url"],
+            "owner_user_id": user.id,
+            "provider": "github",
+            "default_branch": r["default_branch"],
+            "branches": r.get("branches", [r["default_branch"]]),
+            "language": r.get("language", "Python"),
+            "test_runner": r.get("test_runner", "pytest"),
+            "is_private": r.get("is_private", False)
+        })
+        synced_count += 1
+
+    return {
+        "success": True,
+        "synced_count": synced_count,
+        "repositories": db_repository.list_connected_repositories(user_id=user.id)
     }
 
 
